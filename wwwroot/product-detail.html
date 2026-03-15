@@ -1,0 +1,947 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chi tiết sản phẩm | KP Luxury</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .breadcrumb {
+            padding: 2rem 0;
+            color: #888;
+            font-size: 0.9rem;
+        }
+
+        .breadcrumb a {
+            color: #ccc;
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+
+        .breadcrumb a:hover {
+            color: var(--accent-gold);
+        }
+
+        .detail-layout {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4rem;
+            padding-bottom: 5rem;
+        }
+
+        @media (max-width: 768px) {
+            .detail-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .gallery-wrap {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .main-image-container {
+            width: 100%;
+            height: 600px;
+            background: #111;
+            border-radius: 12px;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid var(--glass-border);
+        }
+
+        .main-image-container img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            transition: transform 0.5s;
+        }
+
+        .main-image-container:hover img {
+            transform: scale(1.05);
+        }
+
+        .thumbnail-list {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .thumbnail {
+            width: 100px;
+            height: 100px;
+            border-radius: 8px;
+            border: 1px solid var(--glass-border);
+            cursor: pointer;
+            object-fit: cover;
+            opacity: 0.6;
+            transition: all 0.3s;
+        }
+
+        .thumbnail.active,
+        .thumbnail:hover {
+            border-color: var(--accent-gold);
+            opacity: 1;
+        }
+
+        .product-brand {
+            color: var(--accent-gold);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-size: 1rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .product-title {
+            font-size: 2.5rem;
+            line-height: 1.2;
+            margin-bottom: 1rem;
+            font-family: 'Playfair Display', serif;
+        }
+
+        .rating {
+            color: #f1c40f;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .rating span {
+            color: #888;
+            font-size: 0.9rem;
+        }
+
+        .price-wrap {
+            display: flex;
+            align-items: baseline;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            padding-bottom: 2rem;
+            border-bottom: 1px solid var(--glass-border);
+        }
+
+        .current-price {
+            font-size: 2.5rem;
+            font-weight: 600;
+            color: var(--accent-gold);
+        }
+
+        .old-price {
+            font-size: 1.5rem;
+            text-decoration: line-through;
+            color: #666;
+        }
+
+        .attributes-section {
+            margin-bottom: 2rem;
+        }
+
+        .attribute-title {
+            font-weight: 600;
+            margin-bottom: 1rem;
+            font-size: 1.1rem;
+        }
+
+        .size-selectors {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .size-btn {
+            background: transparent;
+            border: 1px solid #444;
+            color: #ccc;
+            padding: 0.8rem 1.5rem;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .size-btn.active,
+        .size-btn:hover {
+            border-color: var(--accent-gold);
+            color: var(--accent-gold);
+            background: rgba(212, 175, 55, 0.1);
+        }
+
+        .purchase-section {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .qty-wrapper {
+            display: flex;
+            align-items: center;
+            border: 1px solid #444;
+            border-radius: 4px;
+            background: #111;
+        }
+
+        .qty-btn {
+            background: transparent;
+            border: none;
+            color: white;
+            width: 40px;
+            height: 50px;
+            cursor: pointer;
+            font-size: 1.2rem;
+        }
+
+        .qty-btn:hover {
+            color: var(--accent-gold);
+        }
+
+        .qty-input {
+            width: 50px;
+            height: 50px;
+            background: transparent;
+            border: none;
+            color: white;
+            text-align: center;
+            font-size: 1.1rem;
+            outline: none;
+            -moz-appearance: textfield;
+        }
+
+        .qty-input::-webkit-outer-spin-button,
+        .qty-input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        .btn-add-cart,
+        .btn-buy-now {
+            flex: 1;
+            padding: 0 1.5rem;
+            height: 50px;
+            border-radius: 4px;
+            font-weight: 600;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .btn-add-cart {
+            background: transparent;
+            border: 1px solid var(--accent-gold);
+            color: var(--accent-gold);
+        }
+
+        .btn-add-cart:hover {
+            background: rgba(212, 175, 55, 0.1);
+        }
+
+        .btn-buy-now {
+            background: linear-gradient(45deg, var(--accent-gold), #f1cf6d);
+            border: none;
+            color: #000;
+        }
+
+        .btn-buy-now:hover {
+            box-shadow: 0 5px 15px rgba(212, 175, 55, 0.4);
+            transform: translateY(-2px);
+        }
+
+        .product-guarantees {
+            padding: 1.5rem;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 8px;
+            border: 1px solid var(--glass-border);
+        }
+
+        .guarantee-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .guarantee-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .guarantee-icon {
+            color: var(--accent-gold);
+            font-size: 1.5rem;
+        }
+
+        /* Bottom Details Section */
+        .bottom-details {
+            margin-top: 3rem;
+            border-top: 1px solid var(--glass-border);
+            padding-top: 4rem;
+        }
+
+        .section-heading {
+            font-family: 'Playfair Display', serif;
+            font-size: 2rem;
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+
+        .section-heading::after {
+            content: '';
+            display: block;
+            width: 60px;
+            height: 2px;
+            background: var(--accent-gold);
+            margin: 1rem auto 0;
+        }
+
+        .description-content {
+            color: #bbb;
+            line-height: 1.8;
+            font-size: 1.1rem;
+            max-width: 800px;
+            margin: 0 auto 4rem;
+            text-align: justify;
+        }
+
+        .notes-and-specs {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4rem;
+            background: #111;
+            padding: 3rem;
+            border-radius: 12px;
+            border: 1px solid var(--glass-border);
+        }
+
+        .fragrance-notes h3,
+        .specs h3 {
+            font-size: 1.5rem;
+            margin-bottom: 1.5rem;
+            color: #fff;
+        }
+
+        .note-tier {
+            display: flex;
+            align-items: flex-start;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .note-icon {
+            width: 50px;
+            height: 50px;
+            background: rgba(212, 175, 55, 0.1);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--accent-gold);
+            font-size: 1.2rem;
+            flex-shrink: 0;
+        }
+
+        .note-content h4 {
+            color: var(--accent-gold);
+            margin-bottom: 0.3rem;
+        }
+
+        .note-content p {
+            color: #aaa;
+            font-size: 0.95rem;
+        }
+
+        .spec-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .spec-table th,
+        .spec-table td {
+            padding: 1rem;
+            border-bottom: 1px solid #333;
+            text-align: left;
+        }
+
+        .spec-table th {
+            color: #888;
+            font-weight: normal;
+            width: 40%;
+        }
+
+        .spec-table td {
+            color: #ddd;
+            font-weight: 500;
+        }
+
+        @media (max-width: 992px) {
+            .notes-and-specs {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Discount Badge */
+        .discount-badge {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: #e74c3c;
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            font-weight: bold;
+            font-size: 1.2rem;
+            z-index: 10;
+            box-shadow: 0 5px 15px rgba(231, 76, 60, 0.4);
+        }
+
+        /* Reviews Section */
+        .reviews-section {
+            margin-top: 5rem;
+            background: #111;
+            padding: 3rem;
+            border-radius: 12px;
+            border: 1px solid var(--glass-border);
+        }
+
+        .review-item {
+            border-bottom: 1px solid #333;
+            padding: 1.5rem 0;
+        }
+
+        .review-item:last-child {
+            border-bottom: none;
+        }
+
+        .review-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+        }
+
+        .reviewer-name {
+            font-weight: bold;
+            color: var(--accent-gold);
+        }
+
+        .review-date {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .review-stars {
+            color: #f1c40f;
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+        }
+
+        .review-text {
+            color: #ccc;
+            line-height: 1.6;
+        }
+
+        .review-form {
+            margin-top: 3rem;
+            background: rgba(255, 255, 255, 0.02);
+            padding: 2rem;
+            border-radius: 8px;
+            border: 1px solid #333;
+        }
+
+        .review-input {
+            width: 100%;
+            background: #222;
+            border: 1px solid #444;
+            color: white;
+            padding: 1rem;
+            border-radius: 4px;
+            margin-bottom: 1rem;
+            outline: none;
+            font-family: inherit;
+            resize: vertical;
+        }
+
+        .review-input:focus {
+            border-color: var(--accent-gold);
+        }
+
+        /* Chatbot */
+        .chatbot-toggle {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(45deg, var(--accent-gold), #f1cf6d);
+            color: black;
+            border: none;
+            font-size: 1.8rem;
+            cursor: pointer;
+            box-shadow: 0 10px 25px rgba(212, 175, 55, 0.5);
+            z-index: 1000;
+            transition: transform 0.3s;
+        }
+
+        .chatbot-toggle:hover {
+            transform: scale(1.1);
+        }
+
+        .chatbot-widget {
+            position: fixed;
+            bottom: 100px;
+            right: 30px;
+            width: 350px;
+            background: #1a1a1a;
+            border-radius: 12px;
+            border: 1px solid var(--accent-gold);
+            overflow: hidden;
+            z-index: 1000;
+            display: none;
+            flex-direction: column;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.8);
+        }
+
+        .chatbot-widget.show {
+            display: flex;
+        }
+
+        .chatbot-header {
+            background: var(--accent-gold);
+            color: black;
+            padding: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: bold;
+        }
+
+        .chatbot-header button {
+            background: transparent;
+            border: none;
+            font-size: 1.2rem;
+            cursor: pointer;
+        }
+
+        .chatbot-messages {
+            height: 300px;
+            padding: 1rem;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            background: #111;
+        }
+
+        .msg {
+            max-width: 80%;
+            padding: 0.8rem 1rem;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            line-height: 1.4;
+        }
+
+        .bot-msg {
+            background: rgba(212, 175, 55, 0.1);
+            color: #fff;
+            border: 1px solid rgba(212, 175, 55, 0.2);
+            align-self: flex-start;
+            border-bottom-left-radius: 0;
+        }
+
+        .user-msg {
+            background: var(--accent-gold);
+            color: black;
+            align-self: flex-end;
+            border-bottom-right-radius: 0;
+        }
+
+        .chatbot-input {
+            display: flex;
+            padding: 1rem;
+            background: #1a1a1a;
+            border-top: 1px solid #333;
+        }
+
+        .chatbot-input input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: white;
+            outline: none;
+        }
+
+        .chatbot-input button {
+            background: transparent;
+            border: none;
+            color: var(--accent-gold);
+            font-size: 1.2rem;
+            cursor: pointer;
+            margin-left: 0.5rem;
+        }
+    </style>
+</head>
+
+<body>
+    <nav>
+        <div class="container nav-container">
+            <a href="index.html" class="logo">KP LUXURY</a>
+            <div class="nav-links">
+                <a href="index.html#products">Sản phẩm</a>
+                <a href="cart.html">📦 Giỏ hàng</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container" style="padding-top: 80px;">
+        <div class="breadcrumb" id="breadcrumb">
+            <a href="index.html">Trang chủ</a> / <a href="index.html#products">Nước hoa</a> / <span>...</span>
+        </div>
+
+        <div id="productDetail" class="detail-layout">
+            <div class="loading"
+                style="grid-column: 1/-1; text-align: center; padding: 5rem 0; color: var(--accent-gold);">
+                <i class="fas fa-circle-notch fa-spin fa-3x"></i>
+                <p style="margin-top: 1rem;">Đang tải tuyệt tác...</p>
+            </div>
+        </div>
+
+        <div id="bottomDetails" class="bottom-details" style="display: none;">
+            <h2 class="section-heading">Mối Duyên Kì Ngộ</h2>
+            <div id="productDesc" class="description-content">
+                <!-- Description goes here -->
+            </div>
+
+            <div class="notes-and-specs">
+                <div class="fragrance-notes">
+                    <h3>Các Tầng Hương</h3>
+                    <div class="note-tier">
+                        <div class="note-icon"><i class="fas fa-wind"></i></div>
+                        <div class="note-content">
+                            <h4>Hương Đầu (Top Notes)</h4>
+                            <p id="topNotes">Hoa hồng, Quả đào, Xạ hương</p>
+                        </div>
+                    </div>
+                    <div class="note-tier">
+                        <div class="note-icon"><i class="fas fa-heart"></i></div>
+                        <div class="note-content">
+                            <h4>Hương Giữa (Middle Notes)</h4>
+                            <p id="middleNotes">Hoa cam, Gỗ hoắc hương, Hổ phách</p>
+                        </div>
+                    </div>
+                    <div class="note-tier">
+                        <div class="note-icon"><i class="fas fa-leaf"></i></div>
+                        <div class="note-content">
+                            <h4>Hương Cuối (Base Notes)</h4>
+                            <p id="baseNotes">Gỗ đàn hương, Xạ hương, Vani</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="specs">
+                    <h3>Thông Tin Chi Tiết</h3>
+                    <table class="spec-table">
+                        <tbody>
+                            <tr>
+                                <th>Thương hiệu</th>
+                                <td id="specBrand">NARCISO RODRIGUEZ</td>
+                            </tr>
+                            <tr>
+                                <th>Xuất xứ</th>
+                                <td>Pháp</td>
+                            </tr>
+                            <tr>
+                                <th>Năm phát hành</th>
+                                <td>2006</td>
+                            </tr>
+                            <tr>
+                                <th>Nhóm hương</th>
+                                <td>Floral Woody Musk</td>
+                            </tr>
+                            <tr>
+                                <th>Phong cách</th>
+                                <td>Quyến rũ, Sang trọng, Nữ tính</td>
+                            </tr>
+                            <tr>
+                                <th>Độ tỏa hương</th>
+                                <td>Gần - Toả hương trong vòng một cánh tay</td>
+                            </tr>
+                            <tr>
+                                <th>Thời gian lưu hương</th>
+                                <td>Tạm ổn - 3 giờ đến 6 giờ</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Customer Reviews -->
+            <div class="reviews-section">
+                <h2 class="section-heading" style="font-size: 1.8rem; margin-bottom: 3rem;">Đánh Giá Khách Hàng</h2>
+                <div class="review-list">
+                    <div class="review-item">
+                        <div class="review-header">
+                            <span class="reviewer-name">Ngọc Minh <i class="fas fa-check-circle"
+                                    style="color: #2ecc71; font-size: 0.8rem; margin-left: 5px;"
+                                    title="Đã mua hàng"></i></span>
+                            <span class="review-date">02/03/2026</span>
+                        </div>
+                        <div class="review-stars">
+                            <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i
+                                class="fas fa-star"></i><i class="fas fa-star"></i>
+                        </div>
+                        <p class="review-text">Mùi hương sang trọng thực sự, lưu hương trên da mình hơn 6 tiếng. Package
+                            đóng gói tinh tế. Giao hàng cực nhanh.</p>
+                    </div>
+                    <div class="review-item">
+                        <div class="review-header">
+                            <span class="reviewer-name">Thảo Anh <i class="fas fa-check-circle"
+                                    style="color: #2ecc71; font-size: 0.8rem; margin-left: 5px;"
+                                    title="Đã mua hàng"></i></span>
+                            <span class="review-date">28/02/2026</span>
+                        </div>
+                        <div class="review-stars">
+                            <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i
+                                class="fas fa-star"></i><i class="fas fa-star-half-alt"></i>
+                        </div>
+                        <p class="review-text">Giá hơi cao nhưng rất xứng đáng với chất lượng. Mùi hương giữa rất nịnh
+                            mũi.</p>
+                    </div>
+                </div>
+
+                <div class="review-form">
+                    <h3 style="color: #fff; margin-bottom: 1rem;">Viết đánh giá của bạn</h3>
+                    <textarea class="review-input" rows="4"
+                        placeholder="Chia sẻ cảm nhận của bạn về sản phẩm..."></textarea>
+                    <button class="btn-gold"
+                        onclick="alert('Cảm ơn bạn đã đánh giá!'); this.previousElementSibling.value='';">Gửi Đánh
+                        Giá</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer
+        style="margin-top: 5rem; padding: 4rem 0; background: #050505; text-align: center; border-top: 1px solid var(--glass-border);">
+        <div class="container">
+            <p>&copy; 2026 KP Luxury Perfume. All rights reserved.</p>
+            <p class="brand-font" style="margin-top: 1rem; letter-spacing: 2px; color: var(--accent-gold);">KP - Tinh
+                hoa nghệ thuật mùi hương</p>
+        </div>
+    </footer>
+
+    <script src="auth.js"></script>
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const productId = urlParams.get('id');
+
+        async function loadDetail() {
+            if (!productId) return window.location.href = 'index.html';
+
+            try {
+                const res = await fetch(`/api/perfumes/${productId}`);
+                if (!res.ok) throw new Error('Product not found');
+                const p = await res.json();
+
+                // Add mock details to make it rich
+                p.brand = p.name.split(' ')[0] || "Luxury";
+                const oldPrice = p.price * 1.25;
+
+                document.getElementById('breadcrumb').innerHTML = `
+                    <a href="index.html">Trang chủ</a> / <a href="index.html#products">${p.category}</a> / <span style="color: white;">${p.name}</span>
+                `;
+
+                document.getElementById('productDetail').innerHTML = `
+                    <div class="gallery-wrap">
+                        <div class="main-image-container" style="position: relative;">
+                            <div class="discount-badge">-20% GIẢM SÂU</div>
+                            <img src="${p.imageUrl}" alt="${p.name}" id="mainImg">
+                        </div>
+                        <div class="thumbnail-list">
+                            <img src="${p.imageUrl}" class="thumbnail active" onclick="changeImage(this)">
+                            <!-- Fake alternate thumbnails based on same image for demo -->
+                            <img src="${p.imageUrl}" class="thumbnail" style="filter: hue-rotate(15deg);" onclick="changeImage(this)">
+                            <img src="${p.imageUrl}" class="thumbnail" style="filter: brightness(0.8);" onclick="changeImage(this)">
+                        </div>
+                    </div>
+                    <div class="detail-info">
+                        <div class="product-brand">${p.brand}</div>
+                        <h1 class="product-title">${p.name}</h1>
+                        
+                        <div class="rating">
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star-half-alt"></i>
+                            <span>(4.8/5 từ 124 đánh giá)</span>
+                        </div>
+
+                        <div class="price-wrap">
+                            <span class="current-price">$${p.price.toFixed(2)}</span>
+                            <span class="old-price">$${oldPrice.toFixed(2)}</span>
+                        </div>
+
+                        <div class="attributes-section">
+                            <div class="attribute-title">Dung tích</div>
+                            <div class="size-selectors">
+                                <button class="size-btn" onclick="selectSize(this)">30ml</button>
+                                <button class="size-btn active" onclick="selectSize(this)">50ml</button>
+                                <button class="size-btn" onclick="selectSize(this)">100ml</button>
+                            </div>
+                        </div>
+
+                        <div class="purchase-section">
+                            <div class="qty-wrapper">
+                                <button class="qty-btn" onclick="updateQty(-1)">-</button>
+                                <input type="number" id="qty" value="1" min="1" class="qty-input" readonly>
+                                <button class="qty-btn" onclick="updateQty(1)">+</button>
+                            </div>
+                            <button class="btn-add-cart" onclick="addToCart()">
+                                <i class="fas fa-cart-plus"></i> Thêm Vào Giỏ
+                            </button>
+                            <button class="btn-buy-now" onclick="addToCart(true)">
+                                Mua Ngay
+                            </button>
+                        </div>
+                        
+                        <div class="product-guarantees">
+                            <h3 style="margin-bottom: 1rem; color: var(--accent-gold); font-size: 1.1rem; border-bottom: 1px solid #333; padding-bottom: 0.5rem;">Dịch vụ Đa Kênh (Omnichannel)</h3>
+                            <div class="guarantee-item">
+                                <i class="fas fa-store guarantee-icon"></i>
+                                <div>
+                                    <strong style="color: #fff;">Click & Collect (Nhận tại cửa hàng)</strong>
+                                    <p style="color: #888; font-size: 0.9rem; margin-top: 0.2rem;">Đặt online, nhận hàng và trải nghiệm thực tế ngay tại 15 showroom trên toàn quốc.</p>
+                                    <button class="btn-gold" style="padding: 0.4rem 1rem; margin-top: 0.5rem; font-size: 0.8rem;" onclick="alert('Đang tìm cửa hàng gần bạn nhất...')">Kiểm tra tồn kho Showroom</button>
+                                </div>
+                            </div>
+                            <div class="guarantee-item">
+                                <i class="fas fa-video guarantee-icon"></i>
+                                <div>
+                                    <strong style="color: #fff;">Tư Vấn Nước Hoa 1:1 Online</strong>
+                                    <p style="color: #888; font-size: 0.9rem; margin-top: 0.2rem;">Chuyên gia mùi hương của KP sẽ gọi videocall và tư vấn trực tiếp cho bạn.</p>
+                                    <button class="btn-gold" style="padding: 0.4rem 1rem; margin-top: 0.5rem; font-size: 0.8rem; background: transparent; border: 1px solid var(--accent-gold); color: var(--accent-gold);" onclick="alert('Đã đặt lịch hẹn chuyên gia 1:1!')">Đặt Lịch Ngay</button>
+                                </div>
+                            </div>
+                            <div class="guarantee-item">
+                                <i class="fas fa-truck-fast guarantee-icon"></i>
+                                <div>
+                                    <strong style="color: #fff;">Giao Hàng Siêu Tốc 2H</strong>
+                                    <p style="color: #888; font-size: 0.9rem; margin-top: 0.2rem;">Giao hàng nội thành Hồ Chí Minh và Hà Nội chỉ trong 2 tiếng qua Ahamove/Grab.</p>
+                                </div>
+                            </div>
+                            <div class="guarantee-item">
+                                <i class="fas fa-shield-alt guarantee-icon"></i>
+                                <div>
+                                    <strong style="color: #fff;">Cam Kết Chính Hãng 100%</strong>
+                                    <p style="color: #888; font-size: 0.9rem; margin-top: 0.2rem;">Hoàn tiền 200% nếu phát hiện hàng giả.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                document.getElementById('productDesc').innerHTML = `
+                    <p>${p.description}</p>
+                    <p style="margin-top: 1rem;">Lấy cảm hứng từ sự thanh lịch đương đại, ${p.name} là một tuyên ngôn mùi hương dành riêng cho những người trân trọng vẻ đẹp nguyên bản. Sự cân bằng hoàn hảo giữa các tầng hương tạo nên một bản giao hưởng của khứu giác, vừa quyến rũ, vừa lưu luyến không rời.</p>
+                `;
+                document.getElementById('specBrand').innerText = p.brand.toUpperCase();
+
+                document.getElementById('bottomDetails').style.display = 'block';
+
+                window.currentProduct = p;
+            } catch (error) {
+                document.getElementById('productDetail').innerHTML = '<p style="color: red; grid-column: 1/-1; text-align: center;">Không thể tải sản phẩm. Vui lòng thử lại sau.</p>';
+            }
+        }
+
+        // Interaction functions
+        function changeImage(el) {
+            document.querySelectorAll('.thumbnail').forEach(t => t.classList.remove('active'));
+            el.classList.add('active');
+            // Mock change image style just to show interaction
+            document.getElementById('mainImg').style.filter = el.style.filter || 'none';
+        }
+
+        function selectSize(btn) {
+            document.querySelectorAll('.size-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            // Real app would update price here based on size
+        }
+
+        function updateQty(change) {
+            const input = document.getElementById('qty');
+            let val = parseInt(input.value) + change;
+            if (val < 1) val = 1;
+            input.value = val;
+        }
+
+        function addToCart(checkout = false) {
+            if (!window.currentProduct) return;
+            const qty = parseInt(document.getElementById('qty').value);
+            auth.addToCart(window.currentProduct, qty);
+
+            if (checkout) {
+                window.location.href = 'checkout.html';
+            } else {
+                alert('Đã thêm thành công ' + qty + ' sản phẩm vào giỏ hàng!');
+            }
+        }
+
+        // Chatbot interaction
+        function toggleChatbot() {
+            const bot = document.getElementById('chatbotWidget');
+            bot.classList.toggle('show');
+        }
+
+        function sendMsg() {
+            const input = document.getElementById('chatInput');
+            const msg = input.value.trim();
+            if (!msg) return;
+
+            const chatContainer = document.getElementById('chatMessages');
+            chatContainer.innerHTML += `<div class="msg user-msg">${msg}</div>`;
+            input.value = '';
+
+            // Auto scroll to bottom
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+
+            // Mock reply
+            setTimeout(() => {
+                chatContainer.innerHTML += `<div class="msg bot-msg">Cảm ơn bạn đã quan tâm. KP Luxury có thể tư vấn thêm mùi hương thuộc dòng ${window.currentProduct ? window.currentProduct.brand : 'này'} cho bạn nhé! Bạn tìm nước hoa đi tiệc hay đi làm?</div>`;
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+            }, 1000);
+        }
+
+        // Handle enter key in chat
+        document.getElementById('chatInput')?.addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') sendMsg();
+        });
+
+        loadDetail();
+    </script>
+
+    <!-- Chatbot HTML -->
+    <div class="chatbot-widget" id="chatbotWidget">
+        <div class="chatbot-header">
+            <span><i class="fas fa-robot"></i> Trợ Lý Hương Thơm</span>
+            <button onclick="toggleChatbot()"><i class="fas fa-times" style="color: black;"></i></button>
+        </div>
+        <div class="chatbot-messages" id="chatMessages">
+            <div class="msg bot-msg">Chào bạn! Tôi có thể tư vấn chi tiết về độ lưu hương hoặc cách bảo quản chai nước
+                hoa này cho bạn.</div>
+        </div>
+        <div class="chatbot-input">
+            <input type="text" placeholder="Nhập tin nhắn..." id="chatInput"
+                onkeypress="if(event.key === 'Enter') sendMsg()">
+            <button onclick="sendMsg()"><i class="fas fa-paper-plane"></i></button>
+        </div>
+    </div>
+    <button class="chatbot-toggle" onclick="toggleChatbot()">
+        <i class="fas fa-comment-dots"></i>
+    </button>
+</body>
+
+</html>

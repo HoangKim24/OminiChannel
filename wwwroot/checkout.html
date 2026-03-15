@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thanh toán | KP Luxury</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .checkout-layout {
+            display: grid;
+            grid-template-columns: 1fr 400px;
+            gap: 4rem;
+            padding: 10rem 0;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #888;
+        }
+
+        input {
+            width: 100%;
+            padding: 1rem;
+            background: #222;
+            border: 1px solid #444;
+            color: white;
+            outline: none;
+        }
+
+        input:focus {
+            border-color: var(--accent-gold);
+        }
+    </style>
+</head>
+
+<body>
+    <nav>
+        <div class="container nav-container">
+            <a href="index.html" class="logo">KP LUXURY</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="checkout-layout">
+            <div>
+                <h2 class="brand-font" style="margin-bottom: 2rem;">Thông tin giao hàng</h2>
+                <form id="checkoutForm">
+                    <div class="form-group">
+                        <label>Họ và tên</label>
+                        <input type="text" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Địa chỉ</label>
+                        <input type="text" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Số điện thoại</label>
+                        <input type="text" required>
+                    </div>
+                    <button type="submit" class="btn-gold" style="width: 100%; margin-top: 2rem;">Xác nhận đặt
+                        hàng</button>
+                </form>
+            </div>
+            <div id="orderSummary" class="platform-card" style="height: fit-content;">
+                <h3>Tóm tắt đơn hàng</h3>
+                <div id="summaryItems"></div>
+                <hr style="border-color: #333; margin: 1.5rem 0;">
+                <div style="display: flex; justify-content: space-between; font-size: 1.5rem;">
+                    <span>Tổng:</span>
+                    <span id="totalPrice" style="color: var(--accent-gold);">$0</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="auth.js"></script>
+    <script>
+        const user = auth.checkAuth();
+        const cart = auth.getCart();
+
+        if (cart.length === 0) window.location.href = 'index.html';
+
+        function loadSummary() {
+            const container = document.getElementById('summaryItems');
+            let total = 0;
+            cart.forEach(item => {
+                total += item.price * item.quantity;
+                const div = document.createElement('div');
+                div.style = 'display: flex; justify-content: space-between; margin-bottom: 1rem; color: #aaa;';
+                div.innerHTML = `<span>${item.name} x${item.quantity}</span><span>$${(item.price * item.quantity).toFixed(2)}</span>`;
+                container.appendChild(div);
+            });
+            document.getElementById('totalPrice').innerText = `$${total.toFixed(2)}`;
+            window.finalTotal = total;
+        }
+
+        document.getElementById('checkoutForm').onsubmit = async (e) => {
+            e.preventDefault();
+            const order = {
+                userId: user.id,
+                totalAmount: window.finalTotal,
+                items: cart.map(item => ({
+                    perfumeId: item.id,
+                    perfumeName: item.name,
+                    quantity: item.quantity,
+                    price: item.price
+                }))
+            };
+
+            const res = await fetch('/api/orders', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(order)
+            });
+
+            if (res.ok) {
+                auth.clearCart();
+                alert('Đặt hàng thành công!');
+                window.location.href = 'order-tracking.html';
+            } else {
+                alert('Thanh toán thất bại.');
+            }
+        };
+
+        loadSummary();
+    </script>
+</body>
+
+</html>

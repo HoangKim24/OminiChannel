@@ -1,0 +1,147 @@
+@{
+    ViewData["Title"] = "Thống Kê";
+}
+
+<h2 class="brand-font" style="margin-bottom: 2rem;">Báo cáo Hệ thống</h2>
+<div class="stats-grid">
+    <div class="stat-card">
+        <h3>Doanh thu</h3>
+        <div id="salesChart" style="font-size: 2rem; color: var(--accent-gold); margin-top: 1rem;">$0</div>
+        <p style="color: #666;">Cập nhật mới nhất từ Template Method</p>
+    </div>
+    <div class="stat-card">
+        <h3>Tồn kho</h3>
+        <div id="stockChart" style="font-size: 2rem; color: #fff; margin-top: 1rem;">0 Items</div>
+        <p style="color: #666;">Sản phẩm sắp hết hàng</p>
+    </div>
+</div>
+
+<div style="display: flex; justify-content: space-between; align-items: center;">
+    <h2 class="brand-font">Quản lý Sản phẩm</h2>
+    <button class="btn-gold" onclick="showModal()">Thêm sản phẩm</button>
+</div>
+
+<table class="admin-table">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Tên sản phẩm</th>
+            <th>Giá</th>
+            <th>Tồn kho</th>
+            <th>Hành động</th>
+        </tr>
+    </thead>
+    <tbody id="adminProductGrid">
+        <!-- Loaded dynamically -->
+    </tbody>
+</table>
+
+<div id="productModal" class="modal">
+    <div class="modal-content">
+        <h3 class="brand-font" style="margin-bottom: 2rem;">Thông tin Sản phẩm</h3>
+        <form id="productForm">
+            <input type="text" id="pName" placeholder="Tên sản phẩm" required
+                style="width: 100%; padding: 1rem; background: #222; border: 1px solid #444; color: white; margin-bottom: 1rem;">
+            <input type="number" id="pPrice" placeholder="Giá - $" required
+                style="width: 100%; padding: 1rem; background: #222; border: 1px solid #444; color: white; margin-bottom: 1rem;">
+            <input type="number" id="pStock" placeholder="Số lượng tồn" required
+                style="width: 100%; padding: 1rem; background: #222; border: 1px solid #444; color: white; margin-bottom: 2rem;">
+            <div style="display: flex; gap: 1rem;">
+                <button type="submit" class="btn-gold" style="flex: 1;">Lưu</button>
+                <button type="button" onclick="hideModal()"
+                    style="flex: 1; background: #333; color: white; border: none; cursor: pointer;">Hủy</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        async function loadAdminData() {
+            // Check auth again safely
+            if (!window.user) return;
+
+            // Load Stats
+            try {
+                const salesRes = await fetch('/api/statistics/sales', { headers: { 'X-User-Role': window.user.role } });
+                const sales = await salesRes.json();
+                document.getElementById('salesChart').innerText = `$${sales.total}`;
+
+                const stockRes = await fetch('/api/statistics/stock', { headers: { 'X-User-Role': window.user.role } });
+                const stock = await stockRes.json();
+                document.getElementById('stockChart').innerText = `${stock.data.length} Danh mục`;
+            } catch (error) {
+                console.error("Error loading stats", error);
+            }
+
+            // Load Products
+            try {
+                const prodRes = await fetch('/api/perfumes');
+                const products = await prodRes.json();
+                const tbody = document.getElementById('adminProductGrid');
+                tbody.innerHTML = '';
+                products.forEach(p => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${p.id}</td>
+                        <td>${p.name}</td>
+                        <td>$${p.price}</td>
+                        <td>${p.stockQuantity}</td>
+                        <td>
+                            <button onclick="deleteProduct(${p.id})" style="color: #ff4444; background: none; border: none; cursor: pointer;">Xóa</button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            } catch (error) {
+                console.error("Error loading products", error);
+            }
+        }
+
+        function showModal() { document.getElementById('productModal').style.display = 'flex'; }
+        function hideModal() { document.getElementById('productModal').style.display = 'none'; }
+
+        document.getElementById('productForm').onsubmit = async (e) => {
+            e.preventDefault();
+            if (!window.user) return;
+            
+            const product = {
+                name: document.getElementById('pName').value,
+                price: parseFloat(document.getElementById('pPrice').value),
+                stockQuantity: parseInt(document.getElementById('pStock').value),
+                brand: 'KP',
+                imageUrl: 'https://images.unsplash.com/photo-1541643600914-78b084683601?w=500',
+                category: 'Luxury',
+                gender: 'Unisex'
+            };
+
+            const res = await fetch('/api/perfumes', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-User-Role': window.user.role
+                },
+                body: JSON.stringify(product)
+            });
+
+            if (res.ok) {
+                hideModal();
+                loadAdminData();
+            } else {
+                alert('Có lỗi xảy ra!');
+            }
+        };
+
+        async function deleteProduct(id) {
+            if (!confirm('Bạn có chắc muốn xóa?')) return;
+            const res = await fetch(`/api/perfumes/${id}`, {
+                method: 'DELETE',
+                headers: { 'X-User-Role': window.user.role }
+            });
+            if (res.ok) loadAdminData();
+        }
+
+        // Initialize Call
+        loadAdminData();
+    </script>
+}

@@ -1,0 +1,1018 @@
+import { useState, useEffect, useRef } from 'react'
+import './index.css'
+
+function App() {
+  // === CORE STATE ===
+  const [page, setPage] = useState('home') // 'home'|'detail'|'favorites'|'cart'|'checkout'
+  const [products, setProducts] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [user, setUser] = useState(null)
+  const [scrolled, setScrolled] = useState(false)
+
+  // Auth
+  const [authModal, setAuthModal] = useState(null)
+  const [authForm, setAuthForm] = useState({ username: '', password: '', email: '' })
+
+  // Cart
+  const [cart, setCart] = useState(() => JSON.parse(localStorage.getItem('kp_cart')) || [])
+  const [isCartOpen, setIsCartOpen] = useState(false)
+
+  // Favorites
+  const [favorites, setFavorites] = useState(() => JSON.parse(localStorage.getItem('kp_favs')) || [])
+
+  // Orders
+  const [orders, setOrders] = useState([])
+  const [loadingOrders, setLoadingOrders] = useState(false)
+
+  // Product detail
+  const [selectedProduct, setSelectedProduct] = useState(null)
+  const [detailQty, setDetailQty] = useState(1)
+  const [selectedSize, setSelectedSize] = useState('50ml')
+  const [activeTab, setActiveTab] = useState('desc')
+  const [comments, setComments] = useState([
+    { id: 1, name: 'Ngọc Minh', stars: 5, text: 'Mùi hương sang trọng thực sự, lưu hương trên da hơn 6 tiếng. Đóng gói tinh tế. Giao hàng cực nhanh.', date: '02/03/2026', verified: true },
+    { id: 2, name: 'Thảo Anh', stars: 4, text: 'Giá hơi cao nhưng rất xứng đáng với chất lượng. Mùi hương giữa rất nịnh mũi, được nhiều người khen.', date: '28/02/2026', verified: true },
+    { id: 3, name: 'Hoàng Bảo', stars: 5, text: 'Mua làm quà cho bạn gái, bạn ấy rất thích! Chai thuỷ tinh đẹp lắm, xứng tầm quà tặng.', date: '15/02/2026', verified: false },
+  ])
+  const [newComment, setNewComment] = useState({ name: '', text: '', stars: 5 })
+  const [hoverStar, setHoverStar] = useState(0)
+
+  // Search & Filter
+  const [searchTerm, setSearchTerm] = useState('')
+  const [sortBy, setSortBy] = useState('default')
+  const [filterGender, setFilterGender] = useState('all')
+
+  // Toast
+  const [toasts, setToasts] = useState([])
+  const toastId = useRef(0)
+
+  // Checkout
+  const [checkoutForm, setCheckoutForm] = useState({ fullName: '', address: '', phone: '', isPickup: false })
+
+  // Chatbot
+  const [chatOpen, setChatOpen] = useState(false)
+  const [chatMessages, setChatMessages] = useState([
+    { from: 'bot', text: 'Xin chào! Tôi là trợ lý KP Luxury 🌸 Tôi có thể tư vấn nước hoa cho bạn. Hãy hỏi bất cứ điều gì nhé!' }
+  ])
+  const [chatInput, setChatInput] = useState('')
+  const chatEndRef = useRef(null)
+
+  // === TOAST ===
+  const showToast = (message, type = 'success') => {
+    const id = ++toastId.current
+    setToasts(prev => [...prev, { id, message, type }])
+    setTimeout(() => {
+      setToasts(prev => prev.map(t => t.id === id ? { ...t, removing: true } : t))
+      setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 300)
+    }, 2500)
+  }
+
+  // === PERSISTENCE ===
+  useEffect(() => { localStorage.setItem('kp_cart', JSON.stringify(cart)) }, [cart])
+  useEffect(() => { localStorage.setItem('kp_favs', JSON.stringify(favorites)) }, [favorites])
+
+  // === INIT ===
+  useEffect(() => {
+    const savedUser = localStorage.getItem('user')
+    if (savedUser) setUser(JSON.parse(savedUser))
+    const handleScroll = () => setScrolled(window.scrollY > 50)
+    window.addEventListener('scroll', handleScroll)
+    refreshProducts()
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
+
+  useEffect(() => {
+    if (chatEndRef.current) chatEndRef.current.scrollIntoView({ behavior: 'smooth' })
+  }, [chatMessages])
+
+  // Scroll to top on page change
+  useEffect(() => { window.scrollTo(0, 0) }, [page])
+
+  // Fetch orders
+  useEffect(() => {
+    if (!user) { setOrders([]); return }
+    const fetchOrders = async () => {
+      try {
+        setLoadingOrders(true)
+        const res = await fetch(`/api/orders/user/${user.id}`)
+        if (res.ok) { const data = await res.json(); setOrders(Array.isArray(data) ? data : []) }
+      } catch (err) { console.error(err) }
+      finally { setLoadingOrders(false) }
+    }
+    fetchOrders()
+  }, [user])
+
+  const [channels, setChannels] = useState([])
+
+  // === API ===
+  const refreshProducts = async () => {
+    try {
+      setLoading(true)
+      const res = await fetch('/api/perfumes')
+      if (res.ok) setProducts(await res.json())
+
+      // Fetch active channels
+      const resChannels = await fetch('/api/channels')
+      if (resChannels.ok) {
+        const data = await resChannels.json()
+        setChannels(data.filter(c => c.isActive))
+      }
+    } catch (err) { console.error(err) }
+    finally { setLoading(false) }
+  }
+
+  // === AUTH ===
+  const handleLogin = async (e) => {
+    e.preventDefault()
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(authForm)
+      })
+      const data = await res.json()
+      if (res.ok) {
+        setUser(data); localStorage.setItem('user', JSON.stringify(data))
+        setAuthModal(null); showToast(`Xin chào ${data.username}!`)
+      } else showToast(data.message || 'Đăng nhập thất bại', 'error')
+    } catch (err) { showToast('Lỗi kết nối', 'error') }
+  }
+
+  const handleRegister = async (e) => {
+    e.preventDefault()
+    try {
+      const res = await fetch('/api/auth/register', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...authForm, role: 'User' })
+      })
+      if (res.ok) { showToast('Đăng ký thành công! Hãy đăng nhập.'); setAuthModal('login') }
+      else { const data = await res.json(); showToast(data.message || 'Đăng ký thất bại', 'error') }
+    } catch (err) { showToast('Lỗi kết nối', 'error') }
+  }
+
+  const logout = () => {
+    setUser(null); localStorage.removeItem('user')
+    setPage('home'); showToast('Đã đăng xuất')
+  }
+
+  // === CART ===
+  const addToCart = (product, qty = 1) => {
+    setCart(prev => {
+      const existing = prev.find(i => i.id === product.id)
+      if (existing) return prev.map(i => i.id === product.id ? { ...i, quantity: i.quantity + qty } : i)
+      return [...prev, { id: product.id, name: product.name, price: product.price, imageUrl: product.imageUrl, quantity: qty }]
+    })
+    showToast(`Đã thêm "${product.name}" vào giỏ hàng`)
+  }
+
+  const updateCartQty = (id, change) => {
+    setCart(prev => prev.map(i => i.id === id ? { ...i, quantity: Math.max(1, i.quantity + change) } : i))
+  }
+
+  const removeFromCart = (id) => {
+    setCart(prev => prev.filter(i => i.id !== id))
+    showToast('Đã xóa sản phẩm khỏi giỏ hàng')
+  }
+
+  const cartTotal = cart.reduce((s, i) => s + i.price * i.quantity, 0)
+  const cartTax = cartTotal * 0.1
+  const cartGrandTotal = cartTotal + cartTax
+
+  // === VND FORMAT ===
+  const vnd = (price) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price * 24000)
+
+  // === FAVORITES ===
+  const toggleFavorite = (productId) => {
+    setFavorites(prev => {
+      if (prev.includes(productId)) {
+        showToast('Đã bỏ yêu thích'); return prev.filter(id => id !== productId)
+      }
+      showToast('Đã thêm vào yêu thích ❤️'); return [...prev, productId]
+    })
+  }
+
+  // === PRODUCT DETAIL ===
+  const openDetail = async (product) => {
+    setSelectedProduct(product); setDetailQty(1)
+    setSelectedSize('50ml'); setActiveTab('desc')
+    setNewComment({ name: user?.username || '', text: '', stars: 5 })
+    setPage('detail')
+    
+    // Fetch real comments
+    try {
+      const res = await fetch(`/api/comments/perfume/${product.id}`)
+      if (res.ok) setComments(await res.json())
+    } catch (err) { console.error('Error fetching comments:', err) }
+  }
+
+  const submitComment = async () => {
+    if (!newComment.name.trim() || !newComment.text.trim()) { showToast('Vui lòng nhập tên và nội dung đánh giá', 'error'); return }
+    const commentData = {
+      perfumeId: selectedProduct.id,
+      userName: newComment.name,
+      text: newComment.text,
+      stars: newComment.stars,
+      isVerified: !!user
+    }
+    
+    try {
+      const res = await fetch('/api/comments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(commentData)
+      })
+      if (res.ok) {
+        const saved = await res.json()
+        // Map backend fields to frontend if needed
+        const comment = {
+          id: saved.id, name: saved.userName, text: saved.text,
+          stars: saved.stars, date: new Date(saved.createdAt).toLocaleDateString('vi-VN'), verified: saved.isVerified
+        }
+        setComments(prev => [comment, ...prev])
+        setNewComment({ name: user?.username || '', text: '', stars: 5 })
+        showToast('Cảm ơn bạn đã đánh giá! ⭐')
+      } else {
+        showToast('Lỗi gửi đánh giá', 'error')
+      }
+    } catch (err) { showToast('Lỗi kết nối', 'error') }
+  }
+
+  // === CHECKOUT ===
+  const handleCheckout = async (e) => {
+    e.preventDefault()
+    if (!user) { showToast('Vui lòng đăng nhập để thanh toán', 'error'); setAuthModal('login'); return }
+    if (cart.length === 0) { showToast('Giỏ hàng trống', 'error'); return }
+
+    try {
+      for (const item of cart) {
+        await fetch('/api/orders', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            UserId: user.id, PerfumeId: item.id, Quantity: item.quantity,
+            ShippingAddress: checkoutForm.isPickup ? 'NHẬN TẠI CỬA HÀNG' : checkoutForm.address,
+            ReceiverPhone: checkoutForm.phone,
+            Note: `[${checkoutForm.isPickup ? 'PICKUP' : 'DELIVERY'}] Người nhận: ${checkoutForm.fullName}`,
+            IsPickup: checkoutForm.isPickup
+          })
+        })
+      }
+      setCart([]); setCheckoutForm({ fullName: '', address: '', phone: '', isPickup: false })
+      showToast('🎉 Đặt hàng thành công! Cảm ơn bạn.')
+      // Refresh orders
+      const res = await fetch(`/api/orders/user/${user.id}`)
+      if (res.ok) setOrders(await res.json())
+      setPage('home')
+    } catch (err) { showToast('Lỗi đặt hàng', 'error') }
+  }
+
+  // === SEARCH & FILTER ===
+  const filteredProducts = products
+    .filter(p => p.name.toLowerCase().includes(searchTerm.toLowerCase()))
+    .filter(p => filterGender === 'all' || p.gender === filterGender)
+    .sort((a, b) => {
+      if (sortBy === 'price-asc') return a.price - b.price
+      if (sortBy === 'price-desc') return b.price - a.price
+      if (sortBy === 'name') return a.name.localeCompare(b.name)
+      return 0
+    })
+
+  // === CHATBOT ===
+  const handleSendChat = () => {
+    if (!chatInput.trim()) return
+    setChatMessages(prev => [...prev, { from: 'user', text: chatInput.trim() }])
+    setChatInput('')
+    setTimeout(() => {
+      const replies = [
+        'Cảm ơn bạn đã quan tâm! KP Luxury có nhiều dòng nước hoa sang trọng. Bạn thích hương hoa, hương gỗ hay hương tươi mát?',
+        'Dòng nước hoa này rất được yêu thích! Bạn muốn tìm nước hoa đi tiệc hay đi làm?',
+        'KP Luxury cam kết chính hãng 100%. Bạn có thể đặt hàng trực tiếp trên website hoặc qua Shopee, TikTok Shop, Lazada nhé!',
+        'Nước hoa KP có độ lưu hương từ 6-8 tiếng. Bạn muốn tôi tư vấn thêm về cách bảo quản không?',
+        'Hiện KP Luxury đang có chương trình giảm 20% cho khách hàng mới. Bạn muốn xem sản phẩm nào không?'
+      ]
+      setChatMessages(prev => [...prev, { from: 'bot', text: replies[Math.floor(Math.random() * replies.length)] }])
+    }, 800)
+  }
+
+  // ===========================
+  //          RENDER
+  // ===========================
+  return (
+    <div className="app">
+      {/* Toast Notifications */}
+      <div className="toast-container">
+        {toasts.map(t => (
+          <div key={t.id} className={`toast toast-${t.type} ${t.removing ? 'removing' : ''}`}>
+            <span className="toast-icon">{t.type === 'success' ? '✓' : t.type === 'error' ? '✕' : 'ℹ'}</span>
+            {t.message}
+          </div>
+        ))}
+      </div>
+
+      {/* === NAVBAR === */}
+      <nav className={scrolled ? 'scrolled' : ''}>
+        <div className="container">
+          <a href="#" className="logo" onClick={e => { e.preventDefault(); setPage('home') }}>KP LUXURY</a>
+          <div className="nav-links">
+            <a href="#" onClick={e => { e.preventDefault(); setPage('home') }}>Bộ Sưu Tập</a>
+            <a href="#" onClick={e => { e.preventDefault(); setPage('favorites') }}>
+              ❤️ Yêu Thích ({favorites.length})
+            </a>
+            {user ? (
+              <>
+                <span style={{ color: 'var(--accent-gold)', marginLeft: '2.5rem', fontSize: '0.85rem', textTransform: 'uppercase' }}>
+                  Xin chào, {user.username}
+                </span>
+                <a href="#" onClick={e => { e.preventDefault(); logout() }}>Đăng Xuất</a>
+              </>
+            ) : (
+              <a href="#" onClick={e => { e.preventDefault(); setAuthModal('login') }}>Đăng Nhập</a>
+            )}
+            <a href="#" onClick={e => { e.preventDefault(); setPage('cart') }}>
+              🛒 Giỏ Hàng ({cart.reduce((a, b) => a + b.quantity, 0)})
+            </a>
+          </div>
+        </div>
+      </nav>
+
+      {/* === AUTH MODAL === */}
+      <div className={`modal-overlay ${authModal ? 'active' : ''}`} onClick={() => setAuthModal(null)}>
+        <div className="modal-content" onClick={e => e.stopPropagation()}>
+          <button className="cart-close" onClick={() => setAuthModal(null)} style={{ position: 'absolute', top: '1rem', right: '1.5rem' }}>&times;</button>
+          <form className="auth-form" onSubmit={authModal === 'login' ? handleLogin : handleRegister}>
+            <h2 className="brand-font">{authModal === 'login' ? 'Chào Mừng Trở Lại' : 'Tạo Tài Khoản'}</h2>
+            <div className="form-group">
+              <label>Tên đăng nhập</label>
+              <input type="text" required value={authForm.username} onChange={e => setAuthForm({ ...authForm, username: e.target.value })} />
+            </div>
+            {authModal === 'register' && (
+              <div className="form-group">
+                <label>Địa chỉ Email</label>
+                <input type="email" value={authForm.email} onChange={e => setAuthForm({ ...authForm, email: e.target.value })} />
+              </div>
+            )}
+            <div className="form-group">
+              <label>Mật khẩu</label>
+              <input type="password" required value={authForm.password} onChange={e => setAuthForm({ ...authForm, password: e.target.value })} />
+            </div>
+            <button className="btn-gold" style={{ width: '100%', marginTop: '1rem' }}>
+              {authModal === 'login' ? 'Đăng Nhập' : 'Đăng Ký'}
+            </button>
+            <div className="auth-switch">
+              {authModal === 'login' ? (
+                <>Chưa có tài khoản? <span onClick={() => setAuthModal('register')}>Đăng ký ngay</span></>
+              ) : (
+                <>Đã có tài khoản? <span onClick={() => setAuthModal('login')}>Đăng nhập</span></>
+              )}
+            </div>
+          </form>
+        </div>
+      </div>
+
+      {/* ============================================================ */}
+      {/*                      PAGE: HOME                              */}
+      {/* ============================================================ */}
+      {page === 'home' && (
+        <>
+          {/* Hero */}
+          <div className="hero">
+            <div className="hero-content">
+              <p>Nghệ Thuật Của Hương Thơm Vượt Thời Gian</p>
+              <h1>Tinh Hoa Nước Hoa Cao Cấp</h1>
+              <a href="#products" className="btn-gold">Khám Phá Ngay</a>
+            </div>
+          </div>
+
+          {/* Products */}
+          <section id="products" className="products-section">
+            <div className="container">
+              <h2 className="section-title">
+                <span>Tuyển Chọn Đặc Biệt</span>
+                Bộ Sưu Tập Kiệt Tác
+              </h2>
+
+              {/* Search & Filter */}
+              <div className="search-filter-bar">
+                <input className="search-input" type="text" placeholder="🔍 Tìm kiếm nước hoa..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
+                <select className="filter-select" value={sortBy} onChange={e => setSortBy(e.target.value)}>
+                  <option value="default">Sắp xếp mặc định</option>
+                  <option value="price-asc">Giá: Thấp → Cao</option>
+                  <option value="price-desc">Giá: Cao → Thấp</option>
+                  <option value="name">Tên: A → Z</option>
+                </select>
+                <select className="filter-select" value={filterGender} onChange={e => setFilterGender(e.target.value)}>
+                  <option value="all">Tất cả giới tính</option>
+                  <option value="Nam">Nam</option>
+                  <option value="Nữ">Nữ</option>
+                  <option value="Unisex">Unisex</option>
+                </select>
+              </div>
+
+              {loading ? (
+                <div className="loading-state"><p>Đang tải bộ sưu tập...</p></div>
+              ) : filteredProducts.length === 0 ? (
+                <p style={{ textAlign: 'center', color: '#888' }}>Không tìm thấy sản phẩm phù hợp.</p>
+              ) : (
+                <div className="product-grid">
+                  {filteredProducts.map(product => (
+                    <div key={product.id} className="product-card">
+                      <div className="product-image-container" onClick={() => openDetail(product)}>
+                        <img src={product.imageUrl} alt={product.name} className="product-image" />
+                        <div className="card-actions">
+                          <button className={`icon-btn ${favorites.includes(product.id) ? 'active' : ''}`}
+                            onClick={e => { e.stopPropagation(); toggleFavorite(product.id) }}>♥</button>
+                        </div>
+                      </div>
+                      <div className="product-info">
+                        <h3 style={{ cursor: 'pointer' }} onClick={() => openDetail(product)}>{product.name}</h3>
+                        <p className="product-price">{vnd(product.price)}</p>
+                        <button className="add-to-cart-btn" onClick={() => addToCart(product)}>Thêm Vào Giỏ</button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </section>
+
+          {/* Sales Channels Section */}
+          <section className="products-section" style={{ background: '#080808', borderTop: '1px solid var(--glass-border)' }}>
+            <div className="container">
+              <h2 className="section-title">
+                <span>Trải Nghiệm Đa Kênh</span>
+                Kênh Bán Hàng Trực Tuyến
+              </h2>
+              <div style={{ display: 'flex', justifyContent: 'center', gap: '3rem', flexWrap: 'wrap' }}>
+                {channels.map(channel => (
+                  <div key={channel.id} style={{ textAlign: 'center', transition: 'transform 0.3s', cursor: 'pointer' }}
+                    onMouseOver={e => e.currentTarget.style.transform = 'scale(1.1)'}
+                    onMouseOut={e => e.currentTarget.style.transform = 'scale(1)'}>
+                    <img src={channel.channelName === 'Lazada' ? 'https://upload.wikimedia.org/wikipedia/commons/d/df/Lazada_Logo.png' : channel.logoUrl} 
+                      alt={channel.channelName} style={{ width: '64px', height: '64px', marginBottom: '1rem', objectFit: 'contain' }} 
+                      onError={e => { e.target.src = `https://ui-avatars.com/api/?name=${channel.channelName}&background=222&color=c5a059` }} />
+                    <p style={{ color: 'var(--accent-gold)', fontSize: '0.9rem', fontWeight: 600 }}>{channel.channelName}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+
+          {/* Order History */}
+          {user && (
+            <section className="products-section" style={{ paddingTop: 0 }}>
+              <div className="container">
+                <h2 className="section-title">
+                  <span>Hành Trình Của Bạn</span>
+                  Lịch Sử Đơn Hàng
+                </h2>
+                {loadingOrders ? (
+                  <div className="loading-state"><p>Đang tải đơn hàng...</p></div>
+                ) : orders.length === 0 ? (
+                  <p style={{ color: '#888', textAlign: 'center' }}>Bạn chưa có đơn hàng nào.</p>
+                ) : (
+                  <div style={{ display: 'grid', gap: '2rem' }}>
+                    {orders.map(order => {
+                      const items = order.items || order.Items || []
+                      const total = order.totalAmount ?? order.TotalAmount ?? 0
+                      return (
+                        <div key={order.id} className="product-card">
+                          <div className="product-info" style={{ textAlign: 'left' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                              <h3 className="brand-font">Đơn hàng #{order.id}</h3>
+                              <span style={{ color: 'var(--accent-gold)', fontSize: '0.85rem', padding: '0.2rem 0.8rem', background: '#222', borderRadius: '12px' }}>
+                                {order.status || order.Status}
+                              </span>
+                            </div>
+                            <p style={{ color: '#888', fontSize: '0.85rem', marginBottom: '0.5rem' }}>
+                              {order.orderDate ? new Date(order.orderDate).toLocaleString('vi-VN') : ''}
+                            </p>
+                            <p style={{ fontSize: '1.1rem', color: 'var(--accent-gold)', fontWeight: 600 }}>{vnd(total)}</p>
+                            {items.length > 0 && (
+                              <ul style={{ listStyle: 'none', paddingLeft: 0, marginTop: '0.75rem', color: '#aaa', fontSize: '0.9rem' }}>
+                                {items.map((item, i) => (
+                                  <li key={i}>{item.perfumeName || item.PerfumeName} · SL: {item.quantity || item.Quantity} · {vnd(item.price || item.Price || 0)}</li>
+                                ))}
+                              </ul>
+                            )}
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
+              </div>
+            </section>
+          )}
+        </>
+      )}
+
+      {/* ============================================================ */}
+      {/*                    PAGE: PRODUCT DETAIL                       */}
+      {/* ============================================================ */}
+      {page === 'detail' && selectedProduct && (() => {
+        const avgRating = comments.length ? (comments.reduce((s, c) => s + c.stars, 0) / comments.length) : 4.8
+        const starCounts = [5, 4, 3, 2, 1].map(s => ({ s, count: comments.filter(c => c.stars === s).length }))
+        const related = products.filter(p => p.id !== selectedProduct.id && (p.categoryId === selectedProduct.categoryId || p.gender === selectedProduct.gender)).slice(0, 4)
+        const sizes = ['30ml', '50ml', '100ml']
+        const sizePrices = { '30ml': 0.7, '50ml': 1, '100ml': 1.6 }
+        const currentPrice = selectedProduct.price * (sizePrices[selectedSize] || 1)
+        const stockQty = selectedProduct.stockQuantity ?? 0
+        const stockStatus = stockQty === 0 ? 'out' : stockQty <= 10 ? 'low' : 'in'
+
+        return (
+          <div className="detail-page">
+            <div className="container">
+              {/* Breadcrumb */}
+              <div style={{ marginBottom: '2rem', display: 'flex', gap: '0.5rem', alignItems: 'center', fontSize: '0.85rem' }}>
+                <a href="#" onClick={e => { e.preventDefault(); setPage('home') }} style={{ color: 'var(--accent-gold)', textDecoration: 'none' }}>Trang Chủ</a>
+                <span style={{ color: '#555' }}>›</span>
+                <a href="#" onClick={e => { e.preventDefault(); setPage('home') }} style={{ color: '#888', textDecoration: 'none' }}>Bộ Sưu Tập</a>
+                <span style={{ color: '#555' }}>›</span>
+                <span style={{ color: '#aaa' }}>{selectedProduct.name}</span>
+              </div>
+
+              <div className="detail-layout">
+                {/* Gallery */}
+                <div className="detail-gallery">
+                  <img src={selectedProduct.imageUrl} alt={selectedProduct.name} className="detail-main-img"
+                    onError={e => { e.target.src = 'https://images.unsplash.com/photo-1541643600914-78b084683601?auto=format&fit=crop&q=80&w=800' }} />
+                </div>
+
+                {/* Info */}
+                <div className="detail-info">
+                  <div className="detail-brand">{selectedProduct.brand || 'KP LUXURY'}</div>
+                  <h1>{selectedProduct.name}</h1>
+
+                  <div className="detail-rating">
+                    {'★'.repeat(Math.floor(avgRating))}{'☆'.repeat(5 - Math.floor(avgRating))}
+                    <span>{avgRating.toFixed(1)}/5 từ {comments.length} đánh giá</span>
+                  </div>
+
+                  {/* Stock */}
+                  <div className={`stock-badge ${stockStatus === 'in' ? 'in-stock' : stockStatus === 'low' ? 'low-stock' : 'out-stock'}`}>
+                    {stockStatus === 'in' && '● Còn hàng'}
+                    {stockStatus === 'low' && `⚠ Sắp hết hàng · Còn ${stockQty} sản phẩm`}
+                    {stockStatus === 'out' && '✕ Hết hàng'}
+                  </div>
+
+                  {/* Meta tags */}
+                  <div className="detail-meta">
+                    {selectedProduct.gender && <span className="meta-tag">{selectedProduct.gender}</span>}
+                    {selectedProduct.category?.categoryName && <span className="meta-tag">{selectedProduct.category.categoryName}</span>}
+                    <span className="meta-tag">Eau de Parfum</span>
+                    <span className="meta-tag">Chính Hãng</span>
+                  </div>
+
+                  {/* Price */}
+                  <div className="detail-price-wrap">
+                    <span className="detail-current-price">{vnd(currentPrice)}</span>
+                    <span className="detail-old-price">{vnd(currentPrice * 1.25)}</span>
+                    <span className="detail-discount">-20%</span>
+                  </div>
+
+                  {/* ML Size */}
+                  <div className="size-selector">
+                    <label>Dung tích</label>
+                    <div className="size-options">
+                      {sizes.map(sz => (
+                        <button key={sz} className={`size-btn ${selectedSize === sz ? 'active' : ''}`} onClick={() => setSelectedSize(sz)}>
+                          {sz}
+                          {sz === '50ml' && <span style={{ display: 'block', fontSize: '0.7rem', opacity: 0.7 }}>Phổ biến</span>}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Fragrance Notes */}
+                  <div className="fragrance-notes">
+                    <h4>🌸 Tầng Hương</h4>
+                    <div className="notes-pyramid">
+                      <div className="note-layer">
+                        <div className="note-icon">💨</div>
+                        <div className="note-label">Hương đầu</div>
+                        <div className="note-name">{selectedProduct.topNotes || 'Cam Bergamot · Chanh'}</div>
+                      </div>
+                      <div className="note-layer">
+                        <div className="note-icon">🌹</div>
+                        <div className="note-label">Hương giữa</div>
+                        <div className="note-name">{selectedProduct.middleNotes || 'Hồng · Nhài'}</div>
+                      </div>
+                      <div className="note-layer">
+                        <div className="note-icon">🪵</div>
+                        <div className="note-label">Hương cuối</div>
+                        <div className="note-name">{selectedProduct.baseNotes || 'Trầm · Xạ Hương'}</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Info Tabs */}
+                  <div className="info-tabs">
+                    <div className="tab-headers">
+                      {[['desc', 'Mô Tả'], ['spec', 'Chi Tiết'], ['brand', 'Thương Hiệu']].map(([key, label]) => (
+                        <button key={key} className={`tab-header-btn ${activeTab === key ? 'active' : ''}`} onClick={() => setActiveTab(key)}>{label}</button>
+                      ))}
+                    </div>
+                    <div className="tab-content">
+                      {activeTab === 'desc' && (
+                        <p style={{ lineHeight: 1.8 }}>{selectedProduct.description || 'Một tuyệt tác mùi hương sang trọng, kết hợp hoàn hảo giữa các tầng hương tạo nên trải nghiệm khứu giác đẳng cấp. Lấy cảm hứng từ sự thanh lịch đương đại, phù hợp cho mọi dịp từ công sở đến dạ tiệc.'}</p>
+                      )}
+                      {activeTab === 'spec' && (
+                        <table className="spec-table">
+                          <tbody>
+                            <tr><td>Thương hiệu</td><td>{selectedProduct.brand || 'KP Luxury'}</td></tr>
+                            <tr><td>Dung tích</td><td>{selectedSize}</td></tr>
+                            <tr><td>Giới tính</td><td>{selectedProduct.gender || 'Unisex'}</td></tr>
+                            <tr><td>Nồng độ</td><td>{selectedProduct.concentration || 'Eau de Parfum (EDP)'}</td></tr>
+                            <tr><td>Độ lưu hương</td><td>6 – 8 giờ</td></tr>
+                            <tr><td>Xuất xứ</td><td>{selectedProduct.origin || 'Pháp'}</td></tr>
+                            <tr><td>Mã sản phẩm</td><td>KP-{selectedProduct.id?.toString().padStart(4, '0')}</td></tr>
+                          </tbody>
+                        </table>
+                      )}
+                      {activeTab === 'brand' && (
+                        <div>
+                          <p style={{ lineHeight: 1.8 }}>
+                            <strong style={{ color: 'var(--accent-gold)' }}>KP Luxury</strong> {selectedProduct.brandStory || 'được sáng lập vào năm 2010 bởi chuyên gia hương thơm người Việt, với triết lý "Tinh hoa nghệ thuật, bền vững theo thời gian". Mỗi sản phẩm được tạo ra từ nguyên liệu thiên nhiên cao cấp nhập khẩu từ Grasse, Pháp.'}
+                          </p>
+                          <p style={{ color: '#888', marginTop: '0.75rem', lineHeight: 1.8, fontSize: '0.9rem' }}>
+                            Hiện có mặt tại 50+ quốc gia · Đạt chứng nhận IFRA · Không thử nghiệm trên động vật
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Quantity */}
+                  <div className="detail-qty">
+                    <label>Số lượng</label>
+                    <div className="detail-qty-wrap">
+                      <button className="detail-qty-btn" onClick={() => setDetailQty(q => Math.max(1, q - 1))}>−</button>
+                      <input className="detail-qty-input" type="number" value={detailQty} readOnly />
+                      <button className="detail-qty-btn" onClick={() => setDetailQty(q => q + 1)}>+</button>
+                    </div>
+                    {stockQty > 0 && <span style={{ color: '#666', fontSize: '0.8rem' }}>Còn {stockQty} sp</span>}
+                  </div>
+
+                  {/* Actions */}
+                  <div className="detail-actions">
+                    <button className="btn-add-cart-detail" onClick={() => addToCart(selectedProduct, detailQty)} disabled={stockStatus === 'out'}>
+                      🛒 Thêm Vào Giỏ
+                    </button>
+                    <button className="btn-buy-now" onClick={() => { addToCart(selectedProduct, detailQty); setPage('checkout') }} disabled={stockStatus === 'out'}>
+                      ⚡ Mua Ngay
+                    </button>
+                    <button className="btn-store-pickup" onClick={() => showToast('🏪 Đặt lịch nhận tại cửa hàng — tính năng sắp ra mắt!', 'info')}>
+                      🏪 Mua Tại Shop
+                    </button>
+                  </div>
+
+                  {/* Channel Listing */}
+                  {channels.filter(c => c.channelName !== 'Website').length > 0 && (
+                    <div className="channel-listing">
+                      <p>Cũng có sẵn tại các kênh:</p>
+                      <div className="channel-logos">
+                        {channels.filter(c => c.channelName !== 'Website').map(c => (
+                          <a key={c.id} href="#" className="channel-logo-link" onClick={e => { e.preventDefault(); showToast(`Đang chuyển đến ${c.channelName}...`, 'info') }}>
+                            <img src={c.logoUrl} alt={c.channelName}
+                              onError={e => { e.target.onerror = null; e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(c.channelName)}&background=222&color=c5a059&size=36` }} />
+                            <span>{c.channelName}</span>
+                          </a>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Guarantees */}
+                  <div className="detail-guarantees">
+                    <h3 style={{ marginBottom: '1rem', color: 'var(--accent-gold)', fontSize: '1rem', borderBottom: '1px solid #333', paddingBottom: '0.5rem' }}>
+                      Cam Kết Dịch Vụ
+                    </h3>
+                    {[
+                      ['🏪', 'Click & Collect', 'Đặt online, nhận tại 15 showroom toàn quốc'],
+                      ['🚀', 'Giao Hàng 2H', 'Nội thành TP.HCM và Hà Nội'],
+                      ['🔄', 'Đổi Trả 30 Ngày', 'Không cần lý do trong 30 ngày đầu'],
+                      ['🛡️', 'Chính Hãng 100%', 'Hoàn tiền 200% nếu phát hiện hàng giả'],
+                    ].map(([icon, title, desc]) => (
+                      <div key={title} className="guarantee-item">
+                        <span className="guarantee-icon">{icon}</span>
+                        <div>
+                          <strong style={{ color: '#fff', fontSize: '0.9rem' }}>{title}</strong>
+                          <p style={{ color: '#888', fontSize: '0.85rem', marginTop: '0.15rem' }}>{desc}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Reviews Section */}
+              <div className="review-section">
+                <h2 className="brand-font" style={{ fontSize: '1.8rem', marginBottom: '2rem', textAlign: 'center' }}>Đánh Giá Khách Hàng</h2>
+
+                {/* Summary */}
+                <div className="review-summary">
+                  <div className="review-score">
+                    <div className="big-score">{avgRating.toFixed(1)}</div>
+                    <div className="stars-big">{'★'.repeat(Math.round(avgRating))}</div>
+                    <div style={{ color: '#666', fontSize: '0.85rem' }}>{comments.length} đánh giá</div>
+                  </div>
+                  <div className="review-bars">
+                    {starCounts.map(({ s, count }) => (
+                      <div key={s} className="bar-row">
+                        <span>{s}</span>
+                        <div className="bar-track">
+                          <div className="bar-fill" style={{ width: comments.length ? `${(count / comments.length) * 100}%` : '0%' }} />
+                        </div>
+                        <span>{count}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Comment Form */}
+                <div className="comment-form">
+                  <h3>✍️ Viết Đánh Giá Của Bạn</h3>
+                  <div style={{ marginBottom: '0.75rem' }}>
+                    <div style={{ fontSize: '0.8rem', color: '#888', marginBottom: '0.4rem', textTransform: 'uppercase', letterSpacing: '1px' }}>Số sao</div>
+                    <div className="star-picker">
+                      {[1, 2, 3, 4, 5].map(s => (
+                        <button key={s} className={`star-pick ${s <= (hoverStar || newComment.stars) ? 'lit' : ''}`}
+                          onMouseEnter={() => setHoverStar(s)} onMouseLeave={() => setHoverStar(0)}
+                          onClick={() => setNewComment(c => ({ ...c, stars: s }))}>★</button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="form-group">
+                    <label>Họ tên</label>
+                    <input type="text" value={newComment.name || (user?.username || '')}
+                      onChange={e => setNewComment(c => ({ ...c, name: e.target.value }))}
+                      placeholder="Nhập tên của bạn..." />
+                  </div>
+                  <textarea className="comment-input" placeholder="Chia sẻ trải nghiệm của bạn về sản phẩm này..."
+                    value={newComment.text} onChange={e => setNewComment(c => ({ ...c, text: e.target.value }))} />
+                  <button className="comment-submit" onClick={submitComment}>Gửi Đánh Giá ⭐</button>
+                </div>
+
+                {/* Comment List */}
+                {comments.map(c => (
+                  <div key={c.id} className="review-item">
+                    <div className="review-header">
+                      <span className="reviewer-name">{c.name}{c.verified && <span className="review-verified">✅ Đã mua hàng</span>}</span>
+                      <span className="review-date">{c.date}</span>
+                    </div>
+                    <div className="review-stars">{'★'.repeat(c.stars)}{'☆'.repeat(5 - c.stars)}</div>
+                    <p className="review-text">{c.text}</p>
+                  </div>
+                ))}
+              </div>
+
+              {/* Related Products */}
+              {related.length > 0 && (
+                <div className="related-section">
+                  <h2 className="brand-font">
+                    <span>Có Thể Bạn Muốn</span>
+                    Sản Phẩm Liên Quan
+                  </h2>
+                  <div className="related-grid">
+                    {related.map(p => (
+                      <div key={p.id} className="related-card" onClick={() => openDetail(p)}>
+                        <img src={p.imageUrl} alt={p.name}
+                          onError={e => { e.target.src = 'https://images.unsplash.com/photo-1541643600914-78b084683601?auto=format&fit=crop&q=80&w=400' }} />
+                        <div className="related-card-info">
+                          <h3>{p.name}</h3>
+                          <p>{vnd(p.price)}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+            </div>
+          </div>
+        )
+      })()}
+
+
+
+      {/* ============================================================ */}
+      {/*                    PAGE: FAVORITES                            */}
+      {/* ============================================================ */}
+      {page === 'favorites' && (
+        <section className="products-section" style={{ paddingTop: '8rem' }}>
+          <div className="container">
+            <h2 className="section-title">
+              <span>Bộ Sưu Tập Cá Nhân</span>
+              ❤️ Sản Phẩm Yêu Thích
+            </h2>
+            {favorites.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '4rem', background: '#111', border: '1px solid var(--glass-border)', borderRadius: '8px' }}>
+                <p style={{ fontSize: '3rem', marginBottom: '1rem' }}>💔</p>
+                <h3 className="brand-font">Chưa có mục yêu thích</h3>
+                <p style={{ color: '#888', margin: '1rem 0 2rem' }}>Hãy thả tim cho những hương thơm bạn yêu thích nhất.</p>
+                <button className="btn-gold" onClick={() => setPage('home')}>Khám phá ngay</button>
+              </div>
+            ) : (
+              <div className="product-grid">
+                {products.filter(p => favorites.includes(p.id)).map(product => (
+                  <div key={product.id} className="product-card">
+                    <div className="product-image-container" onClick={() => openDetail(product)}>
+                      <img src={product.imageUrl} alt={product.name} className="product-image" />
+                      <div className="card-actions">
+                        <button className="icon-btn active" onClick={e => { e.stopPropagation(); toggleFavorite(product.id) }}>♥</button>
+                      </div>
+                    </div>
+                    <div className="product-info">
+                      <h3 style={{ cursor: 'pointer' }} onClick={() => openDetail(product)}>{product.name}</h3>
+                      <p className="product-price">${product.price.toFixed(2)}</p>
+                      <button className="add-to-cart-btn" onClick={() => addToCart(product)}>Thêm Vào Giỏ</button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </section>
+      )}
+
+      {/* ============================================================ */}
+      {/*                     PAGE: CART                                */}
+      {/* ============================================================ */}
+      {page === 'cart' && (
+        <div className="cart-page">
+          <div className="container">
+            <h1 className="brand-font" style={{ color: 'var(--accent-gold)', marginBottom: '2rem' }}>🛒 Giỏ Hàng Của Bạn</h1>
+            {cart.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '4rem', background: '#111', border: '1px solid var(--glass-border)', borderRadius: '8px' }}>
+                <p style={{ fontSize: '3rem', marginBottom: '1rem' }}>🛒</p>
+                <h3 className="brand-font">Giỏ hàng trống</h3>
+                <p style={{ color: '#888', margin: '1rem 0 2rem' }}>Chưa có sản phẩm nào trong giỏ hàng của bạn.</p>
+                <button className="btn-gold" onClick={() => setPage('home')}>Khám phá ngay</button>
+              </div>
+            ) : (
+              <div className="cart-page-layout">
+                <div className="cart-page-items">
+                  {cart.map(item => (
+                    <div key={item.id} className="cart-page-item">
+                      <img src={item.imageUrl} alt={item.name} />
+                      <div className="cart-item-details">
+                        <h3 className="cart-item-title">{item.name}</h3>
+                        <div className="cart-item-price">{vnd(item.price)}</div>
+                        <div className="qty-controls">
+                          <button className="qty-btn-sm" onClick={() => updateCartQty(item.id, -1)}>−</button>
+                          <span>{item.quantity}</span>
+                          <button className="qty-btn-sm" onClick={() => updateCartQty(item.id, 1)}>+</button>
+                        </div>
+                      </div>
+                      <div style={{ textAlign: 'right' }}>
+                        <div style={{ fontWeight: 'bold', marginBottom: '1rem', color: 'var(--accent-gold)' }}>
+                          {vnd(item.price * item.quantity)}
+                        </div>
+                        <button className="btn-remove" onClick={() => removeFromCart(item.id)}>🗑 Xóa</button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="cart-summary-box">
+                  <h2 className="brand-font" style={{ marginBottom: '1.5rem', color: 'var(--accent-gold)' }}>Tổng Đơn Hàng</h2>
+                  <div className="summary-row"><span>Tạm tính</span><span>{vnd(cartTotal)}</span></div>
+                  <div className="summary-row"><span>Thuế (10%)</span><span>{vnd(cartTax)}</span></div>
+                  <div className="summary-row summary-total">
+                    <span>Thành tiền</span>
+                    <span style={{ color: 'var(--accent-gold)' }}>{vnd(cartGrandTotal)}</span>
+                  </div>
+                  <button className="btn-gold" style={{ width: '100%', marginTop: '2rem' }} onClick={() => {
+                    if (!user) { showToast('Vui lòng đăng nhập để thanh toán', 'error'); setAuthModal('login'); return }
+                    setPage('checkout')
+                  }}>Tiến hành thanh toán</button>
+                  <button onClick={() => setPage('home')} style={{ width: '100%', marginTop: '1rem', background: 'none', border: '1px solid #444', color: '#fff', padding: '1rem', cursor: 'pointer', textTransform: 'uppercase', letterSpacing: '2px', fontSize: '0.8rem' }}>
+                    Tiếp tục mua sắm
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ============================================================ */}
+      {/*                    PAGE: CHECKOUT                             */}
+      {/* ============================================================ */}
+      {page === 'checkout' && (
+        <div className="checkout-page">
+          <div className="container">
+            <div className="checkout-layout">
+              <div className="checkout-form-section">
+                <h2 className="brand-font">Thông Tin Giao Hàng</h2>
+                <form onSubmit={handleCheckout}>
+                  <div className="form-group">
+                    <label>Họ và tên</label>
+                    <input type="text" required value={checkoutForm.fullName} onChange={e => setCheckoutForm({ ...checkoutForm, fullName: e.target.value })} />
+                  </div>
+                  <div className="form-group">
+                    <label>Địa chỉ</label>
+                    <input type="text" required={!checkoutForm.isPickup} disabled={checkoutForm.isPickup}
+                      placeholder={checkoutForm.isPickup ? 'Sẽ nhận tại cửa hàng' : 'Nhập địa chỉ giao hàng...'}
+                      value={checkoutForm.isPickup ? '' : checkoutForm.address} 
+                      onChange={e => setCheckoutForm({ ...checkoutForm, address: e.target.value })} />
+                  </div>
+                  <div className="form-group" style={{ flexDirection: 'row', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+                    <input type="checkbox" id="pickup" checked={checkoutForm.isPickup} 
+                      onChange={e => setCheckoutForm({ ...checkoutForm, isPickup: e.target.checked })} />
+                    <label htmlFor="pickup" style={{ marginBottom: 0 }}>Tôi muốn nhận hàng tại cửa hàng (In-store Pickup)</label>
+                  </div>
+                  <div className="form-group">
+                    <label>Số điện thoại</label>
+                    <input type="text" required value={checkoutForm.phone} onChange={e => setCheckoutForm({ ...checkoutForm, phone: e.target.value })} />
+                  </div>
+                  <button type="submit" className="btn-gold" style={{ width: '100%', marginTop: '2rem' }}>Xác Nhận Đặt Hàng</button>
+                  <button type="button" onClick={() => setPage('cart')} style={{ width: '100%', marginTop: '1rem', background: 'none', border: '1px solid #444', color: '#fff', padding: '1rem', cursor: 'pointer', textTransform: 'uppercase', letterSpacing: '2px', fontSize: '0.8rem' }}>
+                    ← Quay lại giỏ hàng
+                  </button>
+                </form>
+              </div>
+              <div className="checkout-summary">
+                <h3 className="brand-font">Tóm Tắt Đơn Hàng</h3>
+                {cart.map(item => (
+                  <div key={item.id} className="checkout-summary-item">
+                    <span>{item.name} x{item.quantity}</span>
+                    <span>{vnd(item.price * item.quantity)}</span>
+                  </div>
+                ))}
+                <div className="checkout-total">
+                  <span>Tổng:</span>
+                  <span style={{ color: 'var(--accent-gold)' }}>{vnd(cartGrandTotal)}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* === CART SIDEBAR (quick view) === */}
+      <div className={`cart-overlay ${isCartOpen ? 'active' : ''}`} onClick={() => setIsCartOpen(false)}></div>
+      <div className={`cart-sidebar ${isCartOpen ? 'active' : ''}`}>
+        <div className="cart-header">
+          <h2 className="brand-font">Giỏ Hàng</h2>
+          <button className="cart-close" onClick={() => setIsCartOpen(false)}>&times;</button>
+        </div>
+        <div className="cart-items" style={{ flex: 1, overflowY: 'auto' }}>
+          {cart.length === 0 ? (
+            <p style={{ color: '#888', textAlign: 'center', marginTop: '2rem' }}>Giỏ hàng trống.</p>
+          ) : cart.map(item => (
+            <div key={item.id} style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem', borderBottom: '1px solid #222', paddingBottom: '1rem' }}>
+              <img src={item.imageUrl} alt={item.name} style={{ width: '60px', height: '75px', objectFit: 'cover' }} />
+              <div style={{ flex: 1 }}>
+                <h4 className="brand-font" style={{ fontSize: '0.95rem' }}>{item.name}</h4>
+                <p style={{ color: 'var(--accent-gold)', fontSize: '0.85rem' }}>{vnd(item.price)} · SL: {item.quantity}</p>
+              </div>
+              <button onClick={() => removeFromCart(item.id)} style={{ background: 'none', border: 'none', color: '#e74c3c', cursor: 'pointer', alignSelf: 'center', fontSize: '0.8rem' }}>Xóa</button>
+            </div>
+          ))}
+        </div>
+        {cart.length > 0 && (
+          <div style={{ borderTop: '1px solid #222', paddingTop: '1.5rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
+              <span className="brand-font">Tổng Cộng</span>
+              <span style={{ color: 'var(--accent-gold)', fontSize: '1.1rem', fontWeight: 600 }}>{vnd(cartTotal)}</span>
+            </div>
+            <button className="btn-gold" style={{ width: '100%' }} onClick={() => { setIsCartOpen(false); setPage('cart') }}>Xem Giỏ Hàng</button>
+          </div>
+        )}
+      </div>
+
+      {/* === FOOTER === */}
+      <footer style={{ padding: '6rem 0', textAlign: 'center', background: '#080808', borderTop: '1px solid #111' }}>
+        <div className="container">
+          <h2 className="brand-font" style={{ color: 'var(--accent-gold)', letterSpacing: '4px', marginBottom: '1.5rem' }}>KP LUXURY</h2>
+          <p style={{ color: '#666', fontSize: '0.9rem' }}>&copy; 2026 KP Luxury Perfume. Tinh hoa nghệ thuật mùi hương.</p>
+        </div>
+      </footer>
+
+      {/* === CHATBOT === */}
+      <button className="chatbot-toggle" onClick={() => setChatOpen(!chatOpen)}>
+        {chatOpen ? '✕' : '💬'}
+      </button>
+      {chatOpen && (
+        <div className="chatbot-widget">
+          <div className="chatbot-header">
+            <span>🤖 Trợ Lý Hương Thơm</span>
+            <button onClick={() => setChatOpen(false)}>✕</button>
+          </div>
+          <div className="chatbot-messages">
+            {chatMessages.map((msg, i) => (
+              <div key={i} className={`chat-msg ${msg.from}`}>{msg.text}</div>
+            ))}
+            <div ref={chatEndRef} />
+          </div>
+          <div className="chatbot-input">
+            <input type="text" placeholder="Nhập tin nhắn..." value={chatInput}
+              onChange={e => setChatInput(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && handleSendChat()} />
+            <button onClick={handleSendChat}>📤</button>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+export default App

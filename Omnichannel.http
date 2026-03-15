@@ -1,0 +1,6 @@
+@Omnichannel_HostAddress = http://localhost:5285
+
+GET {{Omnichannel_HostAddress}}/api/perfumes/
+Accept: application/json
+
+###

@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sản phẩm Yêu Thích | KP LUXURY PERFUME</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .fav-container {
+            max-width: 1200px;
+            margin: 120px auto 40px;
+            padding: 0 20px;
+        }
+
+        /* Reusing some product grid styles from main CSS */
+        .action-btns {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            z-index: 10;
+        }
+
+        .icon-btn {
+            background: rgba(0, 0, 0, 0.6);
+            border: 1px solid var(--accent-gold);
+            color: var(--accent-gold);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 1.2rem;
+        }
+
+        .icon-btn:hover {
+            background: var(--accent-gold);
+            color: black;
+            transform: scale(1.1);
+        }
+
+        .icon-btn.active {
+            background: #e74c3c;
+            color: white;
+            border-color: #e74c3c;
+        }
+
+        .product-card {
+            position: relative;
+        }
+    </style>
+</head>
+
+<body>
+    <nav>
+        <div class="container nav-container">
+            <a href="index.html" class="logo">KP LUXURY</a>
+            <div class="nav-links">
+                <a href="index.html#products">Tiếp tục mua sắm</a>
+                <a href="cart.html"><i class="fas fa-shopping-cart"></i> Giỏ hàng</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="fav-container">
+        <h1 class="brand-font" style="margin-bottom: 2rem; color: var(--accent-gold);"><i class="fas fa-heart"></i> Sản
+            phẩm yêu thích</h1>
+
+        <div id="product-grid" class="product-grid">
+            <div class="loading">Đang tải hương thơm...</div>
+        </div>
+    </div>
+
+    <script src="auth.js"></script>
+    <script>
+        async function loadFavorites() {
+            const grid = document.getElementById('product-grid');
+            const favIds = auth.getFavorites();
+
+            if (favIds.length === 0) {
+                grid.innerHTML = `
+                    <div style="grid-column: 1/-1; text-align: center; padding: 4rem; background: #111; border: 1px solid var(--glass-border); border-radius: 8px;">
+                        <i class="fas fa-heart-broken fa-3x" style="color: var(--accent-gold); margin-bottom: 1rem;"></i>
+                        <h2 class="brand-font">Chưa có mục yêu thích</h2>
+                        <p style="color: #888; margin-top: 1rem; margin-bottom: 2rem;">Hãy thả tim cho những hương thơm bạn yêu thích nhất.</p>
+                        <a href="index.html#products" class="btn-gold" style="text-decoration: none;">Khám phá ngay</a>
+                    </div>
+                `;
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/perfumes');
+                const allProducts = await response.json();
+
+                const favProducts = allProducts.filter(p => favIds.includes(p.id));
+                grid.innerHTML = '';
+
+                favProducts.forEach(product => {
+                    const card = document.createElement('div');
+                    card.className = 'product-card';
+                    card.style.cursor = 'pointer';
+                    card.onclick = () => window.location.href = `product-detail.html?id=${product.id}`;
+                    card.innerHTML = `
+                        <img src="${product.imageUrl}" alt="${product.name}" class="product-image">
+                        <div class="product-info">
+                            <h3>${product.name}</h3>
+                            <p class="product-price">$${product.price.toFixed(2)}</p>
+                            <p class="product-desc">${product.description}</p>
+                            
+                            <div style="display: flex; gap: 10px; margin-top: 1rem; align-items: stretch;">
+                                <button class="btn-gold" style="flex: 1; padding: 0.75rem;" onclick="event.stopPropagation(); window.location.href = 'product-detail.html?id=${product.id}';">Xem chi tiết</button>
+                                <button class="icon-btn active" style="position: static; width: 45px; height: auto; flex-shrink: 0;" onclick="event.stopPropagation(); auth.toggleFavorite(${product.id}, this); setTimeout(loadFavorites, 100);">
+                                    <i class="fas fa-heart"></i>
+                                </button>
+                                <button class="icon-btn" style="position: static; width: 45px; height: auto; flex-shrink: 0;" onclick="event.stopPropagation(); auth.addToCart(allProducts.find(p => p.id === ${product.id})); alert('Đã thêm vào giỏ hàng!');">
+                                    <i class="fas fa-cart-plus"></i>
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                    grid.appendChild(card);
+                });
+
+            } catch (e) {
+                console.error(e);
+                grid.innerHTML = '<p>Có lỗi xảy ra.</p>';
+            }
+        }
+
+        loadFavorites();
+    </script>
+</body>
+
+</html>

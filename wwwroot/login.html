@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đăng nhập | KP Luxury</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .login-card {
+            background: var(--card-bg);
+            border: 1px solid var(--glass-border);
+            padding: 3rem;
+            width: 100%;
+            max-width: 400px;
+            margin: 10rem auto;
+            text-align: center;
+        }
+
+        input {
+            width: 100%;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+            background: #222;
+            border: 1px solid #444;
+            color: white;
+            outline: none;
+        }
+
+        input:focus {
+            border-color: var(--accent-gold);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="login-card">
+            <h2 class="brand-font" style="color: var(--accent-gold); margin-bottom: 2rem; font-size: 2rem;">KP ACCESS
+            </h2>
+            <form id="loginForm">
+                <input type="text" id="username" placeholder="Tên đăng nhập" required>
+                <input type="password" id="password" placeholder="Mật khẩu" required>
+                <button type="submit" class="btn-gold" style="width: 100%;">Vào hệ thống</button>
+            </form>
+            <p id="error" style="color: #ff4444; margin-top: 1rem;"></p>
+            <p style="margin-top: 2rem; color: #666; font-size: 0.9rem;">
+                Chưa có tài khoản? <a href="register.html"
+                    style="color: var(--accent-gold); text-decoration: none;">Đăng ký ngay</a>
+            </p>
+        </div>
+    </div>
+
+    <script src="auth.js"></script>
+    <script>
+        document.getElementById('loginForm').onsubmit = async (e) => {
+            e.preventDefault();
+            const u = document.getElementById('username').value;
+            const p = document.getElementById('password').value;
+            try {
+                const user = await auth.login(u, p);
+                if (user.role === 'Admin') window.location.href = 'admin.html';
+                else window.location.href = 'index.html';
+            } catch (err) {
+                document.getElementById('error').innerText = err.message;
+            }
+        };
+    </script>
+</body>
+
+</html>

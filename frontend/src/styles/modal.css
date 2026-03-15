@@ -1,0 +1,30 @@
+/* === Auth Modal & Forms === */
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.9); backdrop-filter: blur(10px);
+  z-index: 3000; display: flex; align-items: center; justify-content: center;
+  opacity: 0; pointer-events: none; transition: var(--transition-smooth);
+}
+.modal-overlay.active { opacity: 1; pointer-events: auto; }
+
+.modal-content {
+  background: var(--bg-card); border: 1px solid var(--glass-border);
+  padding: 4rem; width: 100%; max-width: 500px; position: relative;
+  transform: translateY(30px); transition: var(--transition-smooth);
+}
+.modal-overlay.active .modal-content { transform: translateY(0); }
+
+.auth-form h2 { margin-bottom: 2rem; text-align: center; }
+
+.form-group { margin-bottom: 1.5rem; }
+.form-group label {
+  display: block; font-size: 0.8rem; text-transform: uppercase;
+  letter-spacing: 2px; color: var(--text-secondary); margin-bottom: 0.5rem;
+}
+.form-group input {
+  width: 100%; background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border);
+  padding: 1rem; color: white; font-family: inherit; transition: var(--transition-smooth);
+}
+.form-group input:focus { outline: none; border-color: var(--accent-gold); background: rgba(255,255,255,0.1); }
+
+.auth-switch { margin-top: 2rem; text-align: center; font-size: 0.9rem; color: var(--text-secondary); }
+.auth-switch span { color: var(--accent-gold); cursor: pointer; margin-left: 0.5rem; }

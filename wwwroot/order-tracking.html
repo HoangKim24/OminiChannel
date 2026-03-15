@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Theo dõi đơn hàng | KP Luxury</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .order-card {
+            background: var(--card-bg);
+            padding: 2rem;
+            border: 1px solid var(--glass-border);
+            margin-bottom: 2rem;
+        }
+
+        .order-header {
+            display: flex;
+            justify-content: space-between;
+            border-bottom: 1px solid #333;
+            padding-bottom: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .item-row {
+            display: flex;
+            justify-content: space-between;
+            color: #aaa;
+            margin-bottom: 0.5rem;
+        }
+    </style>
+</head>
+
+<body>
+    <nav>
+        <div class="container nav-container">
+            <a href="index.html" class="logo">KP LUXURY</a>
+            <div class="nav-links">
+                <a href="index.html">Sản phẩm</a>
+                <a href="cart.html">Giỏ hàng</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container" style="padding: 10rem 0;">
+        <h1 class="brand-font" style="font-size: 3rem; margin-bottom: 3rem;">Hành Trình Đơn Hàng</h1>
+        <div id="ordersList">
+            <div class="loading">Đăng tìm kiếm lịch sử...</div>
+        </div>
+    </div>
+
+    <script src="auth.js"></script>
+    <script>
+        const user = auth.checkAuth();
+
+        async function loadOrders() {
+            const res = await fetch(`/api/orders/user/${user.id}`);
+            const orders = await res.json();
+            const container = document.getElementById('ordersList');
+            container.innerHTML = '';
+
+            if (orders.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: #666;">Bạn chưa có đơn hàng nào.</p>';
+                return;
+            }
+
+            orders.reverse().forEach(o => {
+                const card = document.createElement('div');
+                card.className = 'order-card';
+                card.innerHTML = `
+                    <div class="order-header">
+                        <div>
+                            <span style="color: var(--accent-gold);">MÃ ĐƠN: #${o.id}</span>
+                            <p style="font-size: 0.8rem; color: #666;">Ngày đặt: ${new Date(o.orderDate).toLocaleDateString()}</p>
+                        </div>
+                        <div style="text-align: right;">
+                            <span style="background: #333; padding: 0.2rem 1rem; border-radius: 20px; font-size: 0.8rem;">${o.status.toUpperCase()}</span>
+                            <p style="font-size: 1.2rem; color: #fff; margin-top: 0.5rem;">$${o.totalAmount.toFixed(2)}</p>
+                        </div>
+                    </div>
+                    <div>
+                        ${o.items.map(item => `
+                            <div class="item-row">
+                                <span>${item.perfumeName} x${item.quantity}</span>
+                                <span>$${(item.price * item.quantity).toFixed(2)}</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        loadOrders();
+    </script>
+</body>
+
+</html>

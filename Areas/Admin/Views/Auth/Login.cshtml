@@ -1,0 +1,47 @@
+@{
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đăng Nhập Quản Trị | KP Luxury</title>
+    <link rel="stylesheet" href="~/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+</head>
+<body style="display: flex; justify-content: center; align-items: center; min-height: 100vh; background: #0a0a0a;">
+    <div style="background: #111; padding: 3rem; border-radius: 8px; border: 1px solid var(--accent-gold); width: 400px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+        <h1 class="brand-font" style="color: var(--accent-gold); margin-bottom: 2rem;">KP ADMIN</h1>
+        <p style="color: #888; margin-bottom: 2rem;">Trang quản trị hệ thống Đa Kênh</p>
+        <form id="adminLoginForm">
+            <input type="text" id="username" placeholder="Tên đăng nhập (admin)" required
+                   style="width: 100%; padding: 1rem; background: #222; border: 1px solid #444; color: white; margin-bottom: 1rem; border-radius: 4px;">
+            <input type="password" id="password" placeholder="Mật khẩu (123)" required
+                   style="width: 100%; padding: 1rem; background: #222; border: 1px solid #444; color: white; margin-bottom: 2rem; border-radius: 4px;">
+            <button type="submit" class="btn-gold" style="width: 100%; padding: 1rem; font-size: 1.1rem;">Khởi động</button>
+        </form>
+        <a href="/" style="display: block; margin-top: 2rem; color: #666; text-decoration: none; font-size: 0.9rem;">&larr; Quay lại cửa hàng</a>
+    </div>
+
+    <script src="~/auth.js"></script>
+    <script>
+        document.getElementById('adminLoginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const u = document.getElementById('username').value;
+            const p = document.getElementById('password').value;
+            try {
+                const user = await auth.login(u, p);
+                if (user.role === 'Admin') {
+                    window.location.href = '/Admin';
+                } else {
+                    alert('Quyền truy cập bị từ chối. Tài khoản này không phải là Quản Trị.');
+                    auth.logout();
+                }
+            } catch (err) {
+                alert('Sai tài khoản hoặc mật khẩu!');
+            }
+        });
+    </script>
+</body>
+</html>

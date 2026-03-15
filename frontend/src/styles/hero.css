@@ -1,0 +1,23 @@
+/* === Hero Section === */
+.hero {
+  height: 100vh; display: flex; align-items: center; justify-content: center;
+  text-align: center; position: relative; overflow: hidden; background: black;
+}
+.hero::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+  background: linear-gradient(0deg, var(--bg-dark) 0%, rgba(0,0,0,0.3) 50%, rgba(0,0,0,0.6) 100%),
+    url('https://images.unsplash.com/photo-1541643600914-78b084683601?auto=format&fit=crop&q=80&w=2000');
+  background-size: cover; background-position: center; opacity: 0.6;
+}
+.hero-content { position: relative; z-index: 2; max-width: 900px; }
+.hero-content h1 {
+  font-size: clamp(3rem, 10vw, 7rem); line-height: 1.1; margin-bottom: 1.5rem; font-weight: 400;
+  background: linear-gradient(180deg, #fff 0%, #aaa 100%);
+  background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  animation: revealUp 1.2s ease-out;
+}
+.hero-content p {
+  font-size: 1.2rem; font-family: 'Outfit', sans-serif; color: var(--text-secondary);
+  margin-bottom: 3rem; letter-spacing: 3px; text-transform: uppercase;
+  opacity: 0; animation: revealUp 1.2s ease-out 0.3s forwards;
+}

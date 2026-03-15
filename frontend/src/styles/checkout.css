@@ -1,0 +1,23 @@
+/* === Checkout Page === */
+.checkout-page { padding: 8rem 0 4rem; }
+
+.checkout-layout {
+  display: grid; grid-template-columns: 1fr 400px; gap: 4rem;
+}
+
+.checkout-form-section h2 { margin-bottom: 2rem; }
+
+.checkout-summary {
+  background: #111; padding: 2rem; border-radius: 8px;
+  border: 1px solid var(--glass-border); height: fit-content;
+}
+.checkout-summary h3 { color: var(--accent-gold); margin-bottom: 1.5rem; }
+.checkout-summary-item {
+  display: flex; justify-content: space-between; margin-bottom: 0.75rem; color: #aaa; font-size: 0.95rem;
+}
+.checkout-total {
+  display: flex; justify-content: space-between; font-size: 1.4rem;
+  margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid #333;
+}
+
+@media (max-width: 768px) { .checkout-layout { grid-template-columns: 1fr; } }

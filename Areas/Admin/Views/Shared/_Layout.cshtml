@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewData["Title"] | Admin Dashboard | KP Luxury</title>
+    <link rel="stylesheet" href="~/style.css">
+    <style>
+        /* Admin specific styles extracted from admin.html */
+        .admin-layout {
+            display: grid;
+            grid-template-columns: 250px 1fr;
+            min-height: 100vh;
+            padding-top: 80px;
+        }
+
+        .sidebar {
+            background: #111;
+            padding: 2rem;
+            border-right: 1px solid var(--glass-border);
+        }
+
+        .sidebar a {
+            display: block;
+            color: #888;
+            text-decoration: none;
+            margin-bottom: 1rem;
+            transition: 0.3s;
+        }
+
+        .sidebar a:hover,
+        .sidebar a.active {
+            color: var(--accent-gold);
+        }
+
+        .content {
+            padding: 3rem;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 2rem;
+            margin-bottom: 4rem;
+        }
+
+        .stat-card {
+            background: var(--card-bg);
+            padding: 2rem;
+            border: 1px solid var(--glass-border);
+        }
+
+        .admin-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 2rem;
+        }
+
+        .admin-table th,
+        .admin-table td {
+            text-align: left;
+            padding: 1rem;
+            border-bottom: 1px solid #333;
+        }
+
+        .admin-table th {
+            color: var(--accent-gold);
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background: #1a1a1a;
+            padding: 3rem;
+            width: 500px;
+            border: 1px solid var(--accent-gold);
+        }
+    </style>
+</head>
+
+<body>
+    <nav>
+        <div class="container nav-container">
+            <a href="~/" class="logo">KP ADMIN</a>
+            <div id="userInfo" style="color: var(--accent-gold);"></div>
+            <a href="#" onclick="auth.logout()" style="color: #666; text-decoration: none; font-size: 0.8rem;">ĐĂNG XUẤT</a>
+        </div>
+    </nav>
+
+    <div class="admin-layout">
+        <aside class="sidebar" id="adminSidebar">
+            <a href="/Admin">Thống kê & Sản phẩm</a>
+            <a href="/Admin/Orders">Đơn hàng</a>
+            <a href="/Admin/Settings">Cài đặt</a>
+        </aside>
+
+        <main class="content">
+            @RenderBody()
+        </main>
+    </div>
+
+    <script src="~/auth.js"></script>
+    <script>
+        const user = auth.getUser();
+        if (!user || user.role !== 'Admin') {
+            window.location.href = '/Admin/Auth/Login';
+        } else {
+            window.user = user;
+            document.getElementById('userInfo').innerText = `Chào, ${user.username}`;
+            
+            // Set active sidebar link
+            const currentPath = window.location.pathname;
+            document.querySelectorAll('#adminSidebar a').forEach(link => {
+                if (link.getAttribute('href') === currentPath) {
+                    link.classList.add('active');
+                } else {
+                    link.classList.remove('active');
+                }
+            });
+        }
+    </script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

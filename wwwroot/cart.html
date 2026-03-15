@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Giỏ hàng | KP LUXURY PERFUME</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .cart-container {
+            max-width: 1000px;
+            margin: 120px auto 40px;
+            padding: 0 20px;
+        }
+
+        .cart-layout {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 2rem;
+        }
+
+        .cart-items {
+            background: #111;
+            padding: 2rem;
+            border-radius: 8px;
+            border: 1px solid var(--glass-border);
+        }
+
+        .cart-item {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            padding-bottom: 1.5rem;
+            margin-bottom: 1.5rem;
+            border-bottom: 1px solid #333;
+        }
+
+        .cart-item:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+
+        .cart-item img {
+            width: 100px;
+            height: 100px;
+            object-fit: contain;
+            background: #fff;
+            border-radius: 4px;
+        }
+
+        .item-details {
+            flex: 1;
+        }
+
+        .item-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.2rem;
+            color: var(--accent-gold);
+            margin-bottom: 0.5rem;
+        }
+
+        .item-price {
+            font-weight: 600;
+            color: #fff;
+        }
+
+        .qty-controls {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .qty-btn {
+            background: transparent;
+            border: 1px solid var(--accent-gold);
+            color: var(--accent-gold);
+            width: 30px;
+            height: 30px;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+
+        .qty-btn:hover {
+            background: rgba(212, 175, 55, 0.2);
+        }
+
+        .btn-remove {
+            background: none;
+            border: none;
+            color: #e74c3c;
+            cursor: pointer;
+            margin-left: auto;
+        }
+
+        .cart-summary {
+            background: #111;
+            padding: 2rem;
+            border-radius: 8px;
+            border: 1px solid var(--glass-border);
+            height: fit-content;
+        }
+
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+            color: #ccc;
+        }
+
+        .summary-total {
+            border-top: 1px solid #333;
+            padding-top: 1rem;
+            margin-top: 1rem;
+            font-size: 1.2rem;
+            color: #fff;
+            font-weight: bold;
+        }
+
+        @media (max-width: 768px) {
+            .cart-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <nav>
+        <div class="container nav-container">
+            <a href="index.html" class="logo">KP LUXURY</a>
+            <div class="nav-links">
+                <a href="index.html#products">Tiếp tục mua sắm</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="cart-container">
+        <h1 class="brand-font" style="margin-bottom: 2rem; color: var(--accent-gold);">Giỏ hàng của bạn</h1>
+
+        <div class="cart-layout" id="cartLayout">
+            <!-- Rendered by JS -->
+        </div>
+    </div>
+
+    <script src="auth.js"></script>
+    <script>
+        function renderCart() {
+            const cartLayout = document.getElementById('cartLayout');
+            const cart = auth.getCart();
+
+            if (cart.length === 0) {
+                cartLayout.innerHTML = `
+                    <div style="grid-column: 1/-1; text-align: center; padding: 4rem; background: #111; border: 1px solid var(--glass-border); border-radius: 8px;">
+                        <i class="fas fa-shopping-cart fa-3x" style="color: var(--accent-gold); margin-bottom: 1rem;"></i>
+                        <h2 class="brand-font">Giỏ hàng trống</h2>
+                        <p style="color: #888; margin-top: 1rem; margin-bottom: 2rem;">Chưa có sản phẩm nào trong giỏ hàng của bạn.</p>
+                        <a href="index.html#products" class="btn-gold" style="text-decoration: none;">Khám phá ngay</a>
+                    </div>
+                `;
+                return;
+            }
+
+            let html = '<div class="cart-items">';
+            let subtotal = 0;
+
+            cart.forEach(item => {
+                const itemTotal = item.price * item.quantity;
+                subtotal += itemTotal;
+
+                html += `
+                    <div class="cart-item">
+                        <img src="${item.imageUrl}" alt="${item.name}">
+                        <div class="item-details">
+                            <h3 class="item-title">${item.name}</h3>
+                            <div class="item-price">$${item.price.toFixed(2)}</div>
+                            <div class="qty-controls">
+                                <button class="qty-btn" onclick="updateQty(${item.id}, -1)">-</button>
+                                <span>${item.quantity}</span>
+                                <button class="qty-btn" onclick="updateQty(${item.id}, 1)">+</button>
+                            </div>
+                        </div>
+                        <div style="text-align: right;">
+                            <div style="font-weight: bold; margin-bottom: 1rem; color: var(--accent-gold);">$${itemTotal.toFixed(2)}</div>
+                            <button class="btn-remove" onclick="removeItem(${item.id})"><i class="fas fa-trash"></i> Xóa</button>
+                        </div>
+                    </div>
+                `;
+            });
+
+            html += '</div>';
+
+            const tax = subtotal * 0.1;
+            const total = subtotal + tax;
+
+            html += `
+                <div class="cart-summary">
+                    <h2 class="brand-font" style="margin-bottom: 1.5rem; color: var(--accent-gold);">Tổng Đơn Hàng</h2>
+                    <div class="summary-row">
+                        <span>Tạm tính</span>
+                        <span>$${subtotal.toFixed(2)}</span>
+                    </div>
+                    <div class="summary-row">
+                        <span>Thuế (10%)</span>
+                        <span>$${tax.toFixed(2)}</span>
+                    </div>
+                    <div class="summary-row summary-total">
+                        <span>Thành tiền</span>
+                        <span style="color: var(--accent-gold);">$${total.toFixed(2)}</span>
+                    </div>
+                    <button class="btn-gold" style="width: 100%; margin-top: 2rem;" onclick="checkout()">Tiến hành thanh toán</button>
+                </div>
+            `;
+
+            cartLayout.innerHTML = html;
+        }
+
+        function updateQty(id, change) {
+            let cart = auth.getCart();
+            const item = cart.find(i => i.id === id);
+            if (item) {
+                item.quantity += change;
+                if (item.quantity <= 0) {
+                    auth.removeFromCart(id);
+                } else {
+                    localStorage.setItem('cart', JSON.stringify(cart));
+                }
+                renderCart();
+            }
+        }
+
+        function removeItem(id) {
+            if (confirm('Bạn có chắc muốn xóa sản phẩm này?')) {
+                auth.removeFromCart(id);
+                renderCart();
+            }
+        }
+
+        function checkout() {
+            const user = auth.getUser();
+            if (!user) {
+                alert('Vui lòng đăng nhập để thanh toán!');
+                window.location.href = 'login.html';
+                return;
+            }
+            // Proceed to checkout
+            window.location.href = 'checkout.html';
+        }
+
+        renderCart();
+    </script>
+</body>
+
+</html>
