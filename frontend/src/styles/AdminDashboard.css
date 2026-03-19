@@ -1,0 +1,197 @@
+/* AdminDashboard.css */
+:root {
+  --admin-sidebar-width: 250px;
+  --admin-topbar-height: 80px;
+  --admin-gold: #C5A059;
+  --admin-bg-dark: #080808;
+  --admin-panel-bg: #111111;
+  --admin-border: rgba(197, 160, 89, 0.2);
+  --text-primary: #ffffff;
+  --text-secondary: #a0a0a0;
+  --text-muted: #777777;
+}
+
+.admin-screen {
+  display: flex !important;
+  flex-direction: row !important; /* Side-by-side */
+  width: 100% !important;
+  height: 100vh !important;
+  background: var(--admin-bg-dark) !important;
+  color: #fff !important;
+  font-family: 'Inter', sans-serif !important;
+  overflow: hidden !important;
+}
+
+/* Sidebar Column */
+.admin-sidebar-container {
+  width: 250px !important;
+  min-width: 250px !important;
+  max-width: 250px !important;
+  flex-shrink: 0 !important;
+  height: 100vh !important;
+  border-right: 1px solid var(--admin-border) !important;
+  background: #000 !important;
+  z-index: 1000 !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+.admin-sidebar {
+  display: flex !important;
+  flex-direction: column !important;
+  flex: 1 !important;
+  height: 100% !important;
+  overflow-y: auto;
+}
+
+/* Content Column */
+.admin-body {
+  flex: 1 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  min-width: 0 !important; /* Allow shrinking */
+  height: 100vh !important;
+  background: var(--admin-bg-dark) !important;
+  overflow: hidden !important;
+}
+
+.admin-topbar {
+  height: var(--admin-topbar-height) !important;
+  flex-shrink: 0 !important;
+  background: rgba(13, 13, 13, 0.98) !important;
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  padding: 0 2rem !important;
+  border-bottom: 1px solid var(--admin-border) !important;
+}
+
+.admin-canvas {
+  flex: 1 !important;
+  overflow-y: auto !important;
+  padding: 2.5rem !important;
+}
+
+/* Sidebar Sub-elements */
+.admin-logo {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.25rem;
+  color: var(--admin-gold);
+  letter-spacing: 5px;
+  text-align: center;
+  padding: 2.5rem 1rem;
+  border-bottom: 1px solid var(--admin-border);
+  margin-bottom: 2rem;
+}
+
+.admin-nav {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 0.5rem !important;
+  padding: 0 1rem !important;
+  /* Reset global nav styles from nav.css */
+  position: static !important;
+  background: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  border: none !important;
+  width: 100% !important;
+  z-index: auto !important;
+  inset: auto !important;
+}
+
+.admin-nav-item {
+  width: 100% !important;
+  display: flex !important;
+  align-items: center !important;
+  padding: 0.8rem 1.25rem !important;
+  background: transparent !important;
+  border: none !important;
+  color: var(--text-secondary) !important;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: all 0.3s ease;
+  text-transform: uppercase;
+  font-size: 0.7rem;
+  letter-spacing: 1px;
+}
+
+.admin-nav-item:hover {
+  background: rgba(197, 160, 89, 0.05) !important;
+  color: #fff !important;
+}
+
+.admin-nav-item.active {
+  background: rgba(197, 160, 89, 0.1) !important;
+  color: var(--admin-gold) !important;
+  border-left: 3px solid var(--admin-gold) !important;
+}
+
+.nav-icon { margin-right: 1rem; font-size: 1.1rem; }
+
+/* Mobile & Overlay Logic */
+.admin-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.85);
+  backdrop-filter: blur(10px);
+  z-index: 2000;
+}
+
+@media (max-width: 1024px) {
+  .admin-sidebar-container {
+    position: fixed !important;
+    left: -250px !important;
+    transition: transform 0.3s ease !important;
+  }
+  
+  .sidebar-open .admin-sidebar-container {
+    transform: translateX(250px) !important;
+  }
+  
+  .sidebar-open .admin-overlay {
+    display: block !important;
+  }
+}
+
+/* Breadcrumb & Other Elements */
+.admin-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.7rem;
+  letter-spacing: 1.5px;
+  color: var(--text-secondary);
+}
+
+.admin-status {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.status-indicator {
+  font-size: 0.6rem;
+  color: #27ae60;
+  letter-spacing: 1px;
+}
+
+.admin-user {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.8rem;
+}
+
+.admin-user .avatar {
+  width: 32px;
+  height: 32px;
+  background: var(--admin-gold);
+  color: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-weight: bold;
+}

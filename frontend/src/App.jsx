@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react'
 import './index.css'
 import AdminDashboard from './AdminDashboard'
+import AdminLogin from './components/admin/AdminLogin'
 
 function App() {
   // === CORE STATE ===
@@ -115,9 +116,10 @@ function App() {
   }, [])
 
   // Ensure only admins can access the admin page
+  // Removed automatic redirect to home for admin page to allow AdminLogin to show
   useEffect(() => {
     if (page === 'admin' && !isAdmin) {
-      setPage('home')
+      // Logic handled in render
     }
   }, [page, isAdmin])
 
@@ -128,15 +130,21 @@ function App() {
   // Scroll to top on page change
   useEffect(() => { window.scrollTo(0, 0) }, [page])
 
-  // Fetch orders
+  // Fetch orders (User-specific or All for Admin)
   useEffect(() => {
     if (!user) { setOrders([]); return }
     const fetchOrders = async () => {
       try {
         setLoadingOrders(true)
-        const res = await fetch(`/api/orders/user/${user.id}`)
-        if (res.ok) { const data = await res.json(); setOrders(Array.isArray(data) ? data : []) }
-      } catch (err) { console.error(err) }
+        const endpoint = user.role === 'Admin' ? '/api/orders' : `/api/orders/user/${user.id}`
+        const res = await fetch(endpoint, {
+          headers: { 'X-User-Role': user.role || 'User' }
+        })
+        if (res.ok) {
+          const data = await res.json()
+          setOrders(Array.isArray(data) ? data : [])
+        }
+      } catch (err) { console.error('Fetch Orders Error:', err) }
       finally { setLoadingOrders(false) }
     }
     fetchOrders()
@@ -157,7 +165,18 @@ function App() {
         const data = await resChannels.json()
         setChannels(data.filter(c => c.isActive))
       }
-    } catch (err) { console.error(err) }
+
+      // If admin, also refresh all orders to sync dashboard
+      if (user?.role === 'Admin') {
+        const resOrders = await fetch('/api/orders', {
+          headers: { 'X-User-Role': 'Admin' }
+        })
+        if (resOrders.ok) {
+          const orderData = await resOrders.json()
+          setOrders(Array.isArray(orderData) ? orderData : [])
+        }
+      }
+    } catch (err) { console.error('Refresh Error:', err) }
     finally { setLoading(false) }
   }
 
@@ -1240,6 +1259,16 @@ function App() {
           orders={orders} 
           cartTotal={cartTotal}
           setPage={setPage} 
+        />
+      )}
+      {page === 'admin' && !isAdmin && (
+        <AdminLogin 
+          onLogin={(userData) => {
+            setUser(userData);
+            localStorage.setItem('user', JSON.stringify(userData));
+          }}
+          setPage={setPage}
+          showToast={showToast}
         />
       )}
       {page !== 'admin' && (

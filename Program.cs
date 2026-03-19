@@ -29,13 +29,12 @@ builder.Services.AddScoped<OrderFacade>();
 // Configure CORS
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowAll",
-        builder =>
-        {
-            builder.AllowAnyOrigin()
-                   .AllowAnyMethod()
-                   .AllowAnyHeader();
-        });
+    options.AddPolicy("AllowAll", policy =>
+    {
+        policy.AllowAnyOrigin()
+              .AllowAnyMethod()
+              .AllowAnyHeader();
+    });
 });
 
 var app = builder.Build();
@@ -47,17 +46,15 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseDefaultFiles(); // Allow index.html as default
-app.UseStaticFiles();  // Serve files from wwwroot
-
-// app.UseHttpsRedirection();
+app.UseDefaultFiles();
+app.UseStaticFiles();
 app.UseCors("AllowAll");
 app.UseAuthorization();
 
 app.MapControllers();
-app.MapFallbackToFile("index.html"); // Handle SPA routing for React
+app.MapFallbackToFile("index.html");
 
-// Initialize Observers
+// Initialize Observers in a dedicated scope
 using (var scope = app.Services.CreateScope())
 {
     var subject = scope.ServiceProvider.GetRequiredService<InventorySubject>();

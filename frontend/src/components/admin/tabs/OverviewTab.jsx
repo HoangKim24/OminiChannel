@@ -30,10 +30,10 @@ const OverviewTab = ({ products, orders, cartTotal }) => {
 
   return (
     <div className="fade-in">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2.5rem' }}>
-        <h2 className="brand-font" style={{ fontWeight: '300', opacity: '0.9', margin: 0 }}>📊 Toàn cảnh hệ thống</h2>
-        <div className="admin-user-info" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--glass-border)', padding: '0.5rem 1rem', borderRadius: '4px', fontSize: '0.8rem' }}>
-           📅 {new Date().toLocaleDateString('vi-VN')} | 🔔 3 Thông báo mới
+      <div className="admin-tab-header">
+        <h2 className="brand-font page-title">📊 Toàn cảnh hệ thống</h2>
+        <div className="admin-status-bar">
+           📅 {new Date().toLocaleDateString('vi-VN')} | 🔔 3 Thông báo
         </div>
       </div>
 
@@ -50,24 +50,24 @@ const OverviewTab = ({ products, orders, cartTotal }) => {
         ))}
       </div>
 
-      <div className="admin-row" style={{ marginTop: '3rem' }}>
-        <div className="admin-panel glass shadow-lg" style={{ flex: 1.5 }}>
-          <h3 className="brand-font" style={{ marginBottom: '1.5rem', color: 'var(--luxury-gold)' }}>📈 Biểu đồ Doanh Thu (7 ngày qua)</h3>
-          <div style={{ height: '220px', display: 'flex', alignItems: 'flex-end', gap: '15px', padding: '10px 0', borderBottom: '1px solid #222' }}>
+      <div className="dashboard-row main-stats-row">
+        <div className="admin-panel glass chart-container">
+          <h3 className="brand-font section-subtitle">📈 Biểu đồ Doanh Thu</h3>
+          <div className="chart-wrapper">
              {[65, 40, 85, 55, 95, 70, 80].map((h, i) => (
-                <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+                <div key={i} className="chart-bar-container">
                    <div style={{ width: '100%', height: `${h}%`, background: i === 4 ? 'var(--luxury-gold-bright)' : 'rgba(255,255,255,0.05)', borderRadius: '4px 4px 0 0', position: 'relative', transition: '0.5s' }}>
-                      <div className="chart-tooltip" style={{ position: 'absolute', top: '-30px', left: '50%', transform: 'translateX(-50%)', background: '#fff', color: '#000', fontSize: '0.65rem', padding: '2px 5px', borderRadius: '3px', fontWeight: 'bold' }}>{h*1.2}M</div>
+                      <div className="chart-tooltip">{h*1.2}M</div>
                    </div>
-                   <span style={{ fontSize: '0.65rem', color: '#555' }}>T{i+2}</span>
+                   <span className="chart-label">T{i+2}</span>
                 </div>
              ))}
           </div>
-          <p style={{ fontSize: '0.75rem', color: '#444', marginTop: '1rem', textAlign: 'center italic' }}>* Đơn vị: Triệu VNĐ. Cao điểm ghi nhận vào Thứ 6 vừa qua.</p>
+          <p className="chart-note">* Đơn vị: Triệu VNĐ. Cao điểm vào Thứ 6.</p>
         </div>
 
-        <div className="admin-panel glass shadow-lg" style={{ flex: 1 }}>
-          <h3 className="brand-font" style={{ marginBottom: '1.5rem' }}>🏆 Top Sản Phẩm Bán Chạy</h3>
+        <div className="admin-panel glass top-products-container">
+          <h3 className="brand-font section-subtitle">🏆 Top Sản Phẩm</h3>
           <div style={{ display: 'grid', gap: '1rem' }}>
              {products?.slice(0, 4).map((p, i) => (
                 <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '0.8rem', background: 'rgba(255,255,255,0.02)', borderRadius: '8px' }}>
@@ -83,46 +83,48 @@ const OverviewTab = ({ products, orders, cartTotal }) => {
         </div>
       </div>
 
-      <div className="admin-row" style={{ marginTop: '2.5rem' }}>
-        <div className="admin-panel glass shadow-lg" style={{ flex: 2 }}>
-          <h3 className="brand-font">🔔 Đơn Hàng Mới Nhất</h3>
-          <table className="admin-table">
-            <thead>
-              <tr>
-                <th>Mã Đơn</th>
-                <th>Khách Hàng</th>
-                <th>Trạng Thái</th>
-                <th>Tổng</th>
-              </tr>
-            </thead>
-            <tbody>
-              {Array.isArray(orders) && orders.length > 0 ? (
-                orders.slice(0, 5).map((o) => {
-                  const id = o.id ?? o.Id;
-                  const customer = o.customerName ?? o.CustomerName ?? o.userName ?? o.UserName ?? 'Khách hàng';
-                  const status = o.status ?? o.Status ?? 'Chờ xử lý';
-                  const amount = o.totalAmount ?? o.TotalAmount ?? (Array.isArray(o.items || o.Items) ? (o.items || o.Items).reduce((s, it) => s + (it.price || it.Price || 0) * (it.quantity || it.Quantity || 1), 0) : 0);
-                  return (
-                    <tr key={id}>
-                      <td>#{id}</td>
-                      <td>{customer}</td>
-                      <td>
-                        <span className={status.includes('Chờ') || status.toLowerCase().includes('pending') ? 'status-pending' : 'status-processing'}>
-                          {status}
-                        </span>
-                      </td>
-                      <td>{vnd(amount)}</td>
-                    </tr>
-                  );
-                })
-              ) : (
-                <tr><td colSpan={4} style={{ color: '#666', fontSize: '0.9rem' }}>Chưa có đơn hàng nào từ phía khách.</td></tr>
-              )}
-            </tbody>
-          </table>
+      <div className="dashboard-row secondary-stats-row">
+        <div className="admin-panel glass orders-container">
+          <h3 className="brand-font section-subtitle">🔔 Đơn Hàng Mới nhất</h3>
+          <div className="table-responsive">
+            <table className="admin-table">
+              <thead>
+                <tr>
+                  <th>Mã Đơn</th>
+                  <th>Khách Hàng</th>
+                  <th>Trạng Thái</th>
+                  <th>Tổng</th>
+                </tr>
+              </thead>
+              <tbody>
+                {Array.isArray(orders) && orders.length > 0 ? (
+                  orders.slice(0, 5).map((o) => {
+                    const id = o.id ?? o.Id;
+                    const customer = o.customerName ?? o.CustomerName ?? o.userName ?? o.UserName ?? 'Khách hàng';
+                    const status = o.status ?? o.Status ?? 'Chờ xử lý';
+                    const amount = o.totalAmount ?? o.TotalAmount ?? (Array.isArray(o.items || o.Items) ? (o.items || o.Items).reduce((s, it) => s + (it.price || it.Price || 0) * (it.quantity || it.Quantity || 1), 0) : 0);
+                    return (
+                      <tr key={id}>
+                        <td>#{id}</td>
+                        <td>{customer}</td>
+                        <td>
+                          <span className={status.includes('Chờ') || status.toLowerCase().includes('pending') ? 'status-pending' : 'status-processing'}>
+                            {status}
+                          </span>
+                        </td>
+                        <td>{vnd(amount)}</td>
+                      </tr>
+                    );
+                  })
+                ) : (
+                  <tr><td colSpan={4} style={{ color: '#666', fontSize: '0.9rem' }}>Chưa có đơn hàng nào từ phía khách.</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
-        <div className="admin-panel glass shadow-lg" style={{ flex: 1 }}>
-          <h3 className="brand-font">⚠️ Cảnh Báo Hệ Thống</h3>
+        <div className="admin-panel glass warnings-container">
+          <h3 className="brand-font section-subtitle">⚠️ Cảnh Báo Hệ Thống</h3>
           <div style={{ display: 'grid', gap: '0.8rem', marginTop: '1rem' }}>
              <div style={{ padding: '0.8rem', background: 'rgba(231, 76, 60, 0.05)', borderLeft: '3px solid #e74c3c', fontSize: '0.8rem' }}>
                 <strong>Tồn kho thấp:</strong> Bleu de Chanel (Chi nhánh Q1) còn 2 chai.
