@@ -107,7 +107,7 @@ function App() {
     
     // Sync page state with URL path
     const path = window.location.pathname.toLowerCase();
-    if (path === '/admin') {
+    if (path.startsWith('/admin')) {
       setPage('admin');
     }
 
