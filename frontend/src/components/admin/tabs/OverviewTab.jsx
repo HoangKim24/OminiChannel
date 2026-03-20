@@ -1,31 +1,38 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { vnd } from '../../../utils/format';
 
-const OverviewTab = ({ products, orders, cartTotal }) => {
-  const totalOrders = Array.isArray(orders) ? orders.length : 0;
+const OverviewTab = ({ products, orders, cartTotal, user }) => {
+  const [dashboardData, setDashboardData] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  const computedRevenue =
-    Array.isArray(orders) && orders.length > 0
-      ? orders.reduce((sum, o) => {
-          const amount =
-            o.totalAmount ??
-            o.TotalAmount ??
-            (Array.isArray(o.items || o.Items)
-              ? (o.items || o.Items).reduce(
-                  (s, it) =>
-                    s + (it.price || it.Price || 0) * (it.quantity || it.Quantity || 1),
-                  0
-                )
-              : 0);
-          return sum + (amount || 0);
-        }, 0)
-      : 0;
+  useEffect(() => {
+    const fetchDashboard = async () => {
+      try {
+        setLoading(true);
+        const res = await fetch('/api/statistics/dashboard', {
+          headers: { 'X-User-Role': user?.role || 'Admin' }
+        });
+        if (res.ok) {
+          setDashboardData(await res.json());
+        }
+      } catch (err) { console.error('Dashboard fetch error:', err); }
+      finally { setLoading(false); }
+    };
+    fetchDashboard();
+  }, [user, orders]);
+
+  const totalOrders = dashboardData?.totalOrders ?? (Array.isArray(orders) ? orders.length : 0);
+  const totalRevenue = dashboardData?.totalRevenue ?? (Array.isArray(orders) ? orders.reduce((s, o) => s + (o.totalAmount ?? o.TotalAmount ?? 0), 0) : 0);
+  const totalProducts = dashboardData?.totalProducts ?? (products?.length || 0);
+  const totalCustomers = dashboardData?.totalCustomers ?? 0;
+  const recentOrders = dashboardData?.recentOrders ?? [];
+  const lowStockProducts = dashboardData?.lowStockProducts ?? [];
 
   const stats = [
-    { label: 'Tổng Doanh Thu', val: vnd(computedRevenue || cartTotal || 0), icon: '💰', trend: totalOrders ? `+${totalOrders} đơn` : '—' },
+    { label: 'Tổng Doanh Thu', val: vnd(totalRevenue), icon: '💰', trend: totalOrders ? `+${totalOrders} đơn` : '—' },
     { label: 'Số Đơn Hàng', val: totalOrders.toString(), icon: '📦', trend: totalOrders ? 'Hoạt động' : 'Chưa có dữ liệu' },
-    { label: 'Số Sản Phẩm', val: (products?.length || 0).toString(), icon: '💎', trend: products?.length ? 'Đang bán' : 'Chưa có sản phẩm' },
-    { label: 'Dịch Vụ Cá Nhân', val: 'Khắc tên / Gói quà', icon: '🚀', trend: 'Đồng bộ với trang khách' },
+    { label: 'Số Sản Phẩm', val: totalProducts.toString(), icon: '💎', trend: totalProducts ? 'Đang bán' : 'Chưa có sản phẩm' },
+    { label: 'Khách Hàng', val: totalCustomers.toString(), icon: '🚀', trend: totalCustomers ? `${totalCustomers} tài khoản` : 'Chưa có khách' },
   ];
 
   return (
@@ -33,7 +40,7 @@ const OverviewTab = ({ products, orders, cartTotal }) => {
       <div className="admin-tab-header">
         <h2 className="brand-font page-title">📊 Toàn cảnh hệ thống</h2>
         <div className="admin-status-bar">
-           📅 {new Date().toLocaleDateString('vi-VN')} | 🔔 3 Thông báo
+           📅 {new Date().toLocaleDateString('vi-VN')} | 🔔 {lowStockProducts.length > 0 ? `${lowStockProducts.length} cảnh báo tồn kho` : 'Hệ thống ổn định'}
         </div>
       </div>
 
@@ -54,6 +61,7 @@ const OverviewTab = ({ products, orders, cartTotal }) => {
         <div className="admin-panel glass chart-container">
           <h3 className="brand-font section-subtitle">📈 Biểu đồ Doanh Thu</h3>
           <div className="chart-wrapper">
+             {/* Chart: giữ placeholder vì chưa có dữ liệu time-series trong DB */}
              {[65, 40, 85, 55, 95, 70, 80].map((h, i) => (
                 <div key={i} className="chart-bar-container">
                    <div style={{ width: '100%', height: `${h}%`, background: i === 4 ? 'var(--luxury-gold-bright)' : 'rgba(255,255,255,0.05)', borderRadius: '4px 4px 0 0', position: 'relative', transition: '0.5s' }}>
@@ -63,23 +71,7 @@ const OverviewTab = ({ products, orders, cartTotal }) => {
                 </div>
              ))}
           </div>
-          <p className="chart-note">* Đơn vị: Triệu VNĐ. Cao điểm vào Thứ 6.</p>
-        </div>
-
-        <div className="admin-panel glass top-products-container">
-          <h3 className="brand-font section-subtitle">🏆 Top Sản Phẩm</h3>
-          <div style={{ display: 'grid', gap: '1rem' }}>
-             {products?.slice(0, 4).map((p, i) => (
-                <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '0.8rem', background: 'rgba(255,255,255,0.02)', borderRadius: '8px' }}>
-                   <div style={{ width: '24px', height: '24px', background: i === 0 ? 'var(--luxury-gold)' : '#222', borderRadius: '50%', display: 'flex', justifyContent: 'center', alignItems: 'center', fontSize: '0.7rem', fontWeight: 'bold' }}>{i+1}</div>
-                   <img src={p.imageUrl} alt="" style={{ width: '40px', height: '40px', objectFit: 'cover', borderRadius: '4px' }} />
-                   <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: '0.85rem' }}>{p.name}</div>
-                      <div style={{ fontSize: '0.7rem', color: 'var(--luxury-gold)' }}>{12 - i*2} đơn đã bán</div>
-                   </div>
-                </div>
-             ))}
-          </div>
+          <p className="chart-note">* Dữ liệu tĩnh (chưa có time-series trong DB). Tổng doanh thu thật: {vnd(totalRevenue)}</p>
         </div>
       </div>
 
@@ -97,16 +89,28 @@ const OverviewTab = ({ products, orders, cartTotal }) => {
                 </tr>
               </thead>
               <tbody>
-                {Array.isArray(orders) && orders.length > 0 ? (
+                {recentOrders.length > 0 ? (
+                  recentOrders.map((o) => (
+                    <tr key={o.id}>
+                      <td>#{o.id}</td>
+                      <td>{o.customerName || 'Khách hàng'}</td>
+                      <td>
+                        <span className={o.status?.toLowerCase().includes('pending') ? 'status-pending' : 'status-processing'}>
+                          {o.status}
+                        </span>
+                      </td>
+                      <td>{vnd(o.totalAmount)}</td>
+                    </tr>
+                  ))
+                ) : Array.isArray(orders) && orders.length > 0 ? (
                   orders.slice(0, 5).map((o) => {
                     const id = o.id ?? o.Id;
-                    const customer = o.customerName ?? o.CustomerName ?? o.userName ?? o.UserName ?? 'Khách hàng';
                     const status = o.status ?? o.Status ?? 'Chờ xử lý';
-                    const amount = o.totalAmount ?? o.TotalAmount ?? (Array.isArray(o.items || o.Items) ? (o.items || o.Items).reduce((s, it) => s + (it.price || it.Price || 0) * (it.quantity || it.Quantity || 1), 0) : 0);
+                    const amount = o.totalAmount ?? o.TotalAmount ?? 0;
                     return (
                       <tr key={id}>
                         <td>#{id}</td>
-                        <td>{customer}</td>
+                        <td>Khách hàng</td>
                         <td>
                           <span className={status.includes('Chờ') || status.toLowerCase().includes('pending') ? 'status-pending' : 'status-processing'}>
                             {status}
@@ -126,15 +130,17 @@ const OverviewTab = ({ products, orders, cartTotal }) => {
         <div className="admin-panel glass warnings-container">
           <h3 className="brand-font section-subtitle">⚠️ Cảnh Báo Hệ Thống</h3>
           <div style={{ display: 'grid', gap: '0.8rem', marginTop: '1rem' }}>
-             <div style={{ padding: '0.8rem', background: 'rgba(231, 76, 60, 0.05)', borderLeft: '3px solid #e74c3c', fontSize: '0.8rem' }}>
-                <strong>Tồn kho thấp:</strong> Bleu de Chanel (Chi nhánh Q1) còn 2 chai.
-             </div>
-             <div style={{ padding: '0.8rem', background: 'rgba(243, 156, 18, 0.05)', borderLeft: '3px solid #f39c12', fontSize: '0.8rem' }}>
-                <strong>Voucher hết hạn:</strong> Mã "GOLDEN_SUMMER" sẽ hết hạn trong 2h tới.
-             </div>
-             <div style={{ padding: '0.8rem', background: 'rgba(52, 152, 219, 0.05)', borderLeft: '3px solid #3498db', fontSize: '0.8rem' }}>
-                <strong>Đơn hàng:</strong> Có 5 đơn hàng Shopee chưa được đồng bộ.
-             </div>
+             {lowStockProducts.length > 0 ? (
+               lowStockProducts.map(p => (
+                 <div key={p.id} style={{ padding: '0.8rem', background: 'rgba(231, 76, 60, 0.05)', borderLeft: '3px solid #e74c3c', fontSize: '0.8rem' }}>
+                   <strong>Tồn kho thấp:</strong> {p.name} — còn {p.stockQuantity} sản phẩm.
+                 </div>
+               ))
+             ) : (
+               <div style={{ padding: '0.8rem', background: 'rgba(39, 174, 96, 0.05)', borderLeft: '3px solid #27ae60', fontSize: '0.8rem' }}>
+                 <strong>✓ Tất cả sản phẩm đều đủ tồn kho.</strong>
+               </div>
+             )}
           </div>
         </div>
       </div>

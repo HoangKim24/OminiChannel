@@ -1,185 +1,206 @@
 import React, { useState } from 'react';
 
-const ProductsTab = ({ products }) => {
+const ProductsTab = ({ products, user, onRefresh }) => {
   const [showModal, setShowModal] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
+  const [saving, setSaving] = useState(false);
+  const [formData, setFormData] = useState({});
 
   const openAddModal = () => {
     setEditingProduct(null);
+    setFormData({ name: '', brand: 'KP', gender: 'Unisex', price: '', stockQuantity: '', topNotes: '', baseNotes: '', description: '', imageUrl: '' });
     setShowModal(true);
   };
 
   const openEditModal = (product) => {
     setEditingProduct(product);
+    setFormData({
+      name: product.name || '', brand: product.brand || '', gender: product.gender || 'Unisex',
+      price: product.price || '', stockQuantity: product.stockQuantity || 0,
+      topNotes: product.topNotes || '', baseNotes: product.baseNotes || '',
+      description: product.description || '', imageUrl: product.imageUrl || ''
+    });
     setShowModal(true);
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setSaving(true);
+    try {
+      const body = {
+        ...(editingProduct ? { id: editingProduct.id } : {}),
+        name: formData.name, brand: formData.brand, gender: formData.gender,
+        price: parseFloat(formData.price) || 0, stockQuantity: parseInt(formData.stockQuantity) || 0,
+        topNotes: formData.topNotes, baseNotes: formData.baseNotes,
+        description: formData.description, imageUrl: formData.imageUrl,
+        categoryId: editingProduct?.categoryId || null
+      };
+
+      const url = editingProduct ? `/api/perfumes/${editingProduct.id}` : '/api/perfumes';
+      const method = editingProduct ? 'PUT' : 'POST';
+
+      const res = await fetch(url, {
+        method, headers: { 'Content-Type': 'application/json', 'X-User-Role': user?.role || 'Admin' },
+        body: JSON.stringify(body)
+      });
+
+      if (res.ok || res.status === 201 || res.status === 204) {
+        setShowModal(false);
+        if (onRefresh) onRefresh();
+      } else {
+        const err = await res.json().catch(() => ({}));
+        alert(err.message || 'Lỗi khi lưu sản phẩm');
+      }
+    } catch (err) { alert('Lỗi kết nối: ' + err.message); }
+    finally { setSaving(false); }
+  };
+
+  const handleDelete = async (id) => {
+    if (!window.confirm('Bạn chắc chắn muốn xóa sản phẩm này?')) return;
+    try {
+      const res = await fetch(`/api/perfumes/${id}`, {
+        method: 'DELETE', headers: { 'X-User-Role': user?.role || 'Admin' }
+      });
+      if (res.ok || res.status === 204) {
+        if (onRefresh) onRefresh();
+        setShowModal(false);
+      }
+    } catch (err) { alert('Lỗi: ' + err.message); }
   };
 
   return (
     <div className="fade-in">
-      <div className="admin-panel glass shadow-lg">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+      <div className="glass-panel shadow-gold" style={{ border: 'none', background: 'transparent', padding: '0 0 2rem 0' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2.5rem' }}>
           <div>
-            <h3 className="brand-font" style={{ fontSize: '1.8rem' }}>💎 Quản Lý Catalog Nước Hoa</h3>
-            <p style={{ fontSize: '0.8rem', color: '#666', marginTop: '0.3rem' }}>Tổng cộng {products?.length || 0} sản phẩm đang trưng bày.</p>
+            <h2 className="brand-font" style={{ fontSize: '2rem', color: 'var(--admin-gold)' }}>Danh Mục Sản Phẩm</h2>
+            <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '0.5rem', letterSpacing: '0.5px' }}>
+              Quản lý bộ sưu tập nước hoa thượng lưu của bạn.
+            </p>
           </div>
-          <div style={{ display: 'flex', gap: '1rem' }}>
-             <button className="admin-input-sm" style={{ borderStyle: 'dashed' }}>📤 Export CSV</button>
-             <button className="btn-gold" onClick={openAddModal} style={{ padding: '0.8rem 1.5rem', fontWeight: '600' }}>+ Thêm Sản Phẩm Mới</button>
+          <div style={{ display: 'flex', gap: '1.25rem' }}>
+             <button className="luxury-button-gold" onClick={openAddModal}>+ THÊM TUYỆT TÁC</button>
           </div>
         </div>
 
-        {/* Search & Filter Bar */}
-        <div style={{ display: 'flex', gap: '1rem', marginBottom: '2rem' }}>
-           <input type="text" className="admin-input-sm" placeholder="🔍 Tìm tên, thương hiệu..." style={{ flex: 1, padding: '0.8rem' }} />
-           <select className="admin-input-sm" style={{ width: '150px' }}>
-              <option>Thương hiệu</option>
-              <option>Chanel</option>
-              <option>Dior</option>
-              <option>Creed</option>
-           </select>
-           <select className="admin-input-sm" style={{ width: '150px' }}>
-              <option>Giới tính</option>
-              <option>Nam</option>
-              <option>Nữ</option>
-              <option>Unisex</option>
-           </select>
-        </div>
-
-        <table className="admin-table admin-table-modern">
-          <thead>
-            <tr>
-              <th>Ảnh</th>
-              <th>Thông Tin Cơ Bản</th>
-              <th>Thương Hiệu / Giới Tính</th>
-              <th>Tầng Hương (Notes)</th>
-              <th>Giá / Stock</th>
-              <th>Thao Tác</th>
-            </tr>
-          </thead>
-          <tbody>
-            {(products || []).map(p => (
-              <tr key={p.id}>
-                <td><img src={p.imageUrl} alt="" style={{ width: '60px', height: '60px', objectFit: 'cover', borderRadius: '4px', border: '1px solid #222' }} /></td>
-                <td>
-                   <div style={{ fontWeight: '600', fontSize: '1rem' }}>{p.name}</div>
-                   <div style={{ fontSize: '0.75rem', color: '#555', marginTop: '4px' }}>{p.concentration || p.Concentration || 'Eau de Parfum'}</div>
-                </td>
-                <td>
-                   <div className="badge-luxury" style={{ display: 'inline-block' }}>{p.brand || p.Brand || 'KP'}</div>
-                   <div style={{ fontSize: '0.75rem', color: '#888', marginTop: '4px' }}>{p.gender || p.Gender || 'Unisex'}</div>
-                </td>
-                <td style={{ fontSize: '0.75rem', color: '#888' }}>
-                   <div style={{ marginBottom: '4px' }}><span style={{ color: 'var(--luxury-gold)' }}>Top:</span> {p.topNotes || p.TopNotes || '—'}</div>
-                   <div><span style={{ color: 'var(--luxury-gold)' }}>Base:</span> {p.baseNotes || p.BaseNotes || '—'}</div>
-                </td>
-                <td>
-                   <div style={{ color: 'var(--luxury-gold-bright)', fontWeight: 'bold' }}>{p.price?.toLocaleString()} đ</div>
-                   <div style={{ fontSize: '0.75rem', color: p.stockQuantity < 5 ? '#e74c3c' : '#444' }}>Kho: {p.stockQuantity || 0}</div>
-                </td>
-                <td>
-                  <div style={{ display: 'flex', gap: '10px' }}>
-                     <button className="btn-action-view" onClick={() => openEditModal(p)}>Chi tiết / Sửa</button>
-                     <button style={{ background: 'none', border: 'none', color: '#444', cursor: 'pointer', fontSize: '1.2rem' }}>⋮</button>
-                  </div>
-                </td>
+        <div className="table-container shadow-gold" style={{ background: 'rgba(10,10,10,0.5)', borderRadius: '4px', overflow: 'hidden', border: '1px solid var(--admin-border)' }}>
+          <table className="admin-table-modern" style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead style={{ background: 'rgba(197, 160, 89, 0.05)', borderBottom: '1px solid var(--admin-border)' }}>
+              <tr>
+                <th style={{ padding: '1.25rem', textAlign: 'left', fontSize: '0.65rem', color: 'var(--admin-gold)', textTransform: 'uppercase', letterSpacing: '2px' }}>Kiệt Tác</th>
+                <th style={{ padding: '1.25rem', textAlign: 'left', fontSize: '0.65rem', color: 'var(--admin-gold)', textTransform: 'uppercase', letterSpacing: '2px' }}>Chi Tiết</th>
+                <th style={{ padding: '1.25rem', textAlign: 'left', fontSize: '0.65rem', color: 'var(--admin-gold)', textTransform: 'uppercase', letterSpacing: '2px' }}>Phân Loại</th>
+                <th style={{ padding: '1.25rem', textAlign: 'left', fontSize: '0.65rem', color: 'var(--admin-gold)', textTransform: 'uppercase', letterSpacing: '2px' }}>Giá & Tồn Kho</th>
+                <th style={{ padding: '1.25rem', textAlign: 'center', fontSize: '0.65rem', color: 'var(--admin-gold)', textTransform: 'uppercase', letterSpacing: '2px' }}>Thao Tác</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-
-        {/* Simple Pagination */}
-        <div style={{ marginTop: '2rem', display: 'flex', justifyContent: 'center', gap: '0.5rem' }}>
-           <button className="admin-input-sm" disabled>«</button>
-           <button className="admin-input-sm" style={{ background: 'var(--luxury-gold)', color: '#000' }}>1</button>
-           <button className="admin-input-sm">2</button>
-           <button className="admin-input-sm">»</button>
+            </thead>
+            <tbody>
+              {(products || []).map(p => (
+                <tr key={p.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)', transition: 'background 0.3s' }} className="table-row-hover">
+                  <td style={{ padding: '1.25rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
+                      <img src={p.imageUrl} alt="" style={{ width: '64px', height: '64px', objectFit: 'cover', border: '1px solid var(--admin-border)' }} />
+                      <div>
+                        <div className="brand-font" style={{ fontSize: '1.05rem', color: '#fff' }}>{p.name}</div>
+                        <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '4px' }}>SKU: {p.id.toString().padStart(6, '0')}</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td style={{ padding: '1.25rem' }}>
+                    <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{p.brand || 'Luxury Concept'}</div>
+                    <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '4px' }}>{p.concentration || 'Eau de Parfum'}</div>
+                  </td>
+                  <td style={{ padding: '1.25rem' }}>
+                    <span className="luxury-badge" style={{ color: p.gender === 'Nam' ? '#3498db' : p.gender === 'Nữ' ? '#e91e63' : 'var(--admin-gold)' }}>
+                      {p.gender || 'Unisex'}
+                    </span>
+                  </td>
+                  <td style={{ padding: '1.25rem' }}>
+                    <div style={{ color: 'var(--admin-gold)', fontWeight: '700', fontSize: '0.95rem' }}>{p.price?.toLocaleString()} đ</div>
+                    <div style={{ fontSize: '0.7rem', color: p.stockQuantity < 5 ? '#e74c3c' : 'var(--text-muted)', marginTop: '4px' }}>
+                      CÒN: {p.stockQuantity || 0} CHAI
+                    </div>
+                  </td>
+                  <td style={{ padding: '1.25rem', textAlign: 'center' }}>
+                    <button className="luxury-input-field" style={{ fontSize: '0.65rem', padding: '0.5rem 1rem' }} onClick={() => openEditModal(p)}>
+                      CHI TIẾT
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </div>
 
-      {/* CRUD Modal / Drawer Overlay */}
       {showModal && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.85)', zIndex: 2000, display: 'flex', justifyContent: 'flex-end' }}>
-           <div className="fade-in" style={{ width: '600px', height: '100%', background: '#0a0a0a', borderLeft: '1px solid var(--luxury-gold)', padding: '3rem', overflowY: 'auto' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2.5rem' }}>
-                 <h2 className="brand-font" style={{ fontSize: '2rem' }}>{editingProduct ? 'Hồ Sơ Sản Phẩm' : 'Tạo Tuyệt Tác Mới'}</h2>
-                 <button onClick={() => setShowModal(false)} style={{ background: 'none', border: 'none', color: '#fff', fontSize: '2rem', cursor: 'pointer' }}>×</button>
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.9)', zIndex: 9999, display: 'flex', justifyContent: 'flex-end' }}>
+          <div className="glass-panel fade-in-right" style={{ width: '600px', height: '100%', borderLeft: '1px solid var(--admin-border)', padding: '4rem', overflowY: 'auto', borderRadius: 0 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3.5rem' }}>
+              <h2 className="brand-font" style={{ fontSize: '2.2rem', color: 'var(--admin-gold)' }}>
+                {editingProduct ? 'Hồ Sơ Kiệt Tác' : 'Kiến Tạo Tuyệt Tác'}
+              </h2>
+              <button onClick={() => setShowModal(false)} style={{ background: 'none', border: 'none', color: '#555', fontSize: '2.5rem', cursor: 'pointer' }}>×</button>
+            </div>
+
+            <form style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }} onSubmit={handleSubmit}>
+              <div className="input-group">
+                <label style={{ fontSize: '0.65rem', color: 'var(--admin-gold)', letterSpacing: '2px' }}>TÊN SẢN PHẨM</label>
+                <input className="luxury-input-field" required value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} placeholder="Bleu de Chanel Parfum..." />
               </div>
 
-              <form style={{ display: 'grid', gap: '1.5rem' }} onSubmit={(e) => { e.preventDefault(); setShowModal(false); }}>
-                 <div style={{ display: 'grid', gap: '0.5rem' }}>
-                    <label style={{ fontSize: '0.75rem', color: '#666', textTransform: 'uppercase' }}>Tên nước hoa</label>
-                    <input className="admin-input-sm" defaultValue={editingProduct?.name} placeholder="Ví dụ: Bleu de Chanel Parfum" style={{ padding: '0.8rem' }} />
-                 </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+                <div className="input-group">
+                  <label style={{ fontSize: '0.65rem', color: 'var(--admin-gold)', letterSpacing: '2px' }}>THƯƠNG HIỆU</label>
+                  <input className="luxury-input-field" value={formData.brand} onChange={e => setFormData({...formData, brand: e.target.value})} />
+                </div>
+                <div className="input-group">
+                   <label style={{ fontSize: '0.65rem', color: 'var(--admin-gold)', letterSpacing: '2px' }}>PHÂN LOẠI</label>
+                   <select className="luxury-input-field" value={formData.gender} onChange={e => setFormData({...formData, gender: e.target.value})}>
+                      <option>Unisex</option>
+                      <option>Nam</option>
+                      <option>Nữ</option>
+                   </select>
+                </div>
+              </div>
 
-                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                    <div style={{ display: 'grid', gap: '0.5rem' }}>
-                       <label style={{ fontSize: '0.75rem', color: '#666', textTransform: 'uppercase' }}>Thương hiệu</label>
-                       <input className="admin-input-sm" defaultValue={editingProduct?.brand || 'Chanel'} />
-                    </div>
-                    <div style={{ display: 'grid', gap: '0.5rem' }}>
-                       <label style={{ fontSize: '0.75rem', color: '#666', textTransform: 'uppercase' }}>Phân loại giới tính</label>
-                       <select className="admin-input-sm">
-                          <option>Nam</option>
-                          <option>Nữ</option>
-                          <option>Unisex</option>
-                       </select>
-                    </div>
-                 </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+                <div className="input-group">
+                   <label style={{ fontSize: '0.65rem', color: 'var(--admin-gold)', letterSpacing: '2px' }}>GIÁ NIÊM YẾT</label>
+                   <input type="number" className="luxury-input-field" required value={formData.price} onChange={e => setFormData({...formData, price: e.target.value})} />
+                </div>
+                <div className="input-group">
+                   <label style={{ fontSize: '0.65rem', color: 'var(--admin-gold)', letterSpacing: '2px' }}>SỐ LƯỢNG KHO</label>
+                   <input type="number" className="luxury-input-field" value={formData.stockQuantity} onChange={e => setFormData({...formData, stockQuantity: e.target.value})} />
+                </div>
+              </div>
 
-                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                    <div style={{ display: 'grid', gap: '0.5rem' }}>
-                       <label style={{ fontSize: '0.75rem', color: '#666', textTransform: 'uppercase' }}>Dung tích (ml)</label>
-                       <input className="admin-input-sm" placeholder="100ml, 50ml..." defaultValue="100ml" />
-                    </div>
-                    <div style={{ display: 'grid', gap: '0.5rem' }}>
-                       <label style={{ fontSize: '0.75rem', color: '#666', textTransform: 'uppercase' }}>Nồng độ</label>
-                       <select className="admin-input-sm" defaultValue="Eau de Parfum (EDP)">
-                          <option>Parfum</option>
-                          <option>Eau de Parfum (EDP)</option>
-                          <option>Eau de Toilette (EDT)</option>
-                          <option>Extrait de Parfum</option>
-                       </select>
-                    </div>
-                 </div>
+              <div className="input-group">
+                <label style={{ fontSize: '0.65rem', color: 'var(--admin-gold)', letterSpacing: '2px' }}>LINK HÌNH ẢNH</label>
+                <input className="luxury-input-field" value={formData.imageUrl} onChange={e => setFormData({...formData, imageUrl: e.target.value})} placeholder="https://..." />
+              </div>
 
-                 <div style={{ display: 'grid', gap: '1rem', padding: '1.5rem', border: '1px solid #1a1a1a', borderRadius: '8px' }}>
-                    <h4 className="brand-font" style={{ color: 'var(--luxury-gold)', fontSize: '1rem' }}>Scent Profile (Tầng Hương)</h4>
-                    <div style={{ display: 'grid', gap: '0.8rem' }}>
-                       <input className="admin-input-sm" placeholder="Hương đầu (Top Notes)" defaultValue={editingProduct?.topNotes} />
-                       <input className="admin-input-sm" placeholder="Hương giữa (Middle Notes)" />
-                       <input className="admin-input-sm" placeholder="Hương cuối (Base Notes)" defaultValue={editingProduct?.baseNotes} />
-                    </div>
-                 </div>
+              <div style={{ padding: '2rem', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--admin-border)' }}>
+                <h4 className="brand-font" style={{ color: 'var(--admin-gold)', fontSize: '1rem', marginBottom: '1.5rem' }}>Scent Profile (Tầng Hương)</h4>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                   <input className="luxury-input-field" placeholder="Top Notes: Citrus, Mint, Pink Pepper" value={formData.topNotes} onChange={e => setFormData({...formData, topNotes: e.target.value})} />
+                   <input className="luxury-input-field" placeholder="Base Notes: Sandalwood, Cedar, White Musk" value={formData.baseNotes} onChange={e => setFormData({...formData, baseNotes: e.target.value})} />
+                </div>
+              </div>
 
-                 <div style={{ display: 'grid', gap: '0.5rem' }}>
-                    <label style={{ fontSize: '0.75rem', color: '#666', textTransform: 'uppercase' }}>Mô tả câu chuyện</label>
-                    <textarea className="admin-input-sm" style={{ height: '100px', resize: 'none' }} defaultValue={editingProduct?.brandStory || editingProduct?.description}></textarea>
-                 </div>
+              <div className="input-group">
+                <label style={{ fontSize: '0.65rem', color: 'var(--admin-gold)', letterSpacing: '2px' }}>CÂU CHUYỆN SẢN PHẨM</label>
+                <textarea className="luxury-input-field" style={{ height: '120px', resize: 'none' }} value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})}></textarea>
+              </div>
 
-                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                    <div style={{ display: 'grid', gap: '0.5rem' }}>
-                       <label style={{ fontSize: '0.75rem', color: '#666', textTransform: 'uppercase' }}>Giá niêm yết (VNĐ)</label>
-                       <input type="number" className="admin-input-sm" defaultValue={editingProduct?.price} />
-                    </div>
-                    <div style={{ display: 'grid', gap: '0.5rem' }}>
-                       <label style={{ fontSize: '0.75rem', color: '#666', textTransform: 'uppercase' }}>Giảm giá (%)</label>
-                       <input type="number" className="admin-input-sm" defaultValue="0" />
-                    </div>
-                 </div>
-
-                 <div style={{ display: 'grid', gap: '0.5rem' }}>
-                    <label style={{ fontSize: '0.75rem', color: '#666', textTransform: 'uppercase' }}>Hình ảnh (Multi-upload Mock)</label>
-                    <div style={{ border: '2px dashed #222', padding: '2rem', textAlign: 'center', borderRadius: '8px', color: '#444', fontSize: '0.8rem' }}>
-                       Kéo thả hoặc Click để tải lên ảnh nghệ thuật<br/>(Hỗ trợ PNG, JPG, WebP)
-                    </div>
-                 </div>
-
-                 <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
-                    <button type="submit" className="btn-gold" style={{ flex: 2, padding: '1rem' }}>LƯU THAY ĐỔI</button>
-                    {editingProduct && <button type="button" className="admin-input-sm" style={{ flex: 1, color: '#e74c3c', borderColor: '#444' }}>XÓA</button>}
-                 </div>
-              </form>
-           </div>
+              <div style={{ display: 'flex', gap: '1rem', marginTop: '2rem' }}>
+                <button type="submit" className="luxury-button-gold" style={{ flex: 1 }} disabled={saving}>
+                  {saving ? 'ĐANG LƯU...' : (editingProduct ? 'CẬP NHẬT KIỆT TÁC' : 'TẠO MỚI')}
+                </button>
+                {editingProduct && <button type="button" className="luxury-input-field" style={{ color: '#e74c3c' }} onClick={() => handleDelete(editingProduct.id)}>XÓA</button>}
+              </div>
+            </form>
+          </div>
         </div>
       )}
     </div>

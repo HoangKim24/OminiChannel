@@ -3,6 +3,7 @@ using Omnichannel.Infrastructure;
 using Omnichannel.Models;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace Omnichannel.Controllers
@@ -31,7 +32,7 @@ namespace Omnichannel.Controllers
         public async Task<IActionResult> GetChannel(int id)
         {
             var channel = await _unitOfWork.SalesChannels.GetByIdAsync(id);
-            if (channel == null) return NotFound();
+            if (channel == null) return NotFound(new { message = $"Kênh ID={id} không tồn tại" });
             return Ok(channel);
         }
 
@@ -40,7 +41,7 @@ namespace Omnichannel.Controllers
             [FromHeader(Name = "X-User-Role")] string role,
             [FromBody] SalesChannel channel)
         {
-            if (role != "Admin") return Unauthorized();
+            if (role != "Admin") return Unauthorized(new { message = "Chỉ Admin mới có quyền tạo kênh" });
             await _unitOfWork.SalesChannels.AddAsync(channel);
             await _unitOfWork.CompleteAsync();
             return CreatedAtAction(nameof(GetChannel), new { id = channel.Id }, channel);
@@ -52,9 +53,9 @@ namespace Omnichannel.Controllers
             [FromHeader(Name = "X-User-Role")] string role,
             [FromBody] SalesChannel channel)
         {
-            if (role != "Admin") return Unauthorized();
+            if (role != "Admin") return Unauthorized(new { message = "Chỉ Admin mới có quyền cập nhật kênh" });
             var existing = await _unitOfWork.SalesChannels.GetByIdAsync(id);
-            if (existing == null) return NotFound();
+            if (existing == null) return NotFound(new { message = $"Kênh ID={id} không tồn tại" });
 
             existing.ChannelName = channel.ChannelName;
             existing.IsActive = channel.IsActive;
@@ -81,7 +82,7 @@ namespace Omnichannel.Controllers
             [FromHeader(Name = "X-User-Role")] string role,
             [FromBody] ChannelProductRequest request)
         {
-            if (role != "Admin") return Unauthorized();
+            if (role != "Admin") return Unauthorized(new { message = "Chỉ Admin mới có quyền đăng sản phẩm lên kênh" });
 
             var channel = await _unitOfWork.SalesChannels.GetByIdAsync(channelId);
             if (channel == null) return NotFound(new { message = "Kênh bán hàng không tồn tại" });
@@ -121,64 +122,71 @@ namespace Omnichannel.Controllers
             int channelId,
             [FromBody] ChannelOrderRequest request)
         {
-            var channel = await _unitOfWork.SalesChannels.GetByIdAsync(channelId);
-            if (channel == null) return NotFound(new { message = "Kênh bán hàng không tồn tại" });
-
-            var perfume = await _unitOfWork.Perfumes.GetByIdAsync(request.PerfumeId);
-            if (perfume == null) return NotFound(new { message = "Sản phẩm không tồn tại" });
-
-            if (perfume.StockQuantity < request.Quantity)
-                return BadRequest(new { message = "Không đủ hàng trong kho" });
-
-            // Create the main order
-            var order = new Order
+            try
             {
-                UserId = request.UserId,
-                OrderDate = DateTime.Now,
-                TotalAmount = perfume.Price * request.Quantity,
-                Status = "Completed",
-                ShippingAddress = request.ShippingAddress,
-                ReceiverPhone = request.ReceiverPhone,
-                Note = $"Đơn hàng từ {channel.ChannelName} - #{request.ExternalOrderId}",
-                Items = new List<OrderItem>
+                var channel = await _unitOfWork.SalesChannels.GetByIdAsync(channelId);
+                if (channel == null) return NotFound(new { message = "Kênh bán hàng không tồn tại" });
+
+                var perfume = await _unitOfWork.Perfumes.GetByIdAsync(request.PerfumeId);
+                if (perfume == null) return NotFound(new { message = "Sản phẩm không tồn tại" });
+
+                if (perfume.StockQuantity < request.Quantity)
+                    return BadRequest(new { message = $"Không đủ hàng trong kho. Còn {perfume.StockQuantity} sản phẩm." });
+
+                // Create the main order
+                var order = new Order
                 {
-                    new OrderItem
+                    UserId = request.UserId,
+                    OrderDate = DateTime.Now,
+                    TotalAmount = perfume.Price * request.Quantity,
+                    Status = "Pending",
+                    ShippingAddress = request.ShippingAddress,
+                    ReceiverPhone = request.ReceiverPhone,
+                    Note = $"Đơn hàng từ {channel.ChannelName} - #{request.ExternalOrderId}",
+                    Items = new List<OrderItem>
                     {
-                        PerfumeId = perfume.Id,
-                        PerfumeName = perfume.Name,
-                        Quantity = request.Quantity,
-                        Price = perfume.Price
+                        new OrderItem
+                        {
+                            PerfumeId = perfume.Id,
+                            PerfumeName = perfume.Name,
+                            Quantity = request.Quantity,
+                            Price = perfume.Price
+                        }
                     }
-                }
-            };
+                };
 
-            await _unitOfWork.Orders.AddAsync(order);
-            await _unitOfWork.CompleteAsync();
+                await _unitOfWork.Orders.AddAsync(order);
+                await _unitOfWork.CompleteAsync();
 
-            // Link the order to the sales channel
-            var channelOrder = new ChannelOrder
+                // Link the order to the sales channel
+                var channelOrder = new ChannelOrder
+                {
+                    SalesChannelId = channelId,
+                    OrderId = order.Id,
+                    ExternalOrderId = request.ExternalOrderId,
+                    ChannelStatus = "Received",
+                    ReceivedAt = DateTime.Now
+                };
+
+                await _unitOfWork.SalesChannels.AddChannelOrderAsync(channelOrder);
+
+                // Update stock
+                perfume.StockQuantity -= request.Quantity;
+                _unitOfWork.Perfumes.Update(perfume);
+
+                await _unitOfWork.CompleteAsync();
+
+                return Ok(new
+                {
+                    message = $"Đã nhận đơn hàng từ {channel.ChannelName}",
+                    orderId = order.Id,
+                    externalOrderId = request.ExternalOrderId
+                });
+            }
+            catch (Exception ex)
             {
-                SalesChannelId = channelId,
-                OrderId = order.Id,
-                ExternalOrderId = request.ExternalOrderId,
-                ChannelStatus = "Received",
-                ReceivedAt = DateTime.Now
-            };
-
-            await _unitOfWork.SalesChannels.AddChannelOrderAsync(channelOrder);
-
-            // Update stock
-            perfume.StockQuantity -= request.Quantity;
-            _unitOfWork.Perfumes.Update(perfume);
-
-            await _unitOfWork.CompleteAsync();
-
-            return Ok(new
-            {
-                message = $"Đã nhận đơn hàng từ {channel.ChannelName}",
-                orderId = order.Id,
-                externalOrderId = request.ExternalOrderId
-            });
+                return StatusCode(500, new { message = "Lỗi khi xử lý đơn hàng từ kênh", error = ex.Message });
+            }
         }
 
         // ========== SYNC ==========
@@ -188,30 +196,47 @@ namespace Omnichannel.Controllers
             int channelId,
             [FromHeader(Name = "X-User-Role")] string role)
         {
-            if (role != "Admin") return Unauthorized();
+            if (role != "Admin") return Unauthorized(new { message = "Chỉ Admin mới có quyền đồng bộ kênh" });
 
-            var channel = await _unitOfWork.SalesChannels.GetByIdAsync(channelId);
-            if (channel == null) return NotFound();
-
-            var products = await _unitOfWork.SalesChannels.GetChannelProductsAsync(channelId);
-            int syncCount = 0;
-
-            foreach (var cp in products)
+            try
             {
-                if (cp.Perfume != null)
+                var channel = await _unitOfWork.SalesChannels.GetByIdAsync(channelId);
+                if (channel == null) return NotFound(new { message = $"Kênh ID={channelId} không tồn tại" });
+
+                var products = await _unitOfWork.SalesChannels.GetChannelProductsAsync(channelId);
+                int syncCount = 0;
+                var errors = new List<string>();
+
+                foreach (var cp in products)
                 {
-                    cp.LastSyncedAt = DateTime.Now;
-                    _unitOfWork.SalesChannels.UpdateChannelProduct(cp);
-                    syncCount++;
+                    try
+                    {
+                        if (cp.Perfume != null)
+                        {
+                            cp.LastSyncedAt = DateTime.Now;
+                            _unitOfWork.SalesChannels.UpdateChannelProduct(cp);
+                            syncCount++;
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        errors.Add($"Lỗi đồng bộ sản phẩm ID={cp.PerfumeId}: {ex.Message}");
+                    }
                 }
-            }
 
-            await _unitOfWork.CompleteAsync();
-            return Ok(new
+                await _unitOfWork.CompleteAsync();
+
+                return Ok(new
+                {
+                    message = $"Đã đồng bộ {syncCount} sản phẩm lên {channel.ChannelName}",
+                    syncedAt = DateTime.Now,
+                    errors = errors.Count > 0 ? errors : null
+                });
+            }
+            catch (Exception ex)
             {
-                message = $"Đã đồng bộ {syncCount} sản phẩm lên {channel.ChannelName}",
-                syncedAt = DateTime.Now
-            });
+                return StatusCode(500, new { message = "Lỗi khi đồng bộ kênh", error = ex.Message });
+            }
         }
     }
 

@@ -46,11 +46,7 @@ function App() {
   const [engravingText, setEngravingText] = useState('')
   const [isEngravingActive, setIsEngravingActive] = useState(false)
   const [activeTab, setActiveTab] = useState('desc')
-  const [comments, setComments] = useState([
-    { id: 1, name: 'Ngọc Minh', stars: 5, text: 'Mùi hương sang trọng thực sự, lưu hương trên da hơn 6 tiếng. Đóng gói tinh tế. Giao hàng cực nhanh.', date: '02/03/2026', verified: true },
-    { id: 2, name: 'Thảo Anh', stars: 4, text: 'Giá hơi cao nhưng rất xứng đáng với chất lượng. Mùi hương giữa rất nịnh mũi, được nhiều người khen.', date: '28/02/2026', verified: true },
-    { id: 3, name: 'Hoàng Bảo', stars: 5, text: 'Mua làm quà cho bạn gái, bạn ấy rất thích! Chai thuỷ tinh đẹp lắm, xứng tầm quà tặng.', date: '15/02/2026', verified: false },
-  ])
+  const [comments, setComments] = useState([])
   const [newComment, setNewComment] = useState({ name: '', text: '', stars: 5 })
   const [hoverStar, setHoverStar] = useState(0)
 
@@ -262,10 +258,21 @@ function App() {
     setNewComment({ name: user?.username || '', text: '', stars: 5 })
     setPage('detail')
     
-    // Fetch real comments
+    // Fetch real comments from DB
     try {
       const res = await fetch(`/api/comments/perfume/${product.id}`)
-      if (res.ok) setComments(await res.json())
+      if (res.ok) {
+        const data = await res.json()
+        // Map backend fields to frontend display format
+        setComments(data.map(c => ({
+          id: c.id,
+          name: c.userName,
+          stars: c.stars,
+          text: c.text,
+          date: new Date(c.createdAt).toLocaleDateString('vi-VN'),
+          verified: c.isVerified
+        })))
+      }
     } catch (err) { console.error('Error fetching comments:', err) }
   }
 
@@ -308,25 +315,29 @@ function App() {
     if (cart.length === 0) { showToast('Giỏ hàng trống', 'error'); return }
 
     try {
-      for (const item of cart) {
-        await fetch('/api/orders', {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            UserId: user.id, PerfumeId: item.id, Quantity: item.quantity,
-            ShippingAddress: checkoutForm.isPickup ? 'NHẬN TẠI CỬA HÀNG' : checkoutForm.address,
-            ReceiverPhone: checkoutForm.phone,
-            Note: `[${checkoutForm.isPickup ? 'PICKUP' : 'DELIVERY'}] Người nhận: ${checkoutForm.fullName}`,
-            IsPickup: checkoutForm.isPickup
-          })
+      const res = await fetch('/api/orders/batch', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: user.id,
+          items: cart.map(item => ({ perfumeId: item.id, quantity: item.quantity })),
+          shippingAddress: checkoutForm.isPickup ? 'NHẬN TẠI CỬA HÀNG' : checkoutForm.address,
+          receiverPhone: checkoutForm.phone,
+          note: `[${checkoutForm.isPickup ? 'PICKUP' : 'DELIVERY'}] Người nhận: ${checkoutForm.fullName}`,
+          isPickup: checkoutForm.isPickup
         })
+      })
+      const data = await res.json()
+      if (res.ok) {
+        setCart([]); setCheckoutForm({ fullName: '', address: '', phone: '', isPickup: false })
+        showToast('🎉 Đặt hàng thành công! Cảm ơn bạn.')
+        // Refresh orders
+        const ordersRes = await fetch(`/api/orders/user/${user.id}`)
+        if (ordersRes.ok) setOrders(await ordersRes.json())
+        setPage('home')
+      } else {
+        showToast(data.message || 'Lỗi đặt hàng', 'error')
       }
-      setCart([]); setCheckoutForm({ fullName: '', address: '', phone: '', isPickup: false })
-      showToast('🎉 Đặt hàng thành công! Cảm ơn bạn.')
-      // Refresh orders
-      const res = await fetch(`/api/orders/user/${user.id}`)
-      if (res.ok) setOrders(await res.json())
-      setPage('home')
-    } catch (err) { showToast('Lỗi đặt hàng', 'error') }
+    } catch (err) { showToast('Lỗi kết nối khi đặt hàng', 'error') }
   }
 
   // === SEARCH & FILTER ===
@@ -1258,7 +1269,9 @@ function App() {
           products={products} 
           orders={orders} 
           cartTotal={cartTotal}
-          setPage={setPage} 
+          setPage={setPage}
+          user={user}
+          onRefresh={refreshProducts}
         />
       )}
       {page === 'admin' && !isAdmin && (

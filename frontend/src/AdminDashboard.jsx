@@ -7,7 +7,7 @@ import InventoryTab from './components/admin/tabs/InventoryTab';
 import CrmTab from './components/admin/tabs/CrmTab';
 import './styles/AdminDashboard.css';
 
-const AdminDashboard = ({ products, cartTotal, orders, setPage }) => {
+const AdminDashboard = ({ products, cartTotal, orders, setPage, user, onRefresh }) => {
   const [activeTab, setActiveTab] = useState('overview');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
@@ -32,18 +32,18 @@ const AdminDashboard = ({ products, cartTotal, orders, setPage }) => {
           <div className="admin-status">
             <div className="status-indicator">● HỆ THỐNG TRỰC TUYẾN</div>
             <div className="admin-user">
-              <span>Super Admin</span>
-              <div className="avatar luxury-glow">A</div>
+              <span>{user?.fullName || user?.username || 'Super Admin'}</span>
+              <div className="avatar luxury-glow">{(user?.username || 'A')[0].toUpperCase()}</div>
             </div>
           </div>
         </header>
 
         <main className="admin-canvas">
-          {activeTab === 'overview' && <OverviewTab products={products} orders={orders} cartTotal={cartTotal} />}
-          {activeTab === 'products' && <ProductsTab products={products} />}
-          {activeTab === 'orders' && <OrdersTab orders={orders} />}
+          {activeTab === 'overview' && <OverviewTab products={products} orders={orders} cartTotal={cartTotal} user={user} />}
+          {activeTab === 'products' && <ProductsTab products={products} user={user} onRefresh={onRefresh} />}
+          {activeTab === 'orders' && <OrdersTab orders={orders} user={user} onRefresh={onRefresh} />}
           {activeTab === 'inventory' && <InventoryTab products={products} />}
-          { activeTab === 'crm' && <CrmTab orders={orders} />}
+          {activeTab === 'crm' && <CrmTab orders={orders} user={user} />}
         </main>
       </div>
 

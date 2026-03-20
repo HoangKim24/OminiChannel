@@ -1,133 +1,163 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { vnd } from '../../../utils/format';
 
-const CrmTab = ({ orders }) => {
+const CrmTab = ({ orders, user }) => {
   const [selectedCustomer, setSelectedCustomer] = useState(null);
+  const [customers, setCustomers] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const vipTiers = {
-    'Gold': { color: '#D4AF37', label: '👑 VIP Gold' },
-    'Silver': { color: '#C0C0C0', label: '🥈 Silver' },
-    'Bronze': { color: '#CD7F32', label: '🥉 Bronze' },
-    'New': { color: '#888', label: '🌱 New' }
+  useEffect(() => {
+    const fetchCustomers = async () => {
+      try {
+        setLoading(true);
+        const res = await fetch('/api/statistics/customers', {
+          headers: { 'X-User-Role': user?.role || 'Admin' }
+        });
+        if (res.ok) {
+          setCustomers(await res.json());
+        }
+      } catch (err) { console.error('CRM fetch error:', err); }
+      finally { setLoading(false); }
+    };
+    fetchCustomers();
+  }, [user, orders]);
+
+  const getTierColor = (totalSpend) => {
+    if (totalSpend >= 50000000) return '#e5e4e2'; // Platin
+    if (totalSpend >= 10000000) return 'var(--admin-gold)'; // Gold
+    if (totalSpend >= 5000000) return '#bdc3c7'; // Silver
+    return '#888';
   };
 
-  const customers = [
-    { id: 1, name: 'Lê Văn A', email: 'vana@gmail.com', phone: '0901234567', tier: 'Gold', totalSpent: 12500000, lastOrder: '2024-03-15' },
-    { id: 2, name: 'Trần Thị B', email: 'thib@gmail.com', phone: '0912223334', tier: 'Silver', totalSpent: 5200000, lastOrder: '2024-03-10' },
-    { id: 3, name: 'Nguyễn Văn C', email: 'vanc@gmail.com', phone: '0988777666', tier: 'New', totalSpent: 850000, lastOrder: '2024-03-18' },
-    { id: 4, name: 'Hoàng Kim', email: 'kim@omni.com', phone: '0966555444', tier: 'Gold', totalSpent: 45000000, lastOrder: '2024-03-19' },
-  ];
+  const getTier = (totalSpend) => {
+    if (totalSpend >= 50000000) return 'VIP Platin';
+    if (totalSpend >= 10000000) return 'Gold';
+    if (totalSpend >= 5000000) return 'Silver';
+    return 'Member';
+  };
 
   return (
     <div className="fade-in">
-      <div className="admin-row">
-         <div className="admin-panel glass shadow-lg" style={{ flex: 2 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-               <h3 className="brand-font" style={{ fontSize: '1.6rem' }}>👤 Quản Lý Khách Hàng Luxury</h3>
-               <button className="btn-gold" style={{ padding: '0.6rem 1.2rem', fontSize: '0.8rem' }}>+ Thêm Khách Hàng</button>
-            </div>
-            
-            <div className="admin-filters" style={{ marginBottom: '1.5rem', display: 'flex', gap: '1rem' }}>
-               <input type="text" placeholder="Tìm bằng Tên, SĐT, Email..." className="admin-input-sm" style={{ flex: 1 }} />
-               <select className="admin-input-sm">
-                  <option>Tất cả Hạng</option>
-                  <option>VIP Gold</option>
-                  <option>Silver</option>
-               </select>
-            </div>
+       <div style={{ marginBottom: '3rem' }}>
+          <h2 className="brand-font" style={{ fontSize: '2rem', color: 'var(--admin-gold)' }}>Quản Trị Khách Hàng (CRM)</h2>
+          <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '0.5rem', letterSpacing: '0.5px' }}>
+             Xây dựng mối quan hệ bền vững với tầng lớp khách hàng tinh hoa.
+          </p>
+       </div>
 
-            <table className="admin-table admin-table-modern">
-               <thead>
-                  <tr>
-                     <th>Khách Hàng</th>
-                     <th>Hạng Thành Viên</th>
-                     <th>Chi Tiêu (Lũy Kế)</th>
-                     <th>Đơn Cuối</th>
-                     <th>Thao Tác</th>
-                  </tr>
-               </thead>
-               <tbody>
-                  {customers.map(cus => (
-                     <tr key={cus.id}>
-                        <td>
-                           <div style={{ fontWeight: '600' }}>{cus.name}</div>
-                           <div style={{ fontSize: '0.7rem', color: '#555' }}>{cus.email} | {cus.phone}</div>
-                        </td>
-                        <td>
-                           <span style={{ 
-                              color: vipTiers[cus.tier].color, 
-                              border: `1px solid ${vipTiers[cus.tier].color}`,
-                              padding: '2px 8px',
-                              borderRadius: '4px',
-                              fontSize: '0.7rem',
-                              fontWeight: 'bold',
-                              background: `${vipTiers[cus.tier].color}11`
-                           }}>
-                              {vipTiers[cus.tier].label}
-                           </span>
-                        </td>
-                        <td><strong style={{ color: 'var(--luxury-gold)' }}>{cus.totalSpent.toLocaleString()} đ</strong></td>
-                        <td style={{ fontSize: '0.8rem', color: '#888' }}>{cus.lastOrder}</td>
-                        <td>
-                           <button className="btn-action-view" onClick={() => setSelectedCustomer(cus)}>Lịch sử</button>
-                        </td>
-                     </tr>
-                  ))}
-               </tbody>
-            </table>
-         </div>
+       <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '2rem' }}>
+          <div className="glass-panel" style={{ padding: '2rem' }}>
+             <h3 className="brand-font" style={{ fontSize: '1.1rem', marginBottom: '2rem' }}>💎 Đặc Quyền VIP</h3>
+             <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                {[
+                  { label: 'Miễn phí vận chuyển hỏa tốc', active: true },
+                  { label: 'Quà tặng sinh nhật cá nhân hóa', active: true },
+                  { label: 'Trải nghiệm mùi hương mẫu mới nhất', active: true },
+                  { label: 'Ưu tiên đặt hàng trước (Pre-order)', active: false },
+                ].map((perk, i) => (
+                   <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '1rem', opacity: perk.active ? 1 : 0.3 }}>
+                      <div style={{ color: 'var(--admin-gold)' }}>{perk.active ? '✦' : '✧'}</div>
+                      <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{perk.label}</div>
+                   </div>
+                ))}
+             </div>
+             <div style={{ marginTop: '2.5rem', padding: '1rem', background: 'rgba(197,160,89,0.05)', border: '1px solid var(--admin-border)' }}>
+               <div style={{ fontSize: '0.65rem', color: 'var(--admin-gold)', letterSpacing: '2px', marginBottom: '0.5rem' }}>TỔNG KHÁCH HÀNG</div>
+               <div className="brand-font" style={{ fontSize: '1.8rem' }}>{customers.length}</div>
+             </div>
+          </div>
 
-         <div className="admin-panel glass shadow-gold" style={{ flex: 1 }}>
-            <h3 className="brand-font" style={{ marginBottom: '1.5rem' }}>🏅 Đặc Quyền VIP Gold</h3>
-            <div style={{ padding: '1.5rem', background: 'rgba(212,175,55,0.05)', borderRadius: '8px', border: '1px solid rgba(212,175,55,0.2)' }}>
-               <ul style={{ fontSize: '0.85rem', color: '#ccc', paddingLeft: '1.2rem', lineHeight: '1.8' }}>
-                  <li>Giảm giá mặc định 10% toàn store.</li>
-                  <li>Dịch vụ khắc tên thủ công miễn phí.</li>
-                  <li>Ưu tiên thử các mẫu Pre-release.</li>
-                  <li>Miễn phí Ship hỏa tốc 2h.</li>
-               </ul>
-            </div>
+          <div className="glass-panel shadow-gold" style={{ border: 'none', background: 'transparent', padding: 0 }}>
+             <div className="table-container" style={{ background: 'rgba(10,10,10,0.5)', borderRadius: '4px', overflow: 'hidden', border: '1px solid var(--admin-border)' }}>
+                <table className="admin-table-modern" style={{ width: '100%', borderCollapse: 'collapse' }}>
+                   <thead style={{ background: 'rgba(197, 160, 89, 0.05)', borderBottom: '1px solid var(--admin-border)' }}>
+                      <tr>
+                         <th style={{ padding: '1.25rem', textAlign: 'left', fontSize: '0.65rem', color: 'var(--admin-gold)', textTransform: 'uppercase', letterSpacing: '2px' }}>Khách Hàng</th>
+                         <th style={{ padding: '1.25rem', textAlign: 'left', fontSize: '0.65rem', color: 'var(--admin-gold)', textTransform: 'uppercase', letterSpacing: '2px' }}>Phân Hạng</th>
+                         <th style={{ padding: '1.25rem', textAlign: 'left', fontSize: '0.65rem', color: 'var(--admin-gold)', textTransform: 'uppercase', letterSpacing: '2px' }}>Chi Tiêu</th>
+                         <th style={{ padding: '1.25rem', textAlign: 'center', fontSize: '0.65rem', color: 'var(--admin-gold)', textTransform: 'uppercase', letterSpacing: '2px' }}>Thao Tác</th>
+                      </tr>
+                   </thead>
+                   <tbody>
+                      {loading ? (
+                        <tr><td colSpan={4} style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>Đang tải...</td></tr>
+                      ) : customers.length > 0 ? (
+                        customers.map(c => {
+                          const tier = getTier(c.totalSpend);
+                          return (
+                            <tr key={c.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)', transition: 'background 0.3s' }} className="table-row-hover">
+                               <td style={{ padding: '1.25rem' }}>
+                                  <div style={{ color: '#fff', fontWeight: '600', fontSize: '0.95rem' }}>{c.fullName || c.username}</div>
+                                  <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '4px' }}>
+                                    #{c.id} | {c.orderCount} đơn | {c.lastOrderDate ? new Date(c.lastOrderDate).toLocaleDateString('vi-VN') : 'Chưa đặt hàng'}
+                                  </div>
+                               </td>
+                               <td style={{ padding: '1.25rem' }}>
+                                  <span className="luxury-badge" style={{ color: getTierColor(c.totalSpend), borderColor: getTierColor(c.totalSpend) }}>
+                                     {tier}
+                                  </span>
+                               </td>
+                               <td style={{ padding: '1.25rem' }}>
+                                  <div style={{ color: '#fff', fontWeight: '700' }}>{vnd(c.totalSpend)}</div>
+                                  <div style={{ fontSize: '0.7rem', color: 'var(--admin-gold)', marginTop: '4px' }}>{c.orderCount} ĐƠN HÀNG</div>
+                               </td>
+                               <td style={{ padding: '1.25rem', textAlign: 'center' }}>
+                                  <button className="luxury-input-field" style={{ fontSize: '0.65rem', padding: '0.5rem 1rem' }} onClick={() => setSelectedCustomer(c)}>XEM HỒ SƠ</button>
+                               </td>
+                            </tr>
+                          );
+                        })
+                      ) : (
+                        <tr><td colSpan={4} style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>Chưa có khách hàng nào.</td></tr>
+                      )}
+                   </tbody>
+                </table>
+             </div>
+          </div>
+       </div>
 
-            <div style={{ marginTop: '2.5rem' }}>
-               <h4 className="brand-font" style={{ fontSize: '1rem', color: 'var(--luxury-gold)' }}>📊 Phân Bổ Khách Hàng</h4>
-               <div style={{ marginTop: '1.5rem' }}>
-                  {Object.keys(vipTiers).map(tier => (
-                     <div key={tier} style={{ marginBottom: '1rem' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', marginBottom: '5px' }}>
-                           <span>{vipTiers[tier].label}</span>
-                           <span>{tier === 'Gold' ? '12%' : tier === 'Silver' ? '25%' : '63%'}</span>
-                        </div>
-                        <div style={{ height: '4px', background: '#222', borderRadius: '2px' }}>
-                           <div style={{ width: tier === 'Gold' ? '12%' : tier === 'Silver' ? '25%' : '63%', height: '100%', background: vipTiers[tier].color, borderRadius: '2px' }}></div>
-                        </div>
-                     </div>
-                  ))}
-               </div>
-            </div>
-         </div>
-      </div>
+       {selectedCustomer && (
+          <div style={{ marginTop: '3rem' }} className="fade-in">
+             <div className="glass-panel" style={{ background: 'rgba(197, 160, 89, 0.02)', border: '1px solid var(--admin-border)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '2.5rem' }}>
+                   <div style={{ display: 'flex', gap: '2rem', alignItems: 'center' }}>
+                      <div style={{ width: '80px', height: '80px', background: 'var(--admin-gold)', borderRadius: '50%', display: 'flex', justifyContent: 'center', alignItems: 'center', fontSize: '2.5rem', color: '#000' }}>
+                         {(selectedCustomer.fullName || selectedCustomer.username || '?')[0].toUpperCase()}
+                      </div>
+                      <div>
+                         <h3 className="brand-font" style={{ fontSize: '2rem', color: '#fff' }}>{selectedCustomer.fullName || selectedCustomer.username}</h3>
+                         <div style={{ display: 'flex', gap: '1rem', marginTop: '0.5rem' }}>
+                            <span className="luxury-badge" style={{ color: getTierColor(selectedCustomer.totalSpend) }}>{getTier(selectedCustomer.totalSpend)} MEMBER</span>
+                            {selectedCustomer.email && <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{selectedCustomer.email}</span>}
+                         </div>
+                      </div>
+                   </div>
+                   <button onClick={() => setSelectedCustomer(null)} style={{ background: 'none', border: 'none', color: '#555', fontSize: '2rem', cursor: 'pointer' }}>×</button>
+                </div>
 
-      {selectedCustomer && (
-         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.8)', zIndex: 1000, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-            <div className="admin-panel glass shadow-lg fade-in" style={{ width: '600px', background: '#0a0a0a', border: '1px solid var(--luxury-gold)' }}>
-               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
-                  <h3 className="brand-font">Timeline Mua Hàng: {selectedCustomer.name}</h3>
-                  <button onClick={() => setSelectedCustomer(null)} style={{ background: 'none', border: 'none', color: '#fff', fontSize: '1.5rem', cursor: 'pointer' }}>×</button>
-               </div>
-               <div style={{ display: 'grid', gap: '1rem' }}>
-                  <div style={{ padding: '1rem', borderLeft: '2px solid var(--luxury-gold)', background: 'rgba(255,255,255,0.02)' }}>
-                     <div style={{ fontWeight: 'bold' }}>🛍️ Đơn hàng #KP9821</div>
-                     <div style={{ fontSize: '0.8rem', color: '#666' }}>Mua Bleu de Chanel - 3.500.000đ</div>
-                     <div style={{ fontSize: '0.7rem', color: 'var(--luxury-gold)', marginTop: '5px' }}>15/03/2024 tại Showroom Q1</div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1.5rem', marginBottom: '2rem' }}>
+                  <div style={{ padding: '1.5rem', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--admin-border)' }}>
+                    <div style={{ fontSize: '0.65rem', color: 'var(--admin-gold)', letterSpacing: '2px', marginBottom: '0.5rem' }}>TỔNG CHI TIÊU</div>
+                    <div className="brand-font" style={{ fontSize: '1.5rem' }}>{vnd(selectedCustomer.totalSpend)}</div>
                   </div>
-                  <div style={{ padding: '1rem', borderLeft: '2px solid #333', background: 'rgba(255,255,255,0.02)' }}>
-                     <div style={{ fontWeight: 'bold' }}>🛍️ Đơn hàng #KP7710</div>
-                     <div style={{ fontSize: '0.8rem', color: '#666' }}>Mua Dior Sauvage - 2.800.000đ</div>
-                     <div style={{ fontSize: '0.7rem', color: '#444', marginTop: '5px' }}>20/12/2023 qua Website</div>
+                  <div style={{ padding: '1.5rem', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--admin-border)' }}>
+                    <div style={{ fontSize: '0.65rem', color: 'var(--admin-gold)', letterSpacing: '2px', marginBottom: '0.5rem' }}>SỐ ĐƠN HÀNG</div>
+                    <div className="brand-font" style={{ fontSize: '1.5rem' }}>{selectedCustomer.orderCount}</div>
                   </div>
-               </div>
-            </div>
-         </div>
-      )}
+                  <div style={{ padding: '1.5rem', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--admin-border)' }}>
+                    <div style={{ fontSize: '0.65rem', color: 'var(--admin-gold)', letterSpacing: '2px', marginBottom: '0.5rem' }}>ĐƠN GẦN NHẤT</div>
+                    <div className="brand-font" style={{ fontSize: '1.5rem' }}>
+                      {selectedCustomer.lastOrderDate ? new Date(selectedCustomer.lastOrderDate).toLocaleDateString('vi-VN') : '—'}
+                    </div>
+                  </div>
+                </div>
+
+                {selectedCustomer.phoneNumber && (
+                  <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>📱 SĐT: {selectedCustomer.phoneNumber}</p>
+                )}
+             </div>
+          </div>
+       )}
     </div>
   );
 };
