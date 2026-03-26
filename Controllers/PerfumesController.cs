@@ -97,5 +97,11 @@ namespace Omnichannel.Controllers
                 return StatusCode(500, new { message = "Lỗi khi xóa sản phẩm", error = ex.Message });
             }
         }
+        [HttpPost("recommend")]
+        public async Task<IActionResult> Recommend([FromBody] Services.RecommendationRequest req, [FromServices] Services.RecommendationService rcService)
+        {
+            var data = await rcService.GetRecommendationsAsync(req, 5);
+            return Ok(data);
+        }
     }
 }

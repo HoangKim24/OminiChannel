@@ -1,0 +1,158 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+/* Biến màu dùng trực tiếp trong file để component này tự làm chủ giao diện của chính mình */
+:root {
+  --ds-bg-card: #1a1a1a;
+  --ds-bg-hover: #222222;
+  --ds-gold: #d4af37;
+  --ds-gold-dim: rgba(212, 175, 55, 0.1);
+  --ds-text-white: #ffffff;
+  --ds-text-gray: #a0a0a0;
+  --ds-green: #4ade80; /* Màu báo tăng trưởng tốt */
+  --ds-red: #f87171; /* Màu báo giảm/cảnh báo */
+  
+  --ds-border-radius: 12px;
+  --ds-font: 'Inter', sans-serif;
+}
+
+/* Lưới Bố cục (CSS Grid) */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr); /* Mặc định 4 cột trên Desktop/PC */
+  gap: 24px;
+  width: 100%;
+  font-family: var(--ds-font);
+}
+
+/* Kiểu dáng Thẻ (Card) */
+.stat-card {
+  background-color: var(--ds-bg-card);
+  border-radius: var(--ds-border-radius);
+  padding: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s ease, background-color 0.3s ease;
+  cursor: pointer;
+}
+
+/* Hiệu ứng Hover vào Card */
+.stat-card:hover {
+  transform: translateY(-4px); /* Nhích lên trên thêm 1 chút mượt mà */
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5), 0 0 12px var(--ds-gold-dim);
+  background-color: var(--ds-bg-hover);
+  border-color: rgba(212, 175, 55, 0.2); /* Viền vàng cực nhẹ khi lướt vào */
+}
+
+/* Phần Đầu Thẻ (Tiêu đề + Icon) */
+.stat-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.stat-title {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--ds-text-gray);
+  letter-spacing: 0.5px;
+}
+
+/* Khu vực Icon của Thẻ */
+.stat-iconwrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  background-color: rgba(212, 175, 55, 0.1); /* Nền vàng trong suốt */
+  color: var(--ds-gold); /* Chữ/Viền SVG Vàng Kim */
+  transition: transform 0.3s ease;
+}
+
+.stat-iconwrapper svg {
+  width: 20px;
+  height: 20px;
+}
+
+.stat-card:hover .stat-iconwrapper {
+  transform: scale(1.1) rotate(5deg);
+}
+
+/* Nội dung Chính (Số Liệu Lớn) */
+.stat-content {
+  display: flex;
+  flex-direction: column;
+}
+
+.stat-value {
+  font-size: 2rem; /* Con số lớn */
+  font-weight: 700;
+  color: var(--ds-text-white);
+  line-height: 1.2;
+  margin-bottom: 12px;
+}
+
+/* Phần Cuối: Xu hướng Tăng/Giảm */
+.stat-footer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.8rem;
+}
+
+.stat-trend {
+  display: inline-flex;
+  align-items: center;
+  font-weight: 600;
+  gap: 4px;
+}
+
+.trend-icon {
+  width: 14px;
+  height: 14px;
+}
+
+.trend-up {
+  color: var(--ds-green);
+}
+
+.trend-down {
+  color: var(--ds-red);
+}
+
+.stat-timeframe {
+  color: var(--ds-text-gray);
+  font-weight: 400;
+  white-space: nowrap;
+}
+
+/* ====== RESPONSIVE DESIGN ====== */
+
+/* Tablet & Màn hình vừa */
+@media (max-width: 1024px) {
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr); /* Thành 2 cột */
+    gap: 20px;
+  }
+}
+
+/* Mobile & Màn hình nhỏ */
+@media (max-width: 600px) {
+  .stats-grid {
+    grid-template-columns: 1fr; /* Thành 1 cột (Dọc) */
+    gap: 16px;
+  }
+  
+  .stat-card {
+    padding: 20px;
+  }
+  
+  .stat-value {
+    font-size: 1.75rem;
+  }
+}

@@ -1,0 +1,290 @@
+/* OrdersTable.css */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+
+:root {
+  --ot-bg: #111111;
+  --ot-bg-row-even: #141414;
+  --ot-bg-row-odd: #1a1a1a;
+  --ot-bg-row-hover: #242424;
+  --ot-border: #2a2a2a;
+  --ot-gold: #d4af37;
+  --ot-gold-dim: rgba(212, 175, 55, 0.1);
+  --ot-text-primary: #f0f0f0;
+  --ot-text-muted: #888888;
+  --ot-font: 'Inter', sans-serif;
+}
+
+/* Container */
+.ot-container {
+  background-color: var(--ot-bg);
+  border: 1px solid var(--ot-border);
+  border-radius: 12px;
+  overflow: hidden;
+  font-family: var(--ot-font);
+}
+
+.ot-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--ot-border);
+}
+
+.ot-title {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: var(--ot-text-primary);
+}
+
+.ot-count {
+  font-size: 0.8rem;
+  color: var(--ot-text-muted);
+  background: rgba(255,255,255,0.05);
+  padding: 4px 12px;
+  border-radius: 20px;
+}
+
+/* Table Wrapper (cuộn ngang trên mobile) */
+.ot-table-wrapper {
+  overflow-x: auto;
+  max-height: 500px; /* Giới hạn chiều cao, cho phép cuộn dọc */
+  overflow-y: auto;
+}
+
+/* Custom scrollbar */
+.ot-table-wrapper::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+.ot-table-wrapper::-webkit-scrollbar-track {
+  background: var(--ot-bg);
+}
+.ot-table-wrapper::-webkit-scrollbar-thumb {
+  background: #333;
+  border-radius: 4px;
+}
+
+/* Table */
+.ot-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 780px; /* Đảm bảo bảng không bẹp trên mobile, cho phép cuộn ngang */
+}
+
+/* Table Header (Sticky) */
+.ot-table thead {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+}
+
+.ot-table thead tr {
+  background-color: #0d0d0d;
+}
+
+.ot-table th {
+  padding: 14px 20px;
+  text-align: left;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--ot-text-muted);
+  border-bottom: 1px solid var(--ot-border);
+  white-space: nowrap;
+}
+
+/* Table Body Rows */
+.ot-table td {
+  padding: 14px 20px;
+  font-size: 0.88rem;
+  color: var(--ot-text-primary);
+  border-bottom: 1px solid rgba(255,255,255,0.03);
+  white-space: nowrap;
+}
+
+/* Dòng chẵn/lẻ nền xen kẽ */
+.ot-table tbody tr:nth-child(even) {
+  background-color: var(--ot-bg-row-even);
+}
+
+.ot-table tbody tr:nth-child(odd) {
+  background-color: var(--ot-bg-row-odd);
+}
+
+/* Hover dòng sáng lên nhẹ */
+.ot-table tbody tr {
+  transition: background-color 0.2s ease;
+}
+
+.ot-table tbody tr:hover {
+  background-color: var(--ot-bg-row-hover);
+}
+
+/* Mã đơn hàng */
+.ot-order-id {
+  font-weight: 600;
+  color: var(--ot-gold);
+  font-size: 0.85rem;
+}
+
+/* Cột Khách hàng + Avatar chữ cái */
+.ot-customer {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.ot-customer-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(212, 175, 55, 0.2), rgba(212, 175, 55, 0.05));
+  color: var(--ot-gold);
+  font-size: 0.8rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.ot-date {
+  color: var(--ot-text-muted);
+}
+
+/* Badge Kênh bán */
+.ot-channel {
+  font-size: 0.75rem;
+  font-weight: 500;
+  padding: 3px 10px;
+  border-radius: 4px;
+  letter-spacing: 0.5px;
+}
+
+.channel-web {
+  background-color: rgba(96, 165, 250, 0.1);
+  color: #60a5fa;
+  border: 1px solid rgba(96, 165, 250, 0.2);
+}
+
+.channel-store {
+  background-color: rgba(167, 139, 250, 0.1);
+  color: #a78bfa;
+  border: 1px solid rgba(167, 139, 250, 0.2);
+}
+
+/* Tổng tiền */
+.ot-total {
+  font-weight: 600;
+  color: var(--ot-text-primary);
+}
+
+/* ===== Status Badges ===== */
+.ot-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 14px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+
+.badge-pending {
+  background-color: rgba(251, 191, 36, 0.12);
+  color: #fbbf24;
+  border: 1px solid rgba(251, 191, 36, 0.25);
+}
+
+.badge-processing {
+  background-color: rgba(59, 130, 246, 0.12);
+  color: #3b82f6;
+  border: 1px solid rgba(59, 130, 246, 0.25);
+}
+
+.badge-completed {
+  background-color: rgba(34, 197, 94, 0.12);
+  color: #22c55e;
+  border: 1px solid rgba(34, 197, 94, 0.25);
+}
+
+.badge-cancelled {
+  background-color: rgba(239, 68, 68, 0.12);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.25);
+}
+
+/* ===== Nút 3 chấm & Dropdown ===== */
+.ot-actions {
+  position: relative;
+}
+
+.ot-action-btn {
+  background: none;
+  border: none;
+  color: var(--ot-text-muted);
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ot-action-btn:hover {
+  background-color: rgba(255, 255, 255, 0.08);
+  color: var(--ot-text-primary);
+}
+
+/* Dropdown Menu */
+.ot-dropdown {
+  position: absolute;
+  right: 0;
+  top: 100%;
+  margin-top: 4px;
+  width: 180px;
+  background-color: #1e1e1e;
+  border: 1px solid var(--ot-border);
+  border-radius: 8px;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.7);
+  z-index: 20;
+  padding: 6px 0;
+  animation: dropdownFadeIn 0.15s ease;
+}
+
+@keyframes dropdownFadeIn {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.ot-dropdown button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 16px;
+  background: none;
+  border: none;
+  color: var(--ot-text-primary);
+  font-family: var(--ot-font);
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition: background 0.15s ease;
+  text-align: left;
+}
+
+.ot-dropdown button:hover {
+  background-color: rgba(255, 255, 255, 0.06);
+}
+
+.ot-dropdown-danger {
+  color: #ef4444 !important;
+}
+
+.ot-dropdown-danger:hover {
+  background-color: rgba(239, 68, 68, 0.08) !important;
+}

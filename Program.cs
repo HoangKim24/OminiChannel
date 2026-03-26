@@ -20,11 +20,13 @@ builder.Services.AddScoped<IPerfumeRepository, SqlPerfumeRepository>();
 builder.Services.AddScoped<IOrderRepository, SqlOrderRepository>();
 builder.Services.AddScoped<ICommentRepository, SqlCommentRepository>();
 builder.Services.AddScoped<IPaymentStrategy, CreditCardPayment>();
+builder.Services.AddScoped<VNPayStrategy>();
 builder.Services.AddScoped<IOmnichannelAdapter, ShopeeAdapter>();
 builder.Services.AddScoped<IOmnichannelAdapter, TikTokAdapter>();
 builder.Services.AddScoped<IOmnichannelAdapter, LazadaAdapter>();
 builder.Services.AddScoped<InventorySubject>();
 builder.Services.AddScoped<OrderFacade>();
+builder.Services.AddScoped<RecommendationService>();
 
 // Configure CORS
 builder.Services.AddCors(options =>
