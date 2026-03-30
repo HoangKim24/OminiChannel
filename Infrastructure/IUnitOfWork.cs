@@ -11,6 +11,6 @@ namespace Omnichannel.Infrastructure
         IUserRepository Users { get; }
         ISalesChannelRepository SalesChannels { get; }
         ICommentRepository Comments { get; }
-        Task<int> CompleteAsync();
+        Task<int> CompleteAsync(System.Threading.CancellationToken cancellationToken = default);
     }
 }

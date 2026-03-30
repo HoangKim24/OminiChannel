@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Omnichannel.Models;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Omnichannel.Repositories
@@ -15,17 +16,18 @@ namespace Omnichannel.Repositories
             _context = context;
         }
 
-        public async Task<IEnumerable<Comment>> GetByPerfumeIdAsync(int perfumeId)
+        public async Task<IEnumerable<Comment>> GetByPerfumeIdAsync(int perfumeId, CancellationToken cancellationToken = default)
         {
             return await _context.Comments
+                .AsNoTracking()
                 .Where(c => c.PerfumeId == perfumeId)
                 .OrderByDescending(c => c.CreatedAt)
-                .ToListAsync();
+                .ToListAsync(cancellationToken);
         }
 
-        public async Task AddAsync(Comment comment)
+        public async Task AddAsync(Comment comment, CancellationToken cancellationToken = default)
         {
-            await _context.Comments.AddAsync(comment);
+            await _context.Comments.AddAsync(comment, cancellationToken);
         }
     }
 }

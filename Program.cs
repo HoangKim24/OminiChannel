@@ -2,6 +2,8 @@ using Microsoft.EntityFrameworkCore;
 using Omnichannel.Infrastructure;
 using Omnichannel.Repositories;
 using Omnichannel.Services;
+using FluentValidation;
+using Omnichannel.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -9,6 +11,9 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllersWithViews();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+builder.Services.AddValidatorsFromAssemblyContaining<Program>();
+builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssemblyContaining<Program>());
 
 // Register SQL Database
 builder.Services.AddDbContext<OmnichannelDbContext>(options =>
@@ -40,6 +45,8 @@ builder.Services.AddCors(options =>
 });
 
 var app = builder.Build();
+
+app.UseMiddleware<ExceptionMiddleware>();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

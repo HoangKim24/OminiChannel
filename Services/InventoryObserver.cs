@@ -16,7 +16,7 @@ namespace Omnichannel.Services
         public void Attach(IInventoryObserver observer) => _observers.Add(observer);
         public void Detach(IInventoryObserver observer) => _observers.Remove(observer);
 
-        public async Task NotifyAsync(Perfume perfume)
+        public virtual async Task NotifyAsync(Perfume perfume)
         {
             foreach (var observer in _observers)
             {

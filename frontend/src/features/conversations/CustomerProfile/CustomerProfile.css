@@ -1,0 +1,72 @@
+/* d:\Omnichannel\frontend\src\features\conversations\CustomerProfile\CustomerProfile.css */
+.omni-conv-profile {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow-y: auto;
+}
+
+.omni-conv-profile::-webkit-scrollbar {
+  width: 4px;
+}
+.omni-conv-profile::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 4px;
+}
+
+.omni-conv-profile__header {
+  padding: 2rem 1.5rem;
+  border-bottom: 1px solid var(--border-color);
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.omni-conv-profile__avatar-lg {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background-color: var(--color-gold-500);
+  color: var(--text-inverse);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+}
+
+.omni-conv-profile__section {
+  padding: 1.5rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.omni-conv-profile__title {
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  margin-top: 0;
+  margin-bottom: 1rem;
+  letter-spacing: 0.05em;
+}
+
+.omni-conv-profile__row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+  font-size: 0.85rem;
+}
+
+.omni-conv-profile__label {
+  color: var(--text-secondary);
+}
+
+.omni-conv-profile__value {
+  color: var(--text-primary);
+  font-weight: 500;
+  text-align: right;
+  max-width: 60%;
+}

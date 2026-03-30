@@ -1,8 +1,9 @@
+using MediatR;
 using Microsoft.AspNetCore.Mvc;
-using Omnichannel.Infrastructure;
+using Omnichannel.Features.Comments.Commands;
+using Omnichannel.Features.Comments.Queries;
 using Omnichannel.Models;
-using System;
-using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Omnichannel.Controllers
@@ -11,68 +12,26 @@ namespace Omnichannel.Controllers
     [Route("api/[controller]")]
     public class CommentsController : ControllerBase
     {
-        private readonly IUnitOfWork _unitOfWork;
+        private readonly ISender _sender;
 
-        public CommentsController(IUnitOfWork unitOfWork)
+        public CommentsController(ISender sender)
         {
-            _unitOfWork = unitOfWork;
+            _sender = sender;
         }
 
         [HttpGet("perfume/{perfumeId}")]
-        public async Task<IActionResult> GetComments(int perfumeId)
+        public async Task<IActionResult> GetComments(int perfumeId, CancellationToken cancellationToken)
         {
-            var comments = await _unitOfWork.Comments.GetByPerfumeIdAsync(perfumeId);
-            var response = new List<CommentResponse>();
-            foreach (var c in comments)
-            {
-                response.Add(new CommentResponse
-                {
-                    Id = c.Id,
-                    PerfumeId = c.PerfumeId,
-                    UserName = c.UserName,
-                    Stars = c.Stars,
-                    Text = c.Text,
-                    CreatedAt = c.CreatedAt,
-                    IsVerified = c.IsVerified
-                });
-            }
+            var query = new GetCommentsByPerfumeQuery(perfumeId);
+            var response = await _sender.Send(query, cancellationToken);
             return Ok(response);
         }
 
         [HttpPost]
-        public async Task<IActionResult> PostComment([FromBody] CreateCommentRequest request)
+        public async Task<IActionResult> PostComment([FromBody] CreateCommentRequest request, CancellationToken cancellationToken)
         {
-            if (!ModelState.IsValid)
-                return BadRequest(new { message = "Dữ liệu không hợp lệ", errors = ModelState });
-
-            var perfume = await _unitOfWork.Perfumes.GetByIdAsync(request.PerfumeId);
-            if (perfume == null)
-                return NotFound(new { message = "Sản phẩm không tồn tại" });
-
-            var comment = new Comment
-            {
-                PerfumeId = request.PerfumeId,
-                UserName = request.UserName,
-                Stars = request.Stars,
-                Text = request.Text,
-                IsVerified = request.IsVerified,
-                CreatedAt = DateTime.Now
-            };
-
-            await _unitOfWork.Comments.AddAsync(comment);
-            await _unitOfWork.CompleteAsync();
-
-            var response = new CommentResponse
-            {
-                Id = comment.Id,
-                PerfumeId = comment.PerfumeId,
-                UserName = comment.UserName,
-                Stars = comment.Stars,
-                Text = comment.Text,
-                CreatedAt = comment.CreatedAt,
-                IsVerified = comment.IsVerified
-            };
-
+            var command = new CreateCommentCommand(request);
+            var response = await _sender.Send(command, cancellationToken);
             return Created("", response);
         }
     }

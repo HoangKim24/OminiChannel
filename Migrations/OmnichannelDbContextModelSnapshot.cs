@@ -137,6 +137,8 @@ namespace Omnichannel.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("PerfumeId");
+
                     b.ToTable("Comments", (string)null);
                 });
 
@@ -167,7 +169,7 @@ namespace Omnichannel.Migrations
 
                     b.Property<string>("Status")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<decimal>("TotalAmount")
                         .HasPrecision(18, 2)
@@ -177,6 +179,8 @@ namespace Omnichannel.Migrations
                         .HasColumnType("int");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("Status");
 
                     b.HasIndex("UserId");
 
@@ -245,7 +249,7 @@ namespace Omnichannel.Migrations
 
                     b.Property<string>("Gender")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("ImageUrl")
                         .IsRequired()
@@ -277,6 +281,8 @@ namespace Omnichannel.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("CategoryId");
+
+                    b.HasIndex("Gender");
 
                     b.ToTable("Perfumes", (string)null);
                 });
@@ -340,9 +346,12 @@ namespace Omnichannel.Migrations
 
                     b.Property<string>("Username")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(450)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("Username")
+                        .IsUnique();
 
                     b.ToTable("Users", (string)null);
                 });

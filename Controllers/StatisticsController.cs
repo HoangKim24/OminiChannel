@@ -1,10 +1,11 @@
 using Microsoft.AspNetCore.Mvc;
-using Omnichannel.Services;
+using Microsoft.EntityFrameworkCore;
 using Omnichannel.Infrastructure;
 using Omnichannel.Models;
+using Omnichannel.Services;
 using System;
-using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Omnichannel.Controllers
@@ -14,10 +15,12 @@ namespace Omnichannel.Controllers
     public class StatisticsController : ControllerBase
     {
         private readonly IUnitOfWork _unitOfWork;
+        private readonly OmnichannelDbContext _dbContext;
 
-        public StatisticsController(IUnitOfWork unitOfWork)
+        public StatisticsController(IUnitOfWork unitOfWork, OmnichannelDbContext dbContext)
         {
             _unitOfWork = unitOfWork;
+            _dbContext = dbContext;
         }
 
         [HttpGet("sales")]
@@ -37,46 +40,61 @@ namespace Omnichannel.Controllers
         }
 
         [HttpGet("dashboard")]
-        public async Task<IActionResult> GetDashboardStats([FromHeader(Name = "X-User-Role")] string role)
+        public async Task<IActionResult> GetDashboardStats([FromHeader(Name = "X-User-Role")] string role, CancellationToken cancellationToken)
         {
             if (role != "Admin") return Unauthorized(new { message = "Chỉ Admin mới có quyền xem dashboard" });
 
             try
             {
-                var orders = (await _unitOfWork.Orders.GetAllAsync()).ToList();
-                var products = (await _unitOfWork.Perfumes.GetAllAsync()).ToList();
-                var users = (await _unitOfWork.Users.GetAllAsync()).ToList();
+                var totalRevenue = await _dbContext.Orders.SumAsync(o => o.TotalAmount, cancellationToken);
+                var totalOrders = await _dbContext.Orders.CountAsync(cancellationToken);
+                var totalProducts = await _dbContext.Perfumes.CountAsync(cancellationToken);
+                var totalCustomers = await _dbContext.Users.CountAsync(u => u.Role == "User", cancellationToken);
+
+                var recentOrdersQuery = await _dbContext.Orders
+                    .Include(o => o.Items)
+                    .OrderByDescending(o => o.OrderDate)
+                    .Take(5)
+                    .Select(o => new OrderSummary
+                    {
+                        Id = o.Id,
+                        UserId = o.UserId,
+                        Status = o.Status,
+                        TotalAmount = o.TotalAmount,
+                        OrderDate = o.OrderDate,
+                        ItemCount = o.Items.Count
+                    })
+                    .ToListAsync(cancellationToken);
+
+                var userIds = recentOrdersQuery.Select(o => o.UserId).Distinct().ToList();
+                var usersMap = await _dbContext.Users
+                    .Where(u => userIds.Contains(u.Id))
+                    .ToDictionaryAsync(u => u.Id, u => string.IsNullOrEmpty(u.FullName) ? u.Username : u.FullName, cancellationToken);
+
+                foreach (var o in recentOrdersQuery)
+                {
+                    o.CustomerName = usersMap.ContainsKey(o.UserId) ? usersMap[o.UserId] : "Khách hàng";
+                }
+
+                var lowStockProducts = await _dbContext.Perfumes
+                    .Where(p => p.StockQuantity < 10)
+                    .OrderBy(p => p.StockQuantity)
+                    .Select(p => new LowStockItem
+                    {
+                        Id = p.Id,
+                        Name = p.Name,
+                        StockQuantity = p.StockQuantity
+                    })
+                    .ToListAsync(cancellationToken);
 
                 var stats = new DashboardStatsResponse
                 {
-                    TotalRevenue = orders.Sum(o => o.TotalAmount),
-                    TotalOrders = orders.Count,
-                    TotalProducts = products.Count,
-                    TotalCustomers = users.Count(u => u.Role == "User"),
-                    RecentOrders = orders
-                        .OrderByDescending(o => o.OrderDate)
-                        .Take(5)
-                        .Select(o => new OrderSummary
-                        {
-                            Id = o.Id,
-                            UserId = o.UserId,
-                            CustomerName = users.FirstOrDefault(u => u.Id == o.UserId)?.FullName
-                                ?? users.FirstOrDefault(u => u.Id == o.UserId)?.Username
-                                ?? "Khách hàng",
-                            Status = o.Status,
-                            TotalAmount = o.TotalAmount,
-                            OrderDate = o.OrderDate,
-                            ItemCount = o.Items?.Count ?? 0
-                        }).ToList(),
-                    LowStockProducts = products
-                        .Where(p => p.StockQuantity < 10)
-                        .OrderBy(p => p.StockQuantity)
-                        .Select(p => new LowStockItem
-                        {
-                            Id = p.Id,
-                            Name = p.Name,
-                            StockQuantity = p.StockQuantity
-                        }).ToList()
+                    TotalRevenue = totalRevenue,
+                    TotalOrders = totalOrders,
+                    TotalProducts = totalProducts,
+                    TotalCustomers = totalCustomers,
+                    RecentOrders = recentOrdersQuery,
+                    LowStockProducts = lowStockProducts
                 };
 
                 return Ok(stats);
@@ -88,34 +106,27 @@ namespace Omnichannel.Controllers
         }
 
         [HttpGet("customers")]
-        public async Task<IActionResult> GetCustomerStats([FromHeader(Name = "X-User-Role")] string role)
+        public async Task<IActionResult> GetCustomerStats([FromHeader(Name = "X-User-Role")] string role, CancellationToken cancellationToken)
         {
             if (role != "Admin") return Unauthorized(new { message = "Chỉ Admin mới có quyền xem thống kê khách hàng" });
 
             try
             {
-                var users = (await _unitOfWork.Users.GetAllAsync()).ToList();
-                var orders = (await _unitOfWork.Orders.GetAllAsync()).ToList();
-
-                var customers = users
+                var customers = await _dbContext.Users
                     .Where(u => u.Role == "User")
-                    .Select(u =>
+                    .Select(u => new CustomerSummary
                     {
-                        var userOrders = orders.Where(o => o.UserId == u.Id).ToList();
-                        return new CustomerSummary
-                        {
-                            Id = u.Id,
-                            Username = u.Username,
-                            FullName = u.FullName,
-                            Email = u.Email,
-                            PhoneNumber = u.PhoneNumber,
-                            TotalSpend = userOrders.Sum(o => o.TotalAmount),
-                            OrderCount = userOrders.Count,
-                            LastOrderDate = userOrders.OrderByDescending(o => o.OrderDate).FirstOrDefault()?.OrderDate
-                        };
+                        Id = u.Id,
+                        Username = u.Username,
+                        FullName = u.FullName,
+                        Email = u.Email,
+                        PhoneNumber = u.PhoneNumber,
+                        TotalSpend = _dbContext.Orders.Where(o => o.UserId == u.Id).Sum(o => o.TotalAmount),
+                        OrderCount = _dbContext.Orders.Count(o => o.UserId == u.Id),
+                        LastOrderDate = _dbContext.Orders.Where(o => o.UserId == u.Id).Max(o => (DateTime?)o.OrderDate)
                     })
                     .OrderByDescending(c => c.TotalSpend)
-                    .ToList();
+                    .ToListAsync(cancellationToken);
 
                 return Ok(customers);
             }

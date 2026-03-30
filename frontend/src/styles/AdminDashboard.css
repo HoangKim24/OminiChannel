@@ -1,191 +1,174 @@
-/* AdminDashboard.css - Refined Luxury Aesthetic */
-:root {
-  --admin-sidebar-width: 260px;
-  --admin-topbar-height: 85px;
-  --admin-gold: #C5A059;
-  --admin-gold-light: #e0bc7b;
-  --admin-bg-dark: #050505;
-  --admin-panel-bg: rgba(20, 20, 20, 0.7);
-  --admin-border: rgba(197, 160, 89, 0.15);
-  --text-primary: #ffffff;
-  --text-secondary: #999999;
-  --text-muted: #555555;
+/* Scoped admin theme variables */
+.admin-app {
+  --admin-sidebar-width: 280px;
+  --admin-topbar-height: 70px;
 }
 
-.admin-screen {
-  display: flex !important;
-  flex-direction: row !important;
-  width: 100% !important;
-  height: 100vh !important;
-  background: var(--admin-bg-dark) !important;
-  color: #fff !important;
-  font-family: 'Inter', system-ui, -apple-system, sans-serif !important;
-  overflow: hidden !important;
+.admin-app .admin-overlay {
+  display: none;
 }
 
-.admin-sidebar-container {
-  width: var(--admin-sidebar-width) !important;
-  min-width: var(--admin-sidebar-width) !important;
-  flex-shrink: 0 !important;
-  height: 100vh !important;
-  border-right: 1px solid var(--admin-border) !important;
-  background: #000 !important;
-  z-index: 1000 !important;
-  box-shadow: 10px 0 30px rgba(0,0,0,0.5);
+.admin-app .admin-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
 }
 
-.admin-body {
-  flex: 1 !important;
-  display: flex !important;
-  flex-direction: column !important;
-  min-width: 0 !important;
-  height: 100vh !important;
-  background: var(--admin-bg-dark) !important;
-  background-image: radial-gradient(circle at 50% 50%, rgba(197, 160, 89, 0.03) 0%, transparent 80%);
+.admin-app .admin-topbar-left,
+.admin-app .admin-status {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
 }
 
-.admin-topbar {
-  height: var(--admin-topbar-height) !important;
-  padding: 0 3rem !important;
-  background: rgba(8, 8, 8, 0.95) !important;
-  backdrop-filter: blur(10px);
-  border-bottom: 1px solid var(--admin-border) !important;
+.admin-app .status-indicator {
+  color: var(--status-success);
+  font-size: 0.8rem;
+  letter-spacing: 0.05em;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 500;
 }
 
-.admin-canvas {
-  flex: 1 !important;
-  overflow-y: auto !important;
-  padding: 3rem !important;
-  scroll-behavior: smooth;
+.admin-app .status-indicator::before {
+  content: '';
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  background-color: var(--status-success);
+  border-radius: 50%;
+  box-shadow: 0 0 10px var(--status-success);
 }
 
-.admin-canvas::-webkit-scrollbar { width: 6px; }
-.admin-canvas::-webkit-scrollbar-thumb { background: var(--admin-border); border-radius: 10px; }
-
-.admin-logo {
-  font-family: 'Playfair Display', serif;
-  font-size: 1.4rem;
-  color: var(--admin-gold);
-  letter-spacing: 6px;
-  text-align: center;
-  padding: 3rem 1rem;
-  border-bottom: 1px solid var(--admin-border);
-  margin-bottom: 2.5rem;
-  font-weight: 300;
+.admin-app .mobile-toggle {
+  display: none;
+  border: 1px solid var(--border-color);
+  background: transparent;
+  color: var(--text-primary);
+  border-radius: var(--radius-sm);
+  width: 40px;
+  height: 40px;
+  cursor: pointer;
+  transition: var(--transition-fast);
 }
 
-.admin-nav-item {
-  width: 100% !important;
-  padding: 1rem 1.75rem !important;
-  border-radius: 0 !important;
-  font-size: 0.65rem !important;
-  letter-spacing: 2px !important;
-  font-weight: 600 !important;
-  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1) !important;
+.admin-app .mobile-toggle:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: var(--color-gold-500);
+  color: var(--color-gold-500);
 }
 
-.admin-nav-item:hover {
-  background: rgba(197, 160, 89, 0.08) !important;
-  padding-left: 2rem !important;
-}
-
-.admin-nav-item.active {
-  background: linear-gradient(90deg, rgba(197,160,89,0.1) 0%, transparent 100%) !important;
-  color: var(--admin-gold) !important;
-  border-left: 2px solid var(--admin-gold) !important;
-}
-
-/* Luxury Utility Classes */
-.brand-font { font-family: 'Playfair Display', serif !important; }
-
-.glass-panel {
-  background: rgba(15, 15, 15, 0.7) !important;
-  backdrop-filter: blur(25px) !important;
-  border: 1px solid rgba(197, 160, 89, 0.2) !important;
-  padding: 2rem !important;
-  transition: all 0.4s ease !important;
-}
-
-.glass-panel:hover {
-  border-color: rgba(197, 160, 89, 0.4) !important;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5) !important;
-}
-
-.shadow-gold {
-  box-shadow: 0 0 20px rgba(197, 160, 89, 0.05) !important;
-}
-
-.luxury-badge {
-  padding: 4px 12px !important;
-  font-size: 0.65rem !important;
-  font-weight: 700 !important;
-  text-transform: uppercase !important;
-  letter-spacing: 1.5px !important;
-  border-radius: 2px !important;
-  border: 1px solid currentColor !important;
-  background: rgba(255, 255, 255, 0.03) !important;
-}
-
-.luxury-button-gold {
-  background: var(--admin-gold) !important;
-  color: #000 !important;
-  border: none !important;
-  padding: 0.8rem 1.8rem !important;
-  font-size: 0.75rem !important;
-  font-weight: 800 !important;
-  text-transform: uppercase !important;
-  letter-spacing: 2px !important;
-  cursor: pointer !important;
-  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1) !important;
-}
-
-.luxury-button-gold:hover {
-  background: #e0bc7b !important;
-  transform: translateY(-2px) !important;
-  box-shadow: 0 5px 15px rgba(197, 160, 89, 0.3) !important;
-}
-
-.luxury-input-field {
-  background: rgba(255, 255, 255, 0.03) !important;
-  border: 1px solid rgba(255, 255, 255, 0.1) !important;
-  color: #fff !important;
-  padding: 0.8rem 1rem !important;
-  font-size: 0.85rem !important;
-  outline: none !important;
-  transition: all 0.3s ease !important;
-}
-
-.luxury-input-field:focus {
-  border-color: var(--admin-gold) !important;
-  background: rgba(197, 160, 89, 0.05) !important;
-}
-
-/* Glass Panels */
-.admin-panel {
-  background: var(--admin-panel-bg) !important;
-  backdrop-filter: blur(20px) !important;
-  border: 1px solid var(--admin-border) !important;
-  border-radius: 4px !important;
-  transition: transform 0.4s ease, border-color 0.4s ease !important;
-}
-
-.admin-panel:hover {
-  border-color: rgba(197, 160, 89, 0.3) !important;
-}
-
-.admin-breadcrumb {
-  font-size: 0.65rem;
-  letter-spacing: 2px;
-  font-weight: 700;
-  text-transform: uppercase;
-}
-
-.admin-user span {
+.admin-app .admin-user span {
   font-weight: 600;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.05em;
+  font-family: var(--font-sans);
 }
 
-.avatar {
-  border: 1px solid var(--admin-border);
-  box-shadow: 0 0 15px rgba(197, 160, 89, 0.2);
+.admin-app .glass-panel {
+  background: var(--bg-elevated);
+  backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--border-light);
+  padding: 2.5rem;
+  border-radius: var(--radius-md);
+  transition: var(--transition-normal);
+}
+
+.admin-app .glass-panel:hover {
+  border-color: var(--border-gold);
+  box-shadow: var(--shadow-md);
+}
+
+.admin-app .luxury-badge {
+  padding: 0.35rem 0.85rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  border-radius: var(--radius-full);
+  border: 1px solid currentColor;
+  background: rgba(255, 255, 255, 0.03);
+  font-family: var(--font-sans);
+}
+
+.admin-app .luxury-button-gold {
+  background: var(--color-gold-500);
+  color: var(--bg-primary);
+  border: 1px solid var(--color-gold-500);
+  padding: 0.85rem 2rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  transition: var(--transition-normal);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-sans);
+}
+
+.admin-app .luxury-button-gold:hover {
+  background: transparent;
+  color: var(--color-gold-500);
+  box-shadow: var(--shadow-glow-gold);
+}
+
+.admin-app .luxury-input-field {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  padding: 0.85rem 1.25rem;
+  font-size: 0.95rem;
+  outline: none;
+  transition: var(--transition-normal);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-sans);
+}
+
+.admin-app .luxury-input-field:focus {
+  border-color: var(--color-gold-500);
+  box-shadow: 0 0 0 1px var(--color-gold-500);
+}
+
+@media (max-width: 900px) {
+  .admin-app .mobile-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .admin-app .admin-sidebar-container {
+    position: fixed;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    transform: translateX(-100%);
+    transition: transform var(--transition-normal);
+    z-index: 1000;
+  }
+
+  .admin-app .sidebar-open .admin-sidebar-container {
+    transform: translateX(0);
+  }
+
+  .admin-app .admin-overlay {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(4px);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity var(--transition-normal);
+    z-index: 900;
+  }
+
+  .admin-app .sidebar-open .admin-overlay {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .admin-app .status-indicator {
+    display: none;
+  }
 }

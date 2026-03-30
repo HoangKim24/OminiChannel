@@ -2,6 +2,10 @@ import { useState, useEffect, useRef } from 'react'
 import './index.css'
 import AdminDashboard from './AdminDashboard'
 import AdminLogin from './components/admin/AdminLogin'
+import Navbar from './components/user/Navbar'
+import Hero from './components/user/Hero'
+import ProductsSection from './components/user/ProductsSection'
+import Footer from './components/user/Footer'
 
 function App() {
   // === CORE STATE ===
@@ -408,7 +412,7 @@ function App() {
   //          RENDER
   // ===========================
   return (
-    <div className="app">
+    <div className={`app ${page === 'admin' ? 'admin-app' : 'user-app'}`}>
       {/* Toast Notifications */}
       <div className="toast-container">
         {toasts.map(t => (
@@ -420,57 +424,16 @@ function App() {
       </div>
 
       {/* === NAVBAR (Store Only) === */}
-      {page !== 'admin' && (
-        <nav className={scrolled ? 'scrolled' : ''}>
-        <div className="container">
-          <a href="#" className="logo" onClick={e => { e.preventDefault(); setPage('home') }}>KP LUXURY</a>
-          <button className="mobile-menu-toggle" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>☰</button>
-          
-          <div className={`nav-links ${isMobileMenuOpen ? 'mobile-open' : ''}`}>
-            
-            <div className="nav-search-container">
-              <input type="text" className="nav-search-input" placeholder="🔍 Tìm kiếm..." value={searchTerm} 
-                     onFocus={() => setIsSearchOpen(true)} 
-                     onChange={e => { setSearchTerm(e.target.value); if(page !== 'home') setPage('home') }} />
-              {searchTerm && isSearchOpen && (
-                <div className="search-suggest-dropdown" onMouseLeave={() => setIsSearchOpen(false)}>
-                  {filteredProducts.slice(0, 5).map(p => (
-                    <div key={p.id} className="suggest-item" onClick={() => { openDetail(p); setIsSearchOpen(false); setSearchTerm(''); setIsMobileMenuOpen(false); }}>
-                      <img src={p.imageUrl} alt={p.name} />
-                      <div className="suggest-info">
-                        <h4>{p.name}</h4>
-                        <p>{vnd(p.price)}</p>
-                      </div>
-                    </div>
-                  ))}
-                  {filteredProducts.length === 0 && <div style={{ padding: '1rem', color: '#888' }}>Không tìm thấy sản phẩm.</div>}
-                </div>
-              )}
-            </div>
-
-            <a href="#" onClick={e => { e.preventDefault(); resetQuiz(); setIsMobileMenuOpen(false); }}>Fragrance Finder</a>
-            <a href="#" onClick={e => { e.preventDefault(); setPage('home'); setIsMobileMenuOpen(false); }}>Bộ Sưu Tập</a>
-            <a href="#" onClick={e => { e.preventDefault(); setPage('favorites'); setIsMobileMenuOpen(false); }}>
-              ❤️ Yêu Thích ({favorites.length})
-            </a>
-            {/* Removed Admin link from public navigation as requested */}
-            {user ? (
-              <>
-                <span style={{ color: 'var(--accent-gold)', marginLeft: '1.5rem', fontSize: '0.85rem', textTransform: 'uppercase' }}>
-                  Chào, {user.username}
-                </span>
-                <a href="#" onClick={e => { e.preventDefault(); logout(); setIsMobileMenuOpen(false); }}>Đăng Xuất</a>
-              </>
-            ) : (
-              <a href="#" onClick={e => { e.preventDefault(); setAuthModal('login'); setIsMobileMenuOpen(false); }}>Đăng Nhập</a>
-            )}
-            <a href="#" onClick={e => { e.preventDefault(); setIsCartOpen(true); setIsMobileMenuOpen(false); }}>
-              🛒 Giỏ Hàng ({cart.reduce((a, b) => a + b.quantity, 0)})
-            </a>
-          </div>
-        </div>
-      </nav>
-      )}
+      <Navbar
+        page={page} setPage={setPage} scrolled={scrolled}
+        isMobileMenuOpen={isMobileMenuOpen} setIsMobileMenuOpen={setIsMobileMenuOpen}
+        searchTerm={searchTerm} setSearchTerm={setSearchTerm}
+        isSearchOpen={isSearchOpen} setIsSearchOpen={setIsSearchOpen}
+        filteredProducts={filteredProducts} openDetail={openDetail}
+        resetQuiz={resetQuiz} favorites={favorites} user={user}
+        logout={logout} setAuthModal={setAuthModal} cart={cart}
+        setIsCartOpen={setIsCartOpen} vnd={vnd}
+      />
 
       {/* === AUTH MODAL === */}
       <div className={`modal-overlay ${authModal ? 'active' : ''}`} onClick={() => setAuthModal(null)}>
@@ -512,93 +475,19 @@ function App() {
       {page === 'home' && (
         <>
           {/* Hero */}
-          <div className="hero">
-            <div className="hero-content">
-              <p>Nghệ Thuật Của Hương Thơm Vượt Thời Gian</p>
-              <h1>Tinh Hoa Nước Hoa Cao Cấp</h1>
-              <a href="#products" className="btn-gold">Khám Phá Ngay</a>
-            </div>
-          </div>
+          <Hero resetQuiz={resetQuiz} />
 
           {/* Products */}
-          <section id="products" className="products-section">
-            <div className="container">
-              <h2 className="section-title">
-                <span>Tuyển Chọn Đặc Biệt</span>
-                Bộ Sưu Tập Kiệt Tác
-              </h2>
-
-              {/* Search & Filter */}
-              <div className="search-filter-bar">
-                <select className="filter-select" value={sortBy} onChange={e => setSortBy(e.target.value)}>
-                  <option value="default">Sắp xếp mặc định</option>
-                  <option value="price-asc">Giá: Thấp → Cao</option>
-                  <option value="price-desc">Giá: Cao → Thấp</option>
-                  <option value="name">Tên: A → Z</option>
-                </select>
-                <select className="filter-select" value={filterGender} onChange={e => setFilterGender(e.target.value)}>
-                  <option value="All">Tất cả giới tính</option>
-                  <option value="Nam">Nam</option>
-                  <option value="Nữ">Nữ</option>
-                  <option value="Unisex">Unisex</option>
-                </select>
-                <select className="filter-select" value={filterFamily} onChange={e => setFilterFamily(e.target.value)}>
-                  <option value="All">Tất cả nhóm hương</option>
-                  <option value="tươi mát">Tươi mát</option>
-                  <option value="hoa">Hương hoa</option>
-                  <option value="gỗ">Hương gỗ</option>
-                  <option value="ngọt">Hương ngọt</option>
-                </select>
-                <select className="filter-select" value={filterConcentration} onChange={e => setFilterConcentration(e.target.value)}>
-                  <option value="All">Tất cả nồng độ</option>
-                  <option value="parfum">Parfum</option>
-                  <option value="eau de parfum">Eau de Parfum</option>
-                  <option value="eau de toilette">Eau de Toilette</option>
-                </select>
-                <select className="filter-select" value={priceRange} onChange={e => setPriceRange(Number(e.target.value))}>
-                  <option value={2000000}>Dưới 2 triệu</option>
-                  <option value={5000000}>Dưới 5 triệu</option>
-                  <option value={10000000}>Dưới 10 triệu</option>
-                  <option value={50000000}>Tất cả mức giá</option>
-                </select>
-              </div>
-
-              {loading ? (
-                <div className="product-grid">
-                  {[1, 2, 3, 4, 5, 6].map(i => (
-                    <div key={i} className="skeleton-card">
-                      <div className="skeleton-box skeleton-img"></div>
-                      <div className="skeleton-box skeleton-text"></div>
-                      <div className="skeleton-box skeleton-price"></div>
-                      <div className="skeleton-box skeleton-btn"></div>
-                    </div>
-                  ))}
-                </div>
-              ) : filteredProducts.length === 0 ? (
-                <p style={{ textAlign: 'center', color: '#888' }}>Không tìm thấy sản phẩm phù hợp.</p>
-              ) : (
-                <div className="product-grid">
-                  {filteredProducts.map(product => (
-                    <div key={product.id} className="product-card">
-                      <div className="product-image-container" onClick={() => openDetail(product)}>
-                        <img src={product.imageUrl} alt={product.name} className="product-image" loading="lazy" />
-                        <img src="https://images.unsplash.com/photo-1594035910387-fea47794261f?auto=format&fit=crop&q=80&w=400" alt="lifestyle" className="product-image-hover" loading="lazy" />
-                        <div className="card-actions">
-                          <button className={`icon-btn ${favorites.includes(product.id) ? 'active' : ''}`}
-                            onClick={e => { e.stopPropagation(); toggleFavorite(product.id) }}>♥</button>
-                        </div>
-                      </div>
-                      <div className="product-info">
-                        <h3 style={{ cursor: 'pointer' }} onClick={() => openDetail(product)}>{product.name}</h3>
-                        <p className="product-price">{vnd(product.price)}</p>
-                        <button className="add-to-cart-btn" onClick={() => addToCart(product)}>Thêm Vào Giỏ</button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </section>
+          <ProductsSection
+            sortBy={sortBy} setSortBy={setSortBy} 
+            filterGender={filterGender} setFilterGender={setFilterGender} 
+            filterFamily={filterFamily} setFilterFamily={setFilterFamily}
+            filterConcentration={filterConcentration} setFilterConcentration={setFilterConcentration} 
+            priceRange={priceRange} setPriceRange={setPriceRange}
+            loading={loading} filteredProducts={filteredProducts} 
+            openDetail={openDetail} favorites={favorites} 
+            toggleFavorite={toggleFavorite} vnd={vnd} addToCart={addToCart}
+          />
 
           {/* Sales Channels Section */}
           <section className="products-section" style={{ background: '#080808', borderTop: '1px solid var(--glass-border)' }}>
@@ -1271,14 +1160,7 @@ function App() {
       </div>
 
       {/* === FOOTER (Store Only) === */}
-      {page !== 'admin' && (
-        <footer style={{ padding: '6rem 0', textAlign: 'center', background: '#080808', borderTop: '1px solid #111' }}>
-          <div className="container">
-            <h2 className="brand-font" style={{ color: 'var(--accent-gold)', letterSpacing: '4px', marginBottom: '1.5rem' }}>KP LUXURY</h2>
-            <p style={{ color: '#666', fontSize: '0.9rem' }}>&copy; 2026 KP Luxury Perfume. Tinh hoa nghệ thuật mùi hương.</p>
-          </div>
-        </footer>
-      )}
+      <Footer page={page} />
 
       {/* ============================================================ */}
       {/*                    PAGE: ADMIN DASHBOARD                      */}

@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Security.Cryptography;
 using System.Text;
 using System.Web;
+using System.Net;
 using System.Globalization;
 
 namespace Omnichannel.Services

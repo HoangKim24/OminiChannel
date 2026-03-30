@@ -1,22 +1,134 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts';
 import { vnd } from '../../../utils/format';
+import './OverviewTab.css';
+
+const FALLBACK_RATIO = [0.1, 0.13, 0.16, 0.14, 0.18, 0.14, 0.15];
+
+const shortMonthLabel = (date) => `T${date.getMonth() + 1}`;
+
+const monthKey = (date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+
+const parseOrderDate = (order) => {
+  const raw =
+    order?.createdAt ??
+    order?.CreatedAt ??
+    order?.orderDate ??
+    order?.OrderDate ??
+    order?.createdDate ??
+    order?.CreatedDate;
+
+  if (!raw) return null;
+  const parsed = new Date(raw);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+};
+
+const buildRevenueSeries = (orders, totalRevenue = 0) => {
+  const now = new Date();
+  const months = Array.from({ length: 7 }, (_, idx) => {
+    const d = new Date(now.getFullYear(), now.getMonth() - (6 - idx), 1);
+    return {
+      key: monthKey(d),
+      month: shortMonthLabel(d),
+      revenue: 0,
+    };
+  });
+
+  const lookup = new Map(months.map((m) => [m.key, m]));
+  let matchedOrders = 0;
+
+  if (Array.isArray(orders)) {
+    orders.forEach((order) => {
+      const d = parseOrderDate(order);
+      if (!d) return;
+
+      const bucket = lookup.get(monthKey(d));
+      if (!bucket) return;
+
+      const amount = Number(order?.totalAmount ?? order?.TotalAmount ?? 0);
+      bucket.revenue += Number.isFinite(amount) ? amount : 0;
+      matchedOrders += 1;
+    });
+  }
+
+  if (matchedOrders === 0 && totalRevenue > 0) {
+    return months.map((item, index) => ({
+      ...item,
+      revenue: Math.round(totalRevenue * FALLBACK_RATIO[index]),
+    }));
+  }
+
+  return months;
+};
+
+const normalizeSeries = (series) => {
+  if (!Array.isArray(series) || series.length === 0) return [];
+
+  return series
+    .map((item, index) => {
+      const month =
+        item?.month ??
+        item?.label ??
+        (typeof item?.period === 'string' ? item.period : `T${index + 1}`);
+      const revenue = Number(item?.revenue ?? item?.value ?? 0);
+
+      return {
+        month,
+        revenue: Number.isFinite(revenue) ? revenue : 0,
+      };
+    })
+    .slice(-7);
+};
+
+const OverviewLoadingState = () => (
+  <div className="overview-loading" role="status" aria-live="polite">
+    <div className="overview-skeleton-grid">
+      {Array.from({ length: 4 }).map((_, idx) => (
+        <div key={`kpi-loading-${idx}`} className="overview-skeleton-card" />
+      ))}
+    </div>
+    <div className="overview-skeleton-chart" />
+  </div>
+);
 
 const OverviewTab = ({ products, orders, user }) => {
   const [dashboardData, setDashboardData] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  const fetchDashboard = useCallback(async () => {
+    setIsLoading(true);
+    setError('');
+
+    try {
+      const res = await fetch('/api/statistics/dashboard', {
+        headers: { 'X-User-Role': user?.role || 'Admin' },
+      });
+
+      if (!res.ok) {
+        throw new Error(`Dashboard API responded with status ${res.status}`);
+      }
+
+      setDashboardData(await res.json());
+    } catch (err) {
+      setError('Không tải được dữ liệu realtime. Đang hiển thị dữ liệu dự phòng.');
+      console.error('Dashboard fetch error:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [user?.role]);
 
   useEffect(() => {
-    const fetchDashboard = async () => {
-      try {
-        const res = await fetch('/api/statistics/dashboard', {
-          headers: { 'X-User-Role': user?.role || 'Admin' }
-        });
-        if (res.ok) {
-          setDashboardData(await res.json());
-        }
-      } catch (err) { console.error('Dashboard fetch error:', err); }
-    };
     fetchDashboard();
-  }, [user, orders]);
+  }, [fetchDashboard]);
 
   const totalOrders = dashboardData?.totalOrders ?? (Array.isArray(orders) ? orders.length : 0);
   const totalRevenue = dashboardData?.totalRevenue ?? (Array.isArray(orders) ? orders.reduce((s, o) => s + (o.totalAmount ?? o.TotalAmount ?? 0), 0) : 0);
@@ -25,6 +137,17 @@ const OverviewTab = ({ products, orders, user }) => {
   const recentOrders = dashboardData?.recentOrders ?? [];
   const lowStockProducts = dashboardData?.lowStockProducts ?? [];
 
+  const seriesFromApi = normalizeSeries(dashboardData?.revenueSeries);
+  const revenueSeries = useMemo(() => {
+    if (seriesFromApi.length > 0) {
+      return seriesFromApi;
+    }
+
+    return buildRevenueSeries(orders, Number(totalRevenue) || 0);
+  }, [orders, seriesFromApi, totalRevenue]);
+
+  const hasRevenueData = revenueSeries.some((item) => item.revenue > 0);
+
   const stats = [
     { label: 'Tổng Doanh Thu', val: vnd(totalRevenue), icon: '💰', trend: totalOrders ? `+${totalOrders} đơn` : '—' },
     { label: 'Số Đơn Hàng', val: totalOrders.toString(), icon: '📦', trend: totalOrders ? 'Hoạt động' : 'Chưa có dữ liệu' },
@@ -32,51 +155,107 @@ const OverviewTab = ({ products, orders, user }) => {
     { label: 'Khách Hàng', val: totalCustomers.toString(), icon: '🚀', trend: totalCustomers ? `${totalCustomers} tài khoản` : 'Chưa có khách' },
   ];
 
+  const showLoading = isLoading && !dashboardData && (!Array.isArray(orders) || orders.length === 0);
+
+  if (showLoading) {
+    return (
+      <section className="overview-tab fade-in">
+        <OverviewLoadingState />
+      </section>
+    );
+  }
+
   return (
-    <div className="fade-in">
-      <div className="admin-tab-header">
-        <h2 className="brand-font page-title">📊 Toàn cảnh hệ thống</h2>
-        <div className="admin-status-bar">
-           📅 {new Date().toLocaleDateString('vi-VN')} | 🔔 {lowStockProducts.length > 0 ? `${lowStockProducts.length} cảnh báo tồn kho` : 'Hệ thống ổn định'}
+    <section className="overview-tab fade-in">
+      <header className="overview-header">
+        <div>
+          <h2 className="brand-font overview-title">📊 Toàn cảnh hệ thống</h2>
+          <p className="overview-subtitle">Giám sát hiệu suất vận hành và doanh thu theo thời gian.</p>
         </div>
-      </div>
+        <div className="overview-meta" aria-live="polite">
+          <span className="overview-chip">📅 {new Date().toLocaleDateString('vi-VN')}</span>
+          <span className="overview-chip">
+            🔔 {lowStockProducts.length > 0 ? `${lowStockProducts.length} cảnh báo tồn kho` : 'Hệ thống ổn định'}
+          </span>
+        </div>
+      </header>
 
-      <div className="stats-grid">
-        {stats.map(s => (
-          <div key={s.label} className="stat-card shadow-gold">
-            <div className="stat-header">
-              <span className="stat-icon">{s.icon}</span>
-              <span className="stat-trend">{s.trend}</span>
+      {error ? (
+        <div className="overview-alert" role="alert">
+          <span>{error}</span>
+          <button type="button" className="overview-retry-btn" onClick={fetchDashboard}>
+            Tải lại
+          </button>
+        </div>
+      ) : null}
+
+      <section className="overview-kpi-grid" aria-label="Dashboard KPI">
+        {stats.map((s) => (
+          <article key={s.label} className="overview-kpi-card admin-panel shadow-gold">
+            <div className="overview-kpi-head">
+              <span className="overview-kpi-icon" aria-hidden="true">{s.icon}</span>
+              <span className="overview-kpi-trend">{s.trend}</span>
             </div>
-            <div className="stat-val">{s.val}</div>
-            <div className="stat-label">{s.label}</div>
-          </div>
+            <p className="overview-kpi-value">{s.val}</p>
+            <p className="overview-kpi-label">{s.label}</p>
+          </article>
         ))}
-      </div>
+      </section>
 
-      <div className="dashboard-row main-stats-row">
-        <div className="admin-panel glass chart-container">
-          <h3 className="brand-font section-subtitle">📈 Biểu đồ Doanh Thu</h3>
-          <div className="chart-wrapper">
-             {/* Chart: giữ placeholder vì chưa có dữ liệu time-series trong DB */}
-             {[65, 40, 85, 55, 95, 70, 80].map((h, i) => (
-                <div key={i} className="chart-bar-container">
-                   <div style={{ width: '100%', height: `${h}%`, background: i === 4 ? 'var(--luxury-gold-bright)' : 'rgba(255,255,255,0.05)', borderRadius: '4px 4px 0 0', position: 'relative', transition: '0.5s' }}>
-                      <div className="chart-tooltip">{h*1.2}M</div>
-                   </div>
-                   <span className="chart-label">T{i+2}</span>
-                </div>
-             ))}
+      <section className="overview-main-grid">
+        <article className="overview-chart-card admin-panel">
+          <div className="overview-card-head">
+            <h3 className="brand-font overview-card-title">📈 Biểu đồ Doanh Thu</h3>
+            <p className="overview-card-subtitle">7 tháng gần nhất</p>
           </div>
-          <p className="chart-note">* Dữ liệu tĩnh (chưa có time-series trong DB). Tổng doanh thu thật: {vnd(totalRevenue)}</p>
-        </div>
-      </div>
 
-      <div className="dashboard-row secondary-stats-row">
-        <div className="admin-panel glass orders-container">
-          <h3 className="brand-font section-subtitle">🔔 Đơn Hàng Mới nhất</h3>
-          <div className="table-responsive">
-            <table className="admin-table">
+          <div className="overview-chart-shell">
+            {hasRevenueData ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={revenueSeries} margin={{ top: 6, right: 16, left: -10, bottom: 0 }}>
+                  <CartesianGrid stroke="rgba(255,255,255,0.08)" strokeDasharray="4 4" vertical={false} />
+                  <XAxis
+                    dataKey="month"
+                    tick={{ fill: '#b5b5b5', fontSize: 12 }}
+                    axisLine={{ stroke: 'rgba(255,255,255,0.12)' }}
+                    tickLine={false}
+                  />
+                  <YAxis
+                    tick={{ fill: '#b5b5b5', fontSize: 12 }}
+                    axisLine={{ stroke: 'rgba(255,255,255,0.12)' }}
+                    tickLine={false}
+                    width={72}
+                    tickFormatter={(value) => `${Math.round(value / 1000000)}M`}
+                  />
+                  <Tooltip
+                    cursor={{ fill: 'rgba(212, 175, 55, 0.08)' }}
+                    contentStyle={{
+                      background: '#121212',
+                      border: '1px solid rgba(212, 175, 55, 0.45)',
+                      borderRadius: '10px',
+                      color: '#ffffff',
+                    }}
+                    formatter={(value) => [vnd(Number(value) || 0), 'Doanh thu']}
+                    labelStyle={{ color: '#d7d7d7' }}
+                  />
+                  <Bar dataKey="revenue" fill="#d4af37" radius={[8, 8, 0, 0]} maxBarSize={42} />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="overview-empty-state" role="status">
+                <p>Chưa có dữ liệu doanh thu theo tháng để hiển thị biểu đồ.</p>
+              </div>
+            )}
+          </div>
+          <p className="overview-chart-note">Tổng doanh thu hiện tại: {vnd(totalRevenue)}</p>
+        </article>
+      </section>
+
+      <section className="overview-secondary-grid">
+        <article className="overview-table-card admin-panel">
+          <h3 className="brand-font overview-card-title">🔔 Đơn Hàng Mới Nhất</h3>
+          <div className="overview-table-wrap">
+            <table className="overview-table">
               <thead>
                 <tr>
                   <th>Mã Đơn</th>
@@ -87,18 +266,21 @@ const OverviewTab = ({ products, orders, user }) => {
               </thead>
               <tbody>
                 {recentOrders.length > 0 ? (
-                  recentOrders.map((o) => (
+                  recentOrders.map((o) => {
+                    const normalizedStatus = String(o.status ?? '').toLowerCase();
+                    return (
                     <tr key={o.id}>
                       <td>#{o.id}</td>
                       <td>{o.customerName || 'Khách hàng'}</td>
                       <td>
-                        <span className={o.status?.toLowerCase().includes('pending') ? 'status-pending' : 'status-processing'}>
-                          {o.status}
+                        <span className={normalizedStatus.includes('pending') ? 'overview-status-pending' : 'overview-status-processing'}>
+                          {o.status || 'Đang xử lý'}
                         </span>
                       </td>
                       <td>{vnd(o.totalAmount)}</td>
                     </tr>
-                  ))
+                    );
+                  })
                 ) : Array.isArray(orders) && orders.length > 0 ? (
                   orders.slice(0, 5).map((o) => {
                     const id = o.id ?? o.Id;
@@ -109,7 +291,7 @@ const OverviewTab = ({ products, orders, user }) => {
                         <td>#{id}</td>
                         <td>Khách hàng</td>
                         <td>
-                          <span className={status.includes('Chờ') || status.toLowerCase().includes('pending') ? 'status-pending' : 'status-processing'}>
+                          <span className={status.includes('Chờ') || status.toLowerCase().includes('pending') ? 'overview-status-pending' : 'overview-status-processing'}>
                             {status}
                           </span>
                         </td>
@@ -118,30 +300,35 @@ const OverviewTab = ({ products, orders, user }) => {
                     );
                   })
                 ) : (
-                  <tr><td colSpan={4} style={{ color: '#666', fontSize: '0.9rem' }}>Chưa có đơn hàng nào từ phía khách.</td></tr>
+                  <tr>
+                    <td colSpan={4} className="overview-empty-row">
+                      Chưa có đơn hàng nào từ phía khách.
+                    </td>
+                  </tr>
                 )}
               </tbody>
             </table>
           </div>
-        </div>
-        <div className="admin-panel glass warnings-container">
-          <h3 className="brand-font section-subtitle">⚠️ Cảnh Báo Hệ Thống</h3>
-          <div style={{ display: 'grid', gap: '0.8rem', marginTop: '1rem' }}>
+        </article>
+
+        <article className="overview-warnings-card admin-panel">
+          <h3 className="brand-font overview-card-title">⚠️ Cảnh Báo Hệ Thống</h3>
+          <div className="overview-warning-list">
              {lowStockProducts.length > 0 ? (
-               lowStockProducts.map(p => (
-                 <div key={p.id} style={{ padding: '0.8rem', background: 'rgba(231, 76, 60, 0.05)', borderLeft: '3px solid #e74c3c', fontSize: '0.8rem' }}>
+               lowStockProducts.map((p) => (
+                 <div key={p.id} className="overview-warning-item is-danger">
                    <strong>Tồn kho thấp:</strong> {p.name} — còn {p.stockQuantity} sản phẩm.
                  </div>
                ))
              ) : (
-               <div style={{ padding: '0.8rem', background: 'rgba(39, 174, 96, 0.05)', borderLeft: '3px solid #27ae60', fontSize: '0.8rem' }}>
+               <div className="overview-warning-item is-safe">
                  <strong>✓ Tất cả sản phẩm đều đủ tồn kho.</strong>
                </div>
              )}
           </div>
-        </div>
-      </div>
-    </div>
+        </article>
+      </section>
+    </section>
   );
 };
 

@@ -1,0 +1,28 @@
+/* User layout is fully scoped to avoid admin leakage */
+.user-app {
+  min-height: 100vh;
+  background: var(--luxury-bg);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+}
+
+.user-app h1,
+.user-app h2,
+.user-app h3,
+.user-app .brand-font {
+  font-family: var(--font-serif);
+  letter-spacing: 0.02em;
+}
+
+.user-app nav {
+  background: rgba(5, 5, 5, 0.92);
+  border-bottom: 1px solid var(--border-light);
+}
+
+.user-app .nav-links a {
+  letter-spacing: 0.08em;
+}
+
+.user-app .logo {
+  letter-spacing: 0.18em;
+}

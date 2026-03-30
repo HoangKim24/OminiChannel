@@ -4,6 +4,14 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Omnichannel.Models
 {
+    public class PaginatedResult<T>
+    {
+        public IEnumerable<T> Data { get; set; } = new List<T>();
+        public int TotalCount { get; set; }
+        public int Page { get; set; }
+        public int PageSize { get; set; }
+    }
+
     // ========== AUTH ==========
 
     public class RegisterRequest

@@ -41,18 +41,18 @@ namespace Omnichannel.Services
             // Note: Since ScentFamily isn't explicitly in the current Perfume Model, skipping until added to model
             // if (!string.IsNullOrEmpty(request.ScentFamily)) { ... }
 
+            var candidatePerfumes = await query.ToListAsync();
+
             if (request.PreferredNotes != null && request.PreferredNotes.Any())
             {
                 var upperNotes = request.PreferredNotes.Select(n => n.ToUpper()).ToList();
 
-                query = query.Where(p =>
+                candidatePerfumes = candidatePerfumes.Where(p =>
                     upperNotes.Any(note => p.TopNotes != null && p.TopNotes.ToUpper().Contains(note)) ||
                     upperNotes.Any(note => p.MiddleNotes != null && p.MiddleNotes.ToUpper().Contains(note)) ||
                     upperNotes.Any(note => p.BaseNotes != null && p.BaseNotes.ToUpper().Contains(note))
-                );
+                ).ToList();
             }
-
-            var candidatePerfumes = await query.ToListAsync();
 
             var scoredPerfumes = candidatePerfumes.Select(p =>
             {

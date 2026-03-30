@@ -1,0 +1,77 @@
+/* d:\Omnichannel\frontend\src\features\conversations\ConversationLayout\ConversationLayout.css */
+.omni-conv-layout {
+  display: flex;
+  height: calc(100vh - 70px - 64px); /* Minus AdminLayout header and padding */
+  width: 100%;
+  background-color: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  position: relative;
+}
+
+.omni-conv-layout__pane {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.omni-conv-layout__pane--left {
+  width: 30%;
+  min-width: 300px;
+  max-width: 400px;
+  border-right: 1px solid var(--border-color);
+  background-color: var(--bg-secondary);
+}
+
+.omni-conv-layout__pane--center {
+  flex-grow: 1; /* takes remaining space */
+  display: flex;
+  flex-direction: column;
+  background-color: var(--bg-primary);
+}
+
+.omni-conv-layout__pane--right {
+  width: 25%;
+  min-width: 250px;
+  max-width: 350px;
+  border-left: 1px solid var(--border-color);
+  background-color: var(--bg-secondary);
+  transition: transform var(--transition-normal), width var(--transition-normal);
+}
+
+.omni-conv-layout__pane--right-hidden {
+  width: 0;
+  min-width: 0;
+  transform: translateX(100%);
+  border-left: none;
+}
+
+@media (max-width: 1024px) {
+  .omni-conv-layout__pane--right {
+    position: absolute;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    z-index: 10;
+    box-shadow: -4px 0 15px rgba(0,0,0,0.5);
+  }
+}
+
+@media (max-width: 768px) {
+  .omni-conv-layout__pane--left {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 100%;
+    max-width: 100%;
+    z-index: 5;
+    transition: transform var(--transition-normal);
+  }
+  
+  .omni-conv-layout__pane--center {
+    width: 100%;
+  }
+}

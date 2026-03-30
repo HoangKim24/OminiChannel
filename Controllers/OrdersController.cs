@@ -37,51 +37,18 @@ namespace Omnichannel.Controllers
             return Ok(orders);
         }
 
-        // Legacy single-item endpoint (kept for backward compatibility)
         [HttpPost]
-        public async Task<IActionResult> PlaceOrder([FromBody] PlaceOrderRequest request)
+        public async Task<IActionResult> PlaceOrder([FromBody] PlaceOrderRequest request, System.Threading.CancellationToken cancellationToken)
         {
             if (!ModelState.IsValid)
                 return BadRequest(new { message = "Dữ liệu không hợp lệ", errors = ModelState });
 
-            var perfume = await _unitOfWork.Perfumes.GetByIdAsync(request.PerfumeId);
-            if (perfume == null)
-                return NotFound(new { message = "Sản phẩm không tồn tại" });
+            var result = await _orderFacade.PlaceOrderAsync(request, cancellationToken);
+            
+            if (!result.Success)
+                return BadRequest(new { message = "Sản phẩm không tồn tại hoặc tồn kho không đủ" });
 
-            if (perfume.StockQuantity < request.Quantity)
-                return BadRequest(new { message = $"Tồn kho không đủ. Còn {perfume.StockQuantity} sản phẩm." });
-
-            var paymentAndStockOk = await _orderFacade.PlaceOrderAsync(request.PerfumeId, request.Quantity);
-            if (!paymentAndStockOk)
-                return BadRequest(new { message = "Thanh toán thất bại hoặc tồn kho không đủ" });
-
-            var total = perfume.Price * request.Quantity;
-
-            var order = new Order
-            {
-                UserId = request.UserId,
-                OrderDate = DateTime.Now,
-                Status = "Pending",
-                TotalAmount = total,
-                ShippingAddress = request.ShippingAddress,
-                ReceiverPhone = request.ReceiverPhone,
-                Note = request.Note,
-                Items = new List<OrderItem>
-                {
-                    new OrderItem
-                    {
-                        PerfumeId = perfume.Id,
-                        PerfumeName = perfume.Name,
-                        Quantity = request.Quantity,
-                        Price = perfume.Price
-                    }
-                }
-            };
-
-            await _unitOfWork.Orders.AddAsync(order);
-            await _unitOfWork.CompleteAsync();
-
-            return Created("", new { message = "Đặt hàng thành công", orderId = order.Id });
+            return Created("", new { message = "Đặt hàng thành công", orderId = result.CreatedOrder!.Id, paymentUrl = result.PaymentUrl });
         }
 
         // New batch endpoint — handles multi-item checkout in 1 transaction

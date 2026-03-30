@@ -70,6 +70,13 @@ namespace Omnichannel.Infrastructure
             modelBuilder.Entity<Order>().Property(o => o.TotalAmount).HasPrecision(18, 2);
             modelBuilder.Entity<OrderItem>().Property(oi => oi.Price).HasPrecision(18, 2);
 
+            // Performance Indexes
+            modelBuilder.Entity<Perfume>().HasIndex(p => p.Gender);
+            modelBuilder.Entity<Order>().HasIndex(o => o.UserId);
+            modelBuilder.Entity<Order>().HasIndex(o => o.Status);
+            modelBuilder.Entity<Comment>().HasIndex(c => c.PerfumeId);
+            modelBuilder.Entity<User>().HasIndex(u => u.Username).IsUnique();
+
             modelBuilder.Entity<ChannelOrder>()
                 .HasOne(co => co.SalesChannel)
                 .WithMany()

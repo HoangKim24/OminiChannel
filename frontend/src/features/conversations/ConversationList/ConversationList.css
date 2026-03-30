@@ -1,0 +1,126 @@
+/* d:\Omnichannel\frontend\src\features\conversations\ConversationList\ConversationList.css */
+.omni-conv-list-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.omni-conv-list-header {
+  padding: 1rem;
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.omni-conv-list-header__top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.omni-conv-list-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.omni-conv-list-search {
+  width: 100%;
+}
+
+.omni-conv-list-scroll {
+  flex-grow: 1;
+  overflow-y: auto;
+  position: relative;
+}
+
+.omni-conv-list-scroll::-webkit-scrollbar {
+  width: 4px;
+}
+.omni-conv-list-scroll::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 4px;
+}
+
+.omni-conv-list-inner {
+  width: 100%;
+  position: relative;
+}
+
+/* Individual Conversation Item */
+.omni-conv-item {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  padding: 1rem;
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  gap: 1rem;
+  cursor: pointer;
+  transition: background-color var(--transition-fast);
+}
+
+.omni-conv-item:hover {
+  background-color: var(--bg-tertiary);
+}
+
+.omni-conv-item--active {
+  background-color: var(--bg-tertiary);
+  border-left: 3px solid var(--color-gold-500);
+}
+
+.omni-conv-item__avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: var(--bg-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  color: var(--color-gold-500);
+  border: 1px solid var(--border-color);
+  flex-shrink: 0;
+}
+
+.omni-conv-item__content {
+  flex-grow: 1;
+  min-width: 0; /* for text ellipsis */
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.omni-conv-item__top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.omni-conv-item__name {
+  font-size: 0.95rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.omni-conv-item__time {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.omni-conv-item__message {
+  font-size: 0.85rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.omni-conv-item__badge {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.15rem;
+}

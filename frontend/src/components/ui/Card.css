@@ -1,0 +1,56 @@
+/* d:\Omnichannel\frontend\src\components\ui\Card.css */
+.omni-card {
+  background-color: var(--bg-elevated);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+  transition: var(--transition-normal);
+  display: flex;
+  flex-direction: column;
+}
+
+.omni-card:hover {
+  border-color: var(--border-color);
+  box-shadow: var(--shadow-md);
+}
+
+.omni-card__header {
+  padding: 1.5rem 1.5rem 0.5rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.omni-card__title {
+  font-size: 1.25rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin: 0;
+  letter-spacing: 0.02em;
+}
+
+.omni-card__content {
+  padding: 1rem 1.5rem;
+  flex-grow: 1;
+}
+
+.omni-card__footer {
+  padding: 1rem 1.5rem;
+  border-top: 1px solid var(--border-light);
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+/* Modifier for Glassmorphism Cards */
+.omni-card--glass {
+  background-color: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  border-color: var(--glass-border);
+}
+
+.omni-card--glass:hover {
+  background-color: var(--glass-bg-hover);
+  border-color: var(--border-gold);
+}

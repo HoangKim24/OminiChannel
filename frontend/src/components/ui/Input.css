@@ -1,0 +1,79 @@
+/* d:\Omnichannel\frontend\src\components\ui\Input.css */
+.omni-input-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.omni-input__label {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.omni-input__wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.omni-input__icon-left {
+  position: absolute;
+  left: 1rem;
+  color: var(--text-secondary);
+  pointer-events: none;
+}
+
+.omni-input__icon-right {
+  position: absolute;
+  right: 1rem;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.omni-input {
+  width: 100%;
+  padding: 0.875rem 1rem;
+  background-color: var(--bg-elevated);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-size: 1rem;
+  transition: var(--transition-normal);
+  outline: none;
+}
+
+.omni-input:focus {
+  border-color: var(--color-gold-500);
+  box-shadow: 0 0 0 1px var(--color-gold-500), 0 0 10px rgba(212, 175, 55, 0.15);
+  background-color: var(--bg-primary);
+}
+
+.omni-input:hover:not(:focus):not(:disabled) {
+  border-color: var(--color-gold-700);
+}
+
+.omni-input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background-color: var(--bg-secondary);
+}
+
+.omni-input--with-icon-left {
+  padding-left: 2.75rem;
+}
+
+.omni-input--with-icon-right {
+  padding-right: 2.75rem;
+}
+
+.omni-input__error {
+  font-size: 0.75rem;
+  color: var(--status-error);
+  margin-top: 0.25rem;
+}
+

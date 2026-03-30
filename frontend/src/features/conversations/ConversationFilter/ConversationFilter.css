@@ -1,0 +1,51 @@
+/* src/features/conversations/ConversationFilter/ConversationFilter.css */
+.omni-conv-filter {
+  position: relative;
+}
+
+.omni-conv-filter__popover {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  width: 280px;
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 0.5rem;
+  box-shadow: var(--shadow-md);
+  padding: 1.25rem;
+  z-index: 50;
+  margin-top: 0.5rem;
+}
+
+.omni-conv-filter__popover h4 {
+  margin: 0 0 1rem 0;
+  font-size: 0.9rem;
+  color: var(--text-primary);
+}
+
+.omni-conv-filter__group {
+  margin-bottom: 1rem;
+}
+
+.omni-conv-filter__group label {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  margin-bottom: 0.5rem;
+}
+
+.omni-conv-filter__select {
+  width: 100%;
+  padding: 0.5rem;
+  background-color: var(--input-bg);
+  border: 1px solid var(--input-border);
+  color: var(--text-primary);
+  border-radius: 0.25rem;
+}
+
+.omni-conv-filter__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 1.5rem;
+}

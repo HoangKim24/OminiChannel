@@ -33,7 +33,9 @@ const AdminDashboard = ({ products, cartTotal, orders, setPage, user, onRefresh 
             <div className="status-indicator">● HỆ THỐNG TRỰC TUYẾN</div>
             <div className="admin-user">
               <span>{user?.fullName || user?.username || 'Super Admin'}</span>
-              <div className="avatar luxury-glow">{(user?.username || 'A')[0].toUpperCase()}</div>
+              <div className="avatar luxury-glow" aria-hidden="true">
+                <span className="avatar-icon">👤</span>
+              </div>
             </div>
           </div>
         </header>
