@@ -64,7 +64,11 @@ Hệ thống sẽ khả dụng tại:
 - **Trang bán hàng**: `http://localhost:5285/`
 - **Trang Quản trị (Admin)**: `http://localhost:5285/Admin`
 
-*(Lưu ý: Nếu thay đổi frontend, hãy chạy `npm run build` trong thư mục `frontend` và copy kết quả vào `wwwroot` của backend).*
+Neu thay doi frontend, chay nhanh 1 lenh trong thu muc `frontend`:
+```bash
+npm run build:sync
+```
+Lenh nay se build Vite va tu dong dong bo file moi sang `wwwroot`.
 
 ---
 
