@@ -26,6 +26,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 1rem;
 }
 
 .logo {
@@ -37,6 +38,8 @@
   letter-spacing: 0.15em;
   text-transform: uppercase;
   transition: var(--transition-normal);
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .logo:hover {
@@ -46,7 +49,11 @@
 .nav-links {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  justify-content: flex-end;
+  gap: 0.55rem;
+  flex-wrap: nowrap;
+  flex: 1;
+  min-width: 0;
 }
 
 .nav-links > a,
@@ -61,10 +68,12 @@
   font-weight: 500;
   transition: var(--transition-fast);
   position: relative;
-  padding: 0.5rem 0.7rem;
+  padding: 0.5rem 0.62rem;
   cursor: pointer;
   border-radius: var(--radius-sm);
   font-family: var(--font-sans);
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .nav-links > a::after,
@@ -101,6 +110,7 @@
   padding: 0.35rem 0.75rem;
   background: rgba(212, 175, 55, 0.08);
   white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .cart-cta {
@@ -117,6 +127,8 @@
   letter-spacing: 0.08em;
   cursor: pointer;
   transition: var(--transition-normal);
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .cart-cta strong {
@@ -140,6 +152,8 @@
 /* Search Input */
 .nav-search-container {
   position: relative;
+  flex: 0 1 230px;
+  min-width: 170px;
 }
 
 .nav-search-input {
@@ -150,13 +164,14 @@
   color: var(--text-primary);
   outline: none;
   transition: var(--transition-normal);
-  width: 200px;
+  width: 100%;
+  max-width: 230px;
   font-family: var(--font-sans);
   font-size: 0.875rem;
 }
 
 .nav-search-input:focus {
-  width: 280px;
+  max-width: 260px;
   background: rgba(255, 255, 255, 0.05);
   border-color: var(--color-gold-500);
   box-shadow: 0 0 0 1px var(--color-gold-500), var(--shadow-glow-gold);
@@ -235,13 +250,32 @@
 
 @media (max-width: 1024px) {
   .nav-links {
-    gap: 0.5rem;
+    gap: 0.35rem;
   }
 
   .nav-link-btn,
   .nav-links > a {
     letter-spacing: 0.05em;
-    font-size: 0.78rem;
+    font-size: 0.75rem;
+    padding: 0.45rem 0.48rem;
+  }
+
+  .nav-search-container {
+    flex-basis: 190px;
+    min-width: 150px;
+  }
+
+  .nav-search-input {
+    max-width: 190px;
+  }
+
+  .nav-search-input:focus {
+    max-width: 220px;
+  }
+
+  .cart-cta {
+    padding: 0.4rem 0.65rem;
+    font-size: 0.72rem;
   }
 }
 

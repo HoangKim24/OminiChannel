@@ -6,6 +6,7 @@ import Navbar from './components/user/Navbar'
 import Hero from './components/user/Hero'
 import ProductsSection from './components/user/ProductsSection'
 import Footer from './components/user/Footer'
+import Chatbot from './components/user/Chatbot'
 
 function App() {
   // === CORE STATE ===
@@ -71,11 +72,6 @@ function App() {
 
   // Chatbot
   const [chatOpen, setChatOpen] = useState(false)
-  const [chatMessages, setChatMessages] = useState([
-    { from: 'bot', text: 'Xin chào! Tôi là trợ lý KP Luxury 🌸 Tôi có thể tư vấn nước hoa cho bạn. Hãy hỏi bất cứ điều gì nhé!' }
-  ])
-  const [chatInput, setChatInput] = useState('')
-  const chatEndRef = useRef(null)
 
   // === TOAST ===
   const showToast = (message, type = 'success') => {
@@ -122,10 +118,6 @@ function App() {
       // Logic handled in render
     }
   }, [page, isAdmin])
-
-  useEffect(() => {
-    if (chatEndRef.current) chatEndRef.current.scrollIntoView({ behavior: 'smooth' })
-  }, [chatMessages])
 
   // Scroll to top on page change
   useEffect(() => { window.scrollTo(0, 0) }, [page])
@@ -357,23 +349,6 @@ function App() {
       if (sortBy === 'name') return a.name.localeCompare(b.name)
       return 0
     })
-
-  // === CHATBOT ===
-  const handleSendChat = () => {
-    if (!chatInput.trim()) return
-    setChatMessages(prev => [...prev, { from: 'user', text: chatInput.trim() }])
-    setChatInput('')
-    setTimeout(() => {
-      const replies = [
-        'Cảm ơn bạn đã quan tâm! KP Luxury có nhiều dòng nước hoa sang trọng. Bạn thích hương hoa, hương gỗ hay hương tươi mát?',
-        'Dòng nước hoa này rất được yêu thích! Bạn muốn tìm nước hoa đi tiệc hay đi làm?',
-        'KP Luxury cam kết chính hãng 100%. Bạn có thể đặt hàng trực tiếp trên website hoặc qua Shopee, TikTok Shop, Lazada nhé!',
-        'Nước hoa KP có độ lưu hương từ 6-8 tiếng. Bạn muốn tôi tư vấn thêm về cách bảo quản không?',
-        'Hiện KP Luxury đang có chương trình giảm 20% cho khách hàng mới. Bạn muốn xem sản phẩm nào không?'
-      ]
-      setChatMessages(prev => [...prev, { from: 'bot', text: replies[Math.floor(Math.random() * replies.length)] }])
-    }, 800)
-  }
 
   // === FRAGRANCE QUIZ ===
   const quizQuestions = [
@@ -1187,27 +1162,16 @@ function App() {
       )}
       {page !== 'admin' && (
         <>
-          <button className="chatbot-toggle" onClick={() => setChatOpen(!chatOpen)}>
-            {chatOpen ? '✕' : '💬'}
-          </button>
-          {chatOpen && (
-            <div className="chatbot-widget">
-              <div className="chatbot-header">
-                <span>🤖 Trợ Lý Hương Thơm</span>
-                <button onClick={() => setChatOpen(false)}>✕</button>
-              </div>
-              <div className="chatbot-messages">
-                {chatMessages.map((msg, i) => (
-                  <div key={i} className={`chat-msg ${msg.from}`}>{msg.text}</div>
-                ))}
-                <div ref={chatEndRef} />
-              </div>
-              <form className="chatbot-input" onSubmit={e => { e.preventDefault(); handleSendChat() }}>
-                <input type="text" placeholder="Nhập tin nhắn..." value={chatInput}
-                  onChange={e => setChatInput(e.target.value)} />
-              </form>
-            </div>
-          )}
+          <Chatbot 
+            chatOpen={chatOpen}
+            setChatOpen={setChatOpen}
+            user={user}
+            products={products}
+            openDetail={openDetail}
+            setPage={setPage}
+            resetQuiz={resetQuiz}
+            showToast={showToast}
+          />
         </>
       )}
       {/* Modals for O2O (Store Only) */}
