@@ -72,6 +72,10 @@ function App() {
 
   // Chatbot
   const [chatOpen, setChatOpen] = useState(false)
+  const [chatMessages, setChatMessages] = useState([
+    { from: 'bot', text: 'Xin chào! Tôi là trợ lý KP Luxury 🌸 Tôi có thể tư vấn nước hoa cho bạn. Hãy hỏi bất cứ điều gì nhé!' }
+  ])
+  const [chatInput, setChatInput] = useState('')
 
   // === TOAST ===
   const showToast = (message, type = 'success') => {
@@ -1165,6 +1169,10 @@ function App() {
           <Chatbot 
             chatOpen={chatOpen}
             setChatOpen={setChatOpen}
+            chatMessages={chatMessages}
+            setChatMessages={setChatMessages}
+            chatInput={chatInput}
+            setChatInput={setChatInput}
             user={user}
             products={products}
             openDetail={openDetail}
