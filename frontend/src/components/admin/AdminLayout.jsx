@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import './AdminLayout.css';
 import { useTheme } from '../../hooks/useTheme';
 
@@ -134,3 +134,4 @@ const AdminLayout = ({ children, activePath = '/admin/dashboard' }) => {
 };
 
 export default AdminLayout;
+

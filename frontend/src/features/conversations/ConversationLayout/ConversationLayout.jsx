@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState, cloneElement } from 'react';
 import './ConversationLayout.css';
 
 export const ConversationLayout = ({ listPane, chatPane, profilePane }) => {
@@ -14,7 +14,7 @@ export const ConversationLayout = ({ listPane, chatPane, profilePane }) => {
       {/* Center Pane: Active Chat */}
       <main className="omni-conv-layout__pane omni-conv-layout__pane--center">
         {/* Pass down the toggle handler so the Chat Pane header can trigger the right sidebar */}
-        {React.cloneElement(chatPane, { 
+        {cloneElement(chatPane, {
           onToggleProfile: () => setIsProfileOpen(!isProfileOpen),
           isProfileOpen
         })}
@@ -29,3 +29,4 @@ export const ConversationLayout = ({ listPane, chatPane, profilePane }) => {
     </div>
   );
 };
+

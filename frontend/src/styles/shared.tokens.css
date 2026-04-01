@@ -4,7 +4,7 @@
 :root {
   /* Color Palette - Premium Luxury */
   --color-gold-400: #f4d27d;
-  --color-gold-500: #d4af37;
+  --color-gold-500: #d8af2f;
   --color-gold-600: #bb9644;
   --color-gold-700: #8d6a2a;
   
@@ -38,6 +38,23 @@
   --status-warning: #f59e0b;
   --status-error: #ef4444;
   --status-info: #3b82f6;
+  --status-critical: #e74c3c;
+
+  /* Order Status Colors */
+  --order-status-pending: #f39c12;
+  --order-status-confirmed: #3498db;
+  --order-status-shipping: #9b59b6;
+  --order-status-completed: #27ae60;
+  --order-status-cancelled: #e74c3c;
+
+  /* Gender/Category Colors */
+  --gender-male: #3498db;
+  --gender-female: #e91e63;
+  --gender-unspecified: var(--color-gold-500);
+
+  /* Inventory Indicators */
+  --inventory-increase: #27ae60;
+  --inventory-decrease: #e74c3c;
 
   /* Glassmorphism */
   --glass-bg: rgba(15, 15, 15, 0.7);
@@ -68,6 +85,13 @@
   --luxury-bg: var(--bg-primary);
   --accent-gold: var(--color-gold-500);
   --glass-border-legacy: rgba(255, 255, 255, 0.1);
+
+  /* Admin compatibility tokens */
+  --admin-gold: var(--color-gold-500);
+  --admin-border: var(--border-color);
+  --admin-sidebar-width: 280px;
+  --admin-sidebar-w: var(--admin-sidebar-width);
+  --admin-topbar-height: 70px;
 }
 
 [data-theme='light'] {
@@ -83,6 +107,7 @@
 
   --border-color: #e5e7eb;
   --border-light: #f3f4f6;
+  --admin-border: rgba(17, 24, 39, 0.12);
 
   --glass-bg: rgba(250, 250, 250, 0.8);
   --glass-border: rgba(0, 0, 0, 0.05);

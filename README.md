@@ -60,6 +60,12 @@ Tài khoản seed mặc định:
 dotnet run --launch-profile http
 ```
 
+Hoặc trên Windows dùng script ổn định (tự dọn process cũ, pre-build và retry khi build lỗi ngắt quãng):
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\run-backend.ps1
+```
+
 Ứng dụng sẽ chạy tại:
 1. http://localhost:5285/
 
@@ -128,3 +134,4 @@ Omnichannel/
 1. Lỗi address already in use ở port 5285: tắt process cũ đang chiếm cổng.
 2. Lỗi DB connection: kiểm tra lại User Secrets ConnectionStrings:DefaultConnection.
 3. Không thấy UI mới khi chạy backend: chạy lại dotnet run hoặc npm run build:sync.
+4. Lỗi "Couldn't find a project to run": đang đứng sai thư mục (thường là frontend). Hãy chạy ở thư mục gốc hoặc dùng `dotnet run --project .\Omnichannel.csproj`.

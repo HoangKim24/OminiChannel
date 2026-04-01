@@ -1,10 +1,36 @@
-import React, { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { FiMoreVertical, FiSend, FiSidebar } from 'react-icons/fi';
 import { Button } from '../../../components/ui/Button';
 import './ConversationDetail.css';
 
 export const ConversationDetail = ({ activeConversation, onToggleProfile, isProfileOpen }) => {
   const [msgInput, setMsgInput] = useState('');
+  const [messages, setMessages] = useState([]);
+
+  useEffect(() => {
+    if (!activeConversation) {
+      setMessages([]);
+      return;
+    }
+
+    const initialMessages = [
+      {
+        id: `${activeConversation.id}-customer`,
+        role: 'customer',
+        text: activeConversation.lastMessage,
+        time: activeConversation.time || '10:45 AM',
+      },
+      {
+        id: `${activeConversation.id}-agent`,
+        role: 'agent',
+        text: 'Dạ, cửa hàng hiện đang có sẵn một số dòng tông gỗ như trầm hương ạ.',
+        time: '10:47 AM',
+      },
+    ];
+
+    setMessages(initialMessages);
+    setMsgInput('');
+  }, [activeConversation]);
 
   if (!activeConversation) {
     return (
@@ -15,8 +41,22 @@ export const ConversationDetail = ({ activeConversation, onToggleProfile, isProf
   }
 
   const handleSend = () => {
-    if (!msgInput.trim()) return;
-    // Todo: dispatch to store/API
+    const trimmed = msgInput.trim();
+    if (!trimmed || !activeConversation) return;
+
+    const now = new Date();
+    const time = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+
+    setMessages(prev => [
+      ...prev,
+      {
+        id: `${activeConversation.id}-agent-${Date.now()}`,
+        role: 'agent',
+        text: trimmed,
+        time,
+      },
+    ]);
+
     setMsgInput('');
   };
 
@@ -45,15 +85,15 @@ export const ConversationDetail = ({ activeConversation, onToggleProfile, isProf
       </div>
 
       <div className="omni-conv-detail__messages">
-        {/* Fake messages for layout scaling test */}
-        <div className="omni-msg omni-msg--customer">
-          {activeConversation.lastMessage}
-          <span className="omni-msg__time">10:45 AM</span>
-        </div>
-        <div className="omni-msg omni-msg--agent">
-          Dạ, cửa hàng hiện đang có sẵn một số dòng tông gỗ như trầm hương ạ.
-          <span className="omni-msg__time">10:47 AM</span>
-        </div>
+        {messages.map(message => (
+          <div
+            key={message.id}
+            className={`omni-msg ${message.role === 'agent' ? 'omni-msg--agent' : 'omni-msg--customer'}`}
+          >
+            {message.text}
+            <span className="omni-msg__time">{message.time}</span>
+          </div>
+        ))}
       </div>
 
       <div className="omni-conv-detail__input-area">
@@ -72,3 +112,4 @@ export const ConversationDetail = ({ activeConversation, onToggleProfile, isProf
     </div>
   );
 };
+

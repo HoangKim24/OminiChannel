@@ -1,4 +1,4 @@
-import React, { useRef, useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { Input } from '../../../components/ui/Input';
 import { Badge } from '../../../components/ui/Badge';
@@ -100,3 +100,4 @@ export const ConversationList = ({ activeId, onSelect }) => {
     </div>
   );
 };
+

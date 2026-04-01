@@ -1,6 +1,8 @@
-import React from 'react';
+import { useAppStore } from '../../store/useAppStore';
 
-const Hero = ({ resetQuiz }) => {
+const Hero = () => {
+  const setQuizOpen = useAppStore(state => state.setQuizOpen);
+
   return (
     <div className="hero">
       <div className="hero-content">
@@ -8,7 +10,7 @@ const Hero = ({ resetQuiz }) => {
         <h1>Tinh Hoa Nước Hoa Cao Cấp</h1>
         <div className="hero-actions">
           <a href="#products" className="btn-gold">Khám Phá Ngay</a>
-          <button type="button" className="btn-outline" onClick={resetQuiz}>Tư Vấn Mùi Hương</button>
+          <button type="button" className="btn-outline" onClick={() => setQuizOpen(true)}>Tư Vấn Mùi Hương</button>
         </div>
         <div className="hero-proof">
           <div className="proof-item">

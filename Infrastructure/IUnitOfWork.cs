@@ -10,9 +10,11 @@ namespace Omnichannel.Infrastructure
         IOrderRepository Orders { get; }
         IUserRepository Users { get; }
         ISalesChannelRepository SalesChannels { get; }
+        ICategoryRepository Categories { get; }
         IChannelProductRepository ChannelProducts { get; }
         IChannelOrderRepository ChannelOrders { get; }
         ICommentRepository Comments { get; }
+        IVoucherRepository Vouchers { get; }
         Task<int> CompleteAsync(System.Threading.CancellationToken cancellationToken = default);
     }
 }

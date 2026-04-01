@@ -5,7 +5,6 @@ import OrdersTab from './components/admin/tabs/OrdersTab';
 import ProductsTab from './components/admin/tabs/ProductsTab';
 import InventoryTab from './components/admin/tabs/InventoryTab';
 import CrmTab from './components/admin/tabs/CrmTab';
-import './styles/AdminDashboard.css';
 
 const AdminDashboard = ({ products, cartTotal, orders, setPage, user, onRefresh }) => {
   const [activeTab, setActiveTab] = useState('overview');
@@ -54,3 +53,4 @@ const AdminDashboard = ({ products, cartTotal, orders, setPage, user, onRefresh 
 };
 
 export default AdminDashboard;
+

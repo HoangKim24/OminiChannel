@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
 import './HeroSection.css';
 
 const HeroSection = () => {
@@ -71,3 +71,4 @@ const HeroSection = () => {
 };
 
 export default HeroSection;
+

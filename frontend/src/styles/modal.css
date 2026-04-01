@@ -1,7 +1,14 @@
+/* === Z-Index Management ===
+ * 0-99: Regular content
+ * 100-199: Dropdowns, tooltips
+ * 200-299: Modals, overlays
+ * 300+: Alerts, critical overlays
+ */
+
 /* === Auth Modal & Forms === */
 .modal-overlay {
   position: fixed; inset: 0; background: rgba(0,0,0,0.9); backdrop-filter: blur(10px);
-  z-index: 100; display: flex; align-items: center; justify-content: center;
+  z-index: 200; display: flex; align-items: center; justify-content: center;
   opacity: 0; pointer-events: none; transition: var(--transition-smooth);
 }
 .modal-overlay.active { opacity: 1; pointer-events: auto; }
@@ -9,7 +16,7 @@
 .modal-content {
   background: var(--bg-card); border: 1px solid var(--glass-border);
   padding: 4rem; width: 100%; max-width: 500px; position: relative;
-  z-index: 110;
+  z-index: 201;
   transform: translateY(30px); transition: var(--transition-smooth);
 }
 .modal-overlay.active .modal-content { transform: translateY(0); }

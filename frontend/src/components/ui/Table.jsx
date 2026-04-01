@@ -1,4 +1,3 @@
-import React from 'react';
 import './Table.css';
 
 export const Table = ({ columns, data, className = '', emptyMessage = 'Không có dữ liệu' }) => {

@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { FiFilter } from 'react-icons/fi';
 import { Button } from '../../../components/ui/Button';
 import './ConversationFilter.css';
@@ -58,3 +58,4 @@ export const ConversationFilter = () => {
     </div>
   );
 };
+

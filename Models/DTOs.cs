@@ -61,6 +61,7 @@ namespace Omnichannel.Models
 
         public string? Note { get; set; }
         public bool IsPickup { get; set; } = false;
+        public string? VoucherCode { get; set; }
     }
 
     public class PlaceBatchOrderItem

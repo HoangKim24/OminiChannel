@@ -1,5 +1,3 @@
-import React from 'react';
-
 const Footer = ({ page }) => {
   if (page === 'admin') return null;
 

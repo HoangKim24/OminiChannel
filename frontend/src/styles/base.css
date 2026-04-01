@@ -181,3 +181,12 @@ textarea:focus-visible {
   }
 }
 
+/* Channel logo hover effect */
+.channel-logo-hover {
+  transition: transform var(--transition-normal);
+}
+
+.channel-logo-hover:hover {
+  transform: scale(1.1);
+}
+

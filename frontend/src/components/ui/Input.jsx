@@ -1,4 +1,4 @@
-import React, { forwardRef } from 'react';
+import { forwardRef } from 'react';
 import './Input.css';
 
 export const Input = forwardRef(({
@@ -44,3 +44,4 @@ export const Input = forwardRef(({
 });
 
 Input.displayName = 'Input';
+

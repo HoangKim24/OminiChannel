@@ -1,10 +1,10 @@
 const AdminSidebar = ({ activeTab, setActiveTab, setPage, isMobileOpen, setIsMobileOpen }) => {
   const menuItems = [
-    { id: 'overview', label: 'Tổng Quan', icon: '📊' },
-    { id: 'products', label: 'Sản Phẩm', icon: '💎' },
-    { id: 'orders', label: 'Đơn Hàng', icon: '📜' },
-    { id: 'crm', label: 'Khách Hàng', icon: '👤' },
-    { id: 'inventory', label: 'Kho Hàng', icon: '📦' },
+    { id: 'overview', label: 'TỔNG QUAN' },
+    { id: 'products', label: 'SẢN PHẨM' },
+    { id: 'orders', label: 'ĐƠN HÀNG' },
+    { id: 'crm', label: 'KHÁCH HÀNG' },
+    { id: 'inventory', label: 'KHO HÀNG' },
   ];
 
   return (
@@ -20,16 +20,14 @@ const AdminSidebar = ({ activeTab, setActiveTab, setPage, isMobileOpen, setIsMob
                 if (setIsMobileOpen) setIsMobileOpen(false); 
             }}
           >
-            <span className="nav-icon">{item.icon}</span>
             <span>{item.label}</span>
           </button>
         ))}
       </nav>
       
-      <div className="admin-sidebar-footer" style={{ marginTop: 'auto', borderTop: '1px solid var(--admin-border)', paddingTop: '1rem' }}>
-         <button className="admin-nav-item" onClick={() => setPage('home')} style={{ color: 'var(--admin-gold)', border: '1px solid var(--admin-gold)' }}>
-            <span className="nav-icon">🏠</span>
-            <span>Về Trang Chủ</span>
+      <div className="admin-sidebar-footer">
+        <button className="admin-nav-item return-home-btn" onClick={() => setPage('home')}>
+             <span>Về Trang Chủ</span>
          </button>
       </div>
     </aside>

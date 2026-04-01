@@ -1,0 +1,796 @@
+.admin-app .admin-tab-shell {
+  border: none;
+  background: transparent;
+  padding: 0 0 2rem;
+}
+
+.admin-app .admin-tab-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+}
+
+.admin-app .admin-tab-head-only {
+  margin-bottom: 2rem;
+}
+
+.admin-app .admin-tab-title {
+  font-size: clamp(1.4rem, 1rem + 1.1vw, 2rem);
+  color: var(--admin-gold);
+}
+
+.admin-app .admin-tab-subtitle {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  margin-top: 0.5rem;
+  letter-spacing: 0.5px;
+}
+
+.admin-app .admin-tab-actions {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.admin-app .admin-filter-input {
+  min-width: 140px;
+}
+
+.admin-app .admin-table-shell {
+  background: rgba(10, 10, 10, 0.5);
+  border-radius: 4px;
+  overflow: hidden;
+  border: 1px solid var(--admin-border);
+}
+
+.admin-app .admin-table-head {
+  background: rgba(197, 160, 89, 0.05);
+  border-bottom: 1px solid var(--admin-border);
+}
+
+.admin-app .admin-th {
+  padding: 1.25rem;
+  text-align: left;
+  font-size: 0.65rem;
+  color: var(--admin-gold);
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+
+.admin-app .admin-th-center {
+  text-align: center;
+}
+
+.admin-app .admin-tr {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+  transition: background 0.3s;
+}
+
+.admin-app .admin-tr:hover {
+  background: rgba(197, 160, 89, 0.05);
+}
+
+.admin-app .admin-tr:focus-within {
+  background: rgba(197, 160, 89, 0.08);
+}
+
+.admin-app .admin-td {
+  padding: 1.1rem 1.25rem;
+}
+
+.admin-app .admin-td-center {
+  text-align: center;
+}
+
+.admin-app .admin-order-code {
+  color: var(--admin-gold);
+  letter-spacing: 1px;
+}
+
+.admin-app .admin-user-cell {
+  color: #fff;
+  font-weight: 600;
+}
+
+.admin-app .admin-cell-sub {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+.admin-app .admin-cell-text {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.admin-app .admin-product-main {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.admin-app .admin-product-img {
+  width: 64px;
+  height: 64px;
+  object-fit: cover;
+  border: 1px solid var(--admin-border);
+}
+
+.admin-app .admin-product-name {
+  font-size: 1.05rem;
+  color: #fff;
+}
+
+.admin-app .admin-amount {
+  color: #fff;
+  font-size: 0.95rem;
+}
+
+.admin-app .admin-mini-btn {
+  font-size: 0.65rem;
+  padding: 0.5rem 1rem;
+}
+
+.admin-app .admin-empty-cell {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  text-align: center;
+  padding: 4rem 1rem;
+}
+
+.admin-app .admin-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.9);
+  z-index: 9999;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 1rem;
+}
+
+.admin-app .admin-modal-overlay-right {
+  justify-content: flex-end;
+  padding: 0;
+}
+
+.admin-app .admin-side-modal {
+  width: min(620px, 100vw);
+  height: 100%;
+  border-left: 1px solid var(--admin-border);
+  border-radius: 0;
+  padding: 2rem;
+  overflow-y: auto;
+}
+
+.admin-app .admin-centered-modal {
+  width: min(840px, 95vw);
+  background: #0a0a0a;
+  border: 1px solid var(--admin-border);
+  padding: 2rem;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.admin-app .admin-transfer-modal {
+  width: min(520px, 95vw);
+  background: #0a0a0a;
+  border: 1px solid var(--admin-gold);
+  padding: 2rem;
+}
+
+.admin-app .admin-modal-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.admin-app .admin-modal-title {
+  font-size: clamp(1.3rem, 1rem + 1.1vw, 2rem);
+  color: var(--admin-gold);
+}
+
+.admin-app .admin-modal-close {
+  background: none;
+  border: none;
+  color: #555;
+  font-size: 2rem;
+  cursor: pointer;
+}
+
+.admin-app .admin-modal-close:hover {
+  color: var(--admin-gold);
+  transition: color 0.3s;
+}
+
+.admin-app .admin-modal-close:focus {
+  outline: 2px solid var(--admin-gold);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.admin-app .admin-modal-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.admin-app .admin-form-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.admin-app .admin-modal-subpanel {
+  padding: 1.1rem;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.admin-app .admin-info-label {
+  color: var(--admin-gold);
+  text-transform: uppercase;
+  font-size: 0.6rem;
+  letter-spacing: 2px;
+  margin-bottom: 1rem;
+}
+
+.admin-app .admin-info-user {
+  font-size: 1rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.admin-app .admin-info-line {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-top: 0.35rem;
+}
+
+.admin-app .admin-info-address {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.admin-app .admin-status-actions {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.admin-app .admin-order-items-title {
+  margin-bottom: 1.25rem;
+  font-size: 1.1rem;
+}
+
+.admin-app .admin-items-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 560px;
+}
+
+.admin-app .admin-items-head {
+  background: rgba(255, 255, 255, 0.02);
+  border-bottom: 1px solid var(--admin-border);
+}
+
+.admin-app .admin-items-th {
+  padding: 0.95rem;
+  text-align: left;
+  font-size: 0.6rem;
+  color: var(--admin-gold);
+  letter-spacing: 1px;
+}
+
+.admin-app .admin-items-th-center {
+  text-align: center;
+}
+
+.admin-app .admin-items-th-right {
+  text-align: right;
+}
+
+.admin-app .admin-items-row {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.02);
+}
+
+.admin-app .admin-items-td {
+  padding: 0.95rem;
+  font-size: 0.85rem;
+}
+
+.admin-app .admin-items-td-center {
+  text-align: center;
+}
+
+.admin-app .admin-items-td-right {
+  text-align: right;
+}
+
+.admin-app .admin-items-td-strong {
+  font-weight: 700;
+}
+
+.admin-app .admin-items-foot {
+  background: rgba(197, 160, 89, 0.03);
+}
+
+.admin-app .admin-items-total-label {
+  text-align: right;
+  padding: 1.2rem;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-muted);
+}
+
+.admin-app .admin-items-total-value {
+  text-align: right;
+  padding: 1.2rem;
+  color: var(--admin-gold);
+  font-size: 1.15rem;
+  font-weight: 900;
+}
+
+.admin-app .admin-modal-subtitle {
+  color: var(--admin-gold);
+  font-size: 1rem;
+  margin-bottom: 1rem;
+}
+
+.admin-app .admin-modal-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.admin-app .admin-modal-textarea {
+  height: 120px;
+  resize: none;
+}
+
+.admin-app .admin-modal-actions {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 1rem;
+  flex-wrap: wrap;
+}
+
+.admin-app .admin-modal-actions-end {
+  justify-content: flex-end;
+}
+
+.admin-app .admin-modal-actions-vertical {
+  flex-direction: column;
+}
+
+.admin-app .admin-detail-grid {
+  margin-bottom: 2rem;
+}
+
+.admin-app .admin-status-panel {
+  margin-bottom: 2rem;
+  background: rgba(197, 160, 89, 0.03);
+  border: 1px solid var(--admin-border);
+}
+
+.admin-app .admin-order-items-table {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--admin-border);
+}
+
+.admin-app .inventory-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.admin-app .inventory-kpi-label {
+  font-size: 0.65rem;
+  color: var(--admin-gold);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-bottom: 1rem;
+}
+
+.admin-app .inventory-kpi-value {
+  font-size: 2.2rem;
+  font-weight: 700;
+}
+
+.admin-app .inventory-kpi-note {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-top: 0.8rem;
+}
+
+.admin-app .inventory-kpi-alert {
+  border: 1px solid rgba(231, 76, 60, 0.3);
+}
+
+.admin-app .inventory-kpi-alert-label,
+.admin-app .inventory-kpi-alert-note,
+.admin-app .inventory-kpi-alert-value {
+  color: #e74c3c;
+}
+
+.admin-app .inventory-kpi-alert-label {
+  font-size: 0.65rem;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-bottom: 1rem;
+}
+
+.admin-app .inventory-kpi-alert-value {
+  font-size: 2.2rem;
+  font-weight: 700;
+}
+
+.admin-app .inventory-kpi-alert-note {
+  font-size: 0.75rem;
+  margin-top: 0.8rem;
+  font-weight: 700;
+}
+
+.admin-app .inventory-main-grid {
+  display: grid;
+  grid-template-columns: 1.6fr 1fr;
+  gap: 1rem;
+}
+
+.admin-app .inventory-section-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.admin-app .inventory-section-title {
+  font-size: 1.3rem;
+}
+
+.admin-app .inventory-quick-action {
+  padding: 0.6rem 1.25rem;
+}
+
+.admin-app .inventory-location-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
+}
+
+.admin-app .inventory-location-card {
+  padding: 1.2rem;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--admin-border);
+}
+
+.admin-app .inventory-location-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.admin-app .inventory-location-name {
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: #fff;
+}
+
+.admin-app .inventory-location-stock {
+  font-size: 1.6rem;
+  font-weight: 700;
+}
+
+.admin-app .inventory-location-unit {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.admin-app .inventory-capacity-track {
+  height: 2px;
+  background: rgba(255, 255, 255, 0.05);
+  margin-top: 1.2rem;
+  border-radius: 2px;
+}
+
+.admin-app .inventory-capacity-fill {
+  height: 100%;
+  border-radius: 2px;
+}
+
+.admin-app .inventory-capacity-meta {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 0.75rem;
+  font-size: 0.7rem;
+}
+
+.admin-app .inventory-capacity-label {
+  color: var(--text-muted);
+}
+
+.admin-app .inventory-log-title {
+  margin-bottom: 2rem;
+}
+
+.admin-app .inventory-log-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.admin-app .inventory-log-item {
+  padding-bottom: 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+.admin-app .inventory-log-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.admin-app .inventory-log-date {
+  color: var(--text-muted);
+  font-size: 0.7rem;
+}
+
+.admin-app .inventory-log-msg {
+  color: #fff;
+  font-size: 0.85rem;
+}
+
+.admin-app .inventory-log-loc {
+  font-size: 0.7rem;
+  color: var(--admin-gold);
+  margin-top: 4px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.admin-app .inventory-log-more {
+  width: 100%;
+  margin-top: 0.8rem;
+  border-style: dashed;
+}
+
+.admin-app .admin-field-label {
+  font-size: 0.65rem;
+  color: var(--admin-gold);
+  letter-spacing: 2px;
+}
+
+.admin-app .admin-field-full {
+  width: 100%;
+}
+
+/* Order Status Color Tokens */
+.admin-app .order-status-pending {
+  --status-color: var(--order-status-pending);
+  color: var(--status-color);
+  border-color: var(--status-color);
+}
+
+.admin-app .order-status-confirmed {
+  --status-color: var(--order-status-confirmed);
+  color: var(--status-color);
+  border-color: var(--status-color);
+}
+
+.admin-app .order-status-shipping {
+  --status-color: var(--order-status-shipping);
+  color: var(--status-color);
+  border-color: var(--status-color);
+}
+
+.admin-app .order-status-completed {
+  --status-color: var(--order-status-completed);
+  color: var(--status-color);
+  border-color: var(--status-color);
+}
+
+.admin-app .order-status-cancelled {
+  --status-color: var(--order-status-cancelled);
+  color: var(--status-color);
+  border-color: var(--status-color);
+}
+
+.admin-app .order-status-default {
+  --status-color: #888;
+  color: var(--status-color);
+  border-color: var(--status-color);
+}
+
+/* Gender Badge Color Tokens */
+.admin-app .gender-badge-male {
+  color: var(--gender-male);
+  border-color: var(--gender-male);
+}
+
+.admin-app .gender-badge-female {
+  color: var(--gender-female);
+  border-color: var(--gender-female);
+}
+
+.admin-app .gender-badge-unspecified {
+  color: var(--gender-unspecified);
+  border-color: var(--gender-unspecified);
+}
+
+/* Inventory Indicator Color Tokens */
+.admin-app .inventory-increase {
+  color: var(--inventory-increase);
+}
+
+.admin-app .inventory-decrease {
+  color: var(--inventory-decrease);
+}
+
+.admin-app .inventory-log-amount {
+  font-size: 0.85rem;
+}
+
+/* Status Critical Color Token */
+.admin-app .status-critical {
+  color: var(--status-critical);
+}
+
+@media (max-width: 980px) {
+  .admin-app .inventory-main-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-app .admin-form-grid-2 {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-app .admin-side-modal,
+  .admin-app .admin-centered-modal,
+  .admin-app .admin-transfer-modal {
+    padding: 1.25rem;
+  }
+
+  .admin-app .admin-th,
+  .admin-app .admin-td {
+    padding: 0.85rem;
+  }
+
+  .admin-app .admin-items-total-label,
+  .admin-app .admin-items-total-value {
+    padding: 0.9rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .admin-app .admin-modal-overlay {
+    padding: 0.5rem;
+  }
+
+  .admin-app .admin-tab-header {
+    margin-bottom: 1.5rem;
+  }
+
+  .admin-app .admin-side-modal {
+    width: 100vw;
+  }
+
+  .admin-app .admin-modal-actions {
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 480px) {
+  .admin-app .admin-tab-title {
+    font-size: 1.2rem;
+  }
+
+  .admin-app .admin-tab-subtitle {
+    font-size: 0.75rem;
+  }
+
+  .admin-app .admin-tab-header {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .admin-app .admin-tab-actions {
+    width: 100%;
+  }
+
+  .admin-app .admin-filter-input {
+    min-width: 100%;
+  }
+
+  .admin-app .admin-th,
+  .admin-app .admin-td {
+    padding: 0.65rem 0.5rem;
+    font-size: 0.75rem;
+  }
+
+  .admin-app .admin-modal-title {
+    font-size: 1.1rem;
+  }
+
+  .admin-app .admin-centered-modal {
+    width: 100vw;
+    padding: 1rem;
+  }
+
+  .admin-app .admin-modal-form {
+    gap: 1rem;
+  }
+
+  .admin-app .inventory-location-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-app .inventory-kpi-grid {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+
+  .admin-app .inventory-log-item {
+    padding-bottom: 0.75rem;
+  }
+
+  .admin-app .admin-items-table {
+    min-width: 100%;
+    font-size: 0.75rem;
+  }
+
+  .admin-app .admin-items-th,
+  .admin-app .admin-items-td {
+    padding: 0.65rem 0.4rem;
+  }
+}
+
+@media (max-width: 320px) {
+  .admin-app .admin-tab-header {
+    margin-bottom: 1rem;
+  }
+
+  .admin-app .admin-th,
+  .admin-app .admin-td {
+    padding: 0.5rem 0.25rem;
+    font-size: 0.65rem;
+  }
+
+  .admin-app .admin-modal-head {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .admin-app .admin-modal-close {
+    font-size: 1.5rem;
+  }
+
+  .admin-app .admin-form-grid-2 {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+
+  .admin-app .inventory-kpi-label {
+    font-size: 0.55rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .admin-app .inventory-kpi-value {
+    font-size: 1.8rem;
+  }
+
+  .admin-app .admin-items-table {
+    font-size: 0.65rem;
+  }
+
+  .admin-app .admin-modal-form {
+    gap: 0.75rem;
+  }
+}

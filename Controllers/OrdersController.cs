@@ -89,6 +89,26 @@ namespace Omnichannel.Controllers
                 _unitOfWork.Perfumes.Update(perfume);
             }
 
+            decimal discountAmount = 0;
+            if (!string.IsNullOrEmpty(request.VoucherCode))
+            {
+                var voucher = await _unitOfWork.Vouchers.GetByCodeAsync(request.VoucherCode);
+                if (voucher != null && voucher.IsActive && voucher.ExpiryDate > DateTime.Now)
+                {
+                    if (totalAmount >= voucher.MinOrderValue)
+                    {
+                        if (voucher.UsageLimit == 0 || voucher.UsedCount < voucher.UsageLimit)
+                        {
+                            discountAmount = voucher.DiscountAmount;
+                            voucher.UsedCount++;
+                            _unitOfWork.Vouchers.Update(voucher);
+                        }
+                    }
+                }
+            }
+
+            totalAmount = Math.Max(0, totalAmount - discountAmount);
+
             var order = new Order
             {
                 UserId = request.UserId,
@@ -99,6 +119,8 @@ namespace Omnichannel.Controllers
                 ReceiverPhone = request.ReceiverPhone,
                 Note = request.Note,
                 IsPickup = request.IsPickup,
+                VoucherCode = request.VoucherCode,
+                DiscountAmount = discountAmount,
                 Items = orderItems
             };
 
@@ -125,6 +147,20 @@ namespace Omnichannel.Controllers
             var validStatuses = new[] { "Pending", "Confirmed", "Shipping", "Completed", "Cancelled" };
             if (!validStatuses.Contains(request.Status))
                 return BadRequest(new { message = $"Trạng thái '{request.Status}' không hợp lệ. Cho phép: {string.Join(", ", validStatuses)}" });
+
+            if (request.Status == "Cancelled" && existing.Status != "Cancelled")
+            {
+                // Restore stock for each item if cancelled
+                foreach (var item in existing.Items)
+                {
+                    var perfume = await _unitOfWork.Perfumes.GetByIdAsync(item.PerfumeId);
+                    if (perfume != null)
+                    {
+                        perfume.StockQuantity += item.Quantity;
+                        _unitOfWork.Perfumes.Update(perfume);
+                    }
+                }
+            }
 
             existing.Status = request.Status;
             _unitOfWork.Orders.Update(existing);

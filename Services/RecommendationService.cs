@@ -16,7 +16,7 @@ namespace Omnichannel.Services
 
     public class RecommendedPerfumeDto
     {
-        public Perfume Perfume { get; set; }
+        public required Perfume Perfume { get; set; }
         public int MatchScore { get; set; }
     }
 

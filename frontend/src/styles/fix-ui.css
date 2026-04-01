@@ -1,0 +1,76 @@
+/* Consolidated UI Fixes for OminiChannel */
+
+/* 1. Toast Notification Fix (Fixing class mismatch and overflow) */
+.toast-notification {
+  background: rgba(20, 20, 20, 0.95);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--color-gold-500);
+  border-radius: var(--radius-md);
+  padding: 1rem 1.5rem;
+  color: #fff;
+  font-size: 0.9rem;
+  box-shadow: var(--shadow-lg);
+  min-width: 300px;
+  max-width: 450px;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 0.5rem;
+  animation: slideInRight 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  word-break: break-word; /* Fix overflow for long error messages */
+  position: relative;
+  overflow: hidden;
+}
+
+.toast-notification.error {
+  border-color: var(--status-error);
+  background: rgba(40, 10, 10, 0.95);
+}
+
+.toast-notification.success {
+  border-color: var(--status-success);
+  background: rgba(10, 40, 10, 0.95);
+}
+
+/* 2. Error Banner Overflow Fix (Universal) */
+.error-banner, 
+.alert-danger,
+.overview-alert {
+  position: relative;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+/* 3. User Heading Weight Fix */
+.user-app h1,
+.user-app h2,
+.user-app h3,
+.user-app .brand-font {
+  font-weight: 700;
+  color: var(--color-gold-500);
+}
+
+/* 4. Desktop Max-Width Consistency */
+.user-app .main-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 2rem;
+  width: 100%;
+}
+
+/* 5. Mobile Adjustments (375px - 414px) */
+@media (max-width: 414px) {
+  .user-app .main-content {
+    padding: 0 1rem;
+  }
+  
+  .user-app .section-title {
+    font-size: 1.5rem;
+  }
+}
+
+@keyframes slideInRight {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}

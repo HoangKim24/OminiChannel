@@ -1,6 +1,7 @@
 using Omnichannel.Models;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Hangfire;
 
 namespace Omnichannel.Services
 {
@@ -27,21 +28,20 @@ namespace Omnichannel.Services
 
     public class OmnichannelSyncObserver : IInventoryObserver
     {
-        private readonly IEnumerable<IOmnichannelAdapter> _adapters;
+        private readonly Hangfire.IBackgroundJobClient _backgroundJobClient;
 
-        public OmnichannelSyncObserver(IEnumerable<IOmnichannelAdapter> adapters)
+        public OmnichannelSyncObserver(Hangfire.IBackgroundJobClient backgroundJobClient)
         {
-            _adapters = adapters;
+            _backgroundJobClient = backgroundJobClient;
         }
 
-        public async Task OnInventoryChangedAsync(Perfume perfume)
+        public Task OnInventoryChangedAsync(Perfume perfume)
         {
-            System.Console.WriteLine($"[Observer] Phát hiện thay đổi tồn kho: '{perfume.Name}' → {perfume.StockQuantity}. Đang đồng bộ đến tất cả kênh...");
-            foreach (var adapter in _adapters)
-            {
-                await adapter.SyncInventoryAsync(perfume);
-            }
-            System.Console.WriteLine($"[Observer] Hoàn tất đồng bộ '{perfume.Name}' đến {System.Linq.Enumerable.Count(_adapters)} kênh.");
+            System.Console.WriteLine($"[Observer] Phát hiện thay đổi tồn kho: '{perfume.Name}'. Đẩy việc đồng bộ vào Hàng đợi siêu tốc (Hangfire) để khách không phải chờ...");
+            
+            _backgroundJobClient.Enqueue<OmnichannelBackgroundSyncService>(service => service.SyncInventoryJobAsync(perfume.Id));
+            
+            return Task.CompletedTask;
         }
     }
 }

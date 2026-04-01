@@ -14,6 +14,8 @@ namespace Omnichannel.Models
         public string ReceiverPhone { get; set; } = string.Empty;
         public string? Note { get; set; }
         public bool IsPickup { get; set; } = false;
+        public string? VoucherCode { get; set; }
+        public decimal DiscountAmount { get; set; } = 0;
         public List<OrderItem> Items { get; set; } = new List<OrderItem>();
     }
 

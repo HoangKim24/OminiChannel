@@ -1,10 +1,15 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
+import { useToast } from '../../../utils/toastContext.jsx';
 
 const ProductsTab = ({ products, user, onRefresh }) => {
+  const { success, error } = useToast();
   const [showModal, setShowModal] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
   const [saving, setSaving] = useState(false);
   const [formData, setFormData] = useState({});
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterGender, setFilterGender] = useState('all');
+  const [priceRange, setPriceRange] = useState({ min: 0, max: 10000000 });
 
   const openAddModal = () => {
     setEditingProduct(null);
@@ -45,13 +50,15 @@ const ProductsTab = ({ products, user, onRefresh }) => {
       });
 
       if (res.ok || res.status === 201 || res.status === 204) {
+        const message = editingProduct ? '✓ Cập nhật sản phẩm thành công!' : '✓ Thêm sản phẩm mới thành công!';
+        success(message);
         setShowModal(false);
         if (onRefresh) onRefresh();
       } else {
         const err = await res.json().catch(() => ({}));
-        alert(err.message || 'Lỗi khi lưu sản phẩm');
+        error(err.message || 'Lỗi khi lưu sản phẩm');
       }
-    } catch (err) { alert('Lỗi kết nối: ' + err.message); }
+    } catch (err) { error('Lỗi kết nối: ' + err.message); }
     finally { setSaving(false); }
   };
 
@@ -62,67 +69,98 @@ const ProductsTab = ({ products, user, onRefresh }) => {
         method: 'DELETE', headers: { 'X-User-Role': user?.role || 'Admin' }
       });
       if (res.ok || res.status === 204) {
+        success('✓ Xóa sản phẩm thành công!');
         if (onRefresh) onRefresh();
         setShowModal(false);
+      } else {
+        error('Lỗi khi xóa sản phẩm');
       }
-    } catch (err) { alert('Lỗi: ' + err.message); }
+    } catch (err) { error('Lỗi: ' + err.message); }
   };
 
+  const filteredProducts = useMemo(() => {
+    return (products || []).filter(p => {
+      const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                           p.brand.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesGender = filterGender === 'all' || p.gender === filterGender;
+      const matchesPrice = p.price >= priceRange.min && p.price <= priceRange.max;
+      return matchesSearch && matchesGender && matchesPrice;
+    });
+  }, [products, searchQuery, filterGender, priceRange]);
+
   return (
-    <div className="fade-in">
-      <div className="glass-panel shadow-gold" style={{ border: 'none', background: 'transparent', padding: '0 0 2rem 0' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2.5rem' }}>
+    <div className="fade-in admin-tab products-tab">
+      <div className="glass-panel shadow-gold admin-tab-shell">
+        <div className="admin-tab-header">
           <div>
-            <h2 className="brand-font" style={{ fontSize: '2rem', color: 'var(--admin-gold)' }}>Danh Mục Sản Phẩm</h2>
-            <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '0.5rem', letterSpacing: '0.5px' }}>
+            <h2 className="brand-font admin-tab-title">Danh Mục Sản Phẩm</h2>
+            <p className="admin-tab-subtitle">
               Quản lý bộ sưu tập nước hoa thượng lưu của bạn.
             </p>
           </div>
-          <div style={{ display: 'flex', gap: '1.25rem' }}>
+          <div className="admin-tab-actions">
+             <input 
+               type="text" 
+               placeholder="🔍 Tìm kiếm sản phẩm..." 
+               className="luxury-input-field"
+               value={searchQuery}
+               onChange={(e) => setSearchQuery(e.target.value)}
+               style={{ flex: 1, minWidth: '200px' }}
+             />
+             <select 
+               className="luxury-input-field"
+               value={filterGender}
+               onChange={(e) => setFilterGender(e.target.value)}
+             >
+               <option value="all">Tất cả loại</option>
+               <option value="Nam">Nam</option>
+               <option value="Nữ">Nữ</option>
+               <option value="Unisex">Unisex</option>
+             </select>
              <button className="luxury-button-gold" onClick={openAddModal}>+ THÊM TUYỆT TÁC</button>
           </div>
         </div>
 
-        <div className="table-container shadow-gold" style={{ background: 'rgba(10,10,10,0.5)', borderRadius: '4px', overflow: 'hidden', border: '1px solid var(--admin-border)' }}>
-          <table className="admin-table-modern" style={{ width: '100%', borderCollapse: 'collapse' }}>
-            <thead style={{ background: 'rgba(197, 160, 89, 0.05)', borderBottom: '1px solid var(--admin-border)' }}>
+        <div className="table-container shadow-gold admin-table-shell">
+          <table className="admin-table-modern">
+            <thead className="admin-table-head">
               <tr>
-                <th style={{ padding: '1.25rem', textAlign: 'left', fontSize: '0.65rem', color: 'var(--admin-gold)', textTransform: 'uppercase', letterSpacing: '2px' }}>Kiệt Tác</th>
-                <th style={{ padding: '1.25rem', textAlign: 'left', fontSize: '0.65rem', color: 'var(--admin-gold)', textTransform: 'uppercase', letterSpacing: '2px' }}>Chi Tiết</th>
-                <th style={{ padding: '1.25rem', textAlign: 'left', fontSize: '0.65rem', color: 'var(--admin-gold)', textTransform: 'uppercase', letterSpacing: '2px' }}>Phân Loại</th>
-                <th style={{ padding: '1.25rem', textAlign: 'left', fontSize: '0.65rem', color: 'var(--admin-gold)', textTransform: 'uppercase', letterSpacing: '2px' }}>Giá & Tồn Kho</th>
-                <th style={{ padding: '1.25rem', textAlign: 'center', fontSize: '0.65rem', color: 'var(--admin-gold)', textTransform: 'uppercase', letterSpacing: '2px' }}>Thao Tác</th>
+                <th className="admin-th">Kiệt Tác</th>
+                <th className="admin-th">Chi Tiết</th>
+                <th className="admin-th">Phân Loại</th>
+                <th className="admin-th">Giá & Tồn Kho</th>
+                <th className="admin-th admin-th-center">Thao Tác</th>
               </tr>
             </thead>
             <tbody>
-              {(products || []).map(p => (
-                <tr key={p.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)', transition: 'background 0.3s' }} className="table-row-hover">
-                  <td style={{ padding: '1.25rem' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
-                      <img src={p.imageUrl} alt="" style={{ width: '64px', height: '64px', objectFit: 'cover', border: '1px solid var(--admin-border)' }} />
+              {filteredProducts.map(p => (
+                <tr key={p.id} className="table-row-hover admin-tr">
+                  <td className="admin-td">
+                    <div className="admin-product-main">
+                      <img src={p.imageUrl} alt="" className="admin-product-img" />
                       <div>
-                        <div className="brand-font" style={{ fontSize: '1.05rem', color: '#fff' }}>{p.name}</div>
-                        <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '4px' }}>SKU: {p.id.toString().padStart(6, '0')}</div>
+                        <div className="brand-font admin-product-name">{p.name}</div>
+                        <div className="admin-cell-sub">SKU: {p.id.toString().padStart(6, '0')}</div>
                       </div>
                     </div>
                   </td>
-                  <td style={{ padding: '1.25rem' }}>
-                    <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{p.brand || 'Luxury Concept'}</div>
-                    <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '4px' }}>{p.concentration || 'Eau de Parfum'}</div>
+                  <td className="admin-td">
+                    <div className="admin-cell-text">{p.brand || 'Luxury Concept'}</div>
+                    <div className="admin-cell-sub">{p.concentration || 'Eau de Parfum'}</div>
                   </td>
-                  <td style={{ padding: '1.25rem' }}>
-                    <span className="luxury-badge" style={{ color: p.gender === 'Nam' ? '#3498db' : p.gender === 'Nữ' ? '#e91e63' : 'var(--admin-gold)' }}>
+                  <td className="admin-td">
+                    <span className={`luxury-badge ${p.gender === 'Nam' ? 'gender-badge-male' : p.gender === 'Nữ' ? 'gender-badge-female' : 'gender-badge-unspecified'}`}>
                       {p.gender || 'Unisex'}
                     </span>
                   </td>
-                  <td style={{ padding: '1.25rem' }}>
-                    <div style={{ color: 'var(--admin-gold)', fontWeight: '700', fontSize: '0.95rem' }}>{p.price?.toLocaleString()} đ</div>
-                    <div style={{ fontSize: '0.7rem', color: p.stockQuantity < 5 ? '#e74c3c' : 'var(--text-muted)', marginTop: '4px' }}>
+                  <td className="admin-td">
+                    <div className="admin-order-code">{p.price?.toLocaleString()} đ</div>
+                    <div className={p.stockQuantity < 5 ? 'status-critical' : ''} style={{ fontSize: '0.7rem', color: p.stockQuantity < 5 ? 'var(--status-critical)' : 'var(--text-muted)', marginTop: '4px' }}>
                       CÒN: {p.stockQuantity || 0} CHAI
                     </div>
                   </td>
-                  <td style={{ padding: '1.25rem', textAlign: 'center' }}>
-                    <button className="luxury-input-field" style={{ fontSize: '0.65rem', padding: '0.5rem 1rem' }} onClick={() => openEditModal(p)}>
+                  <td className="admin-td admin-td-center">
+                    <button className="luxury-input-field admin-mini-btn" onClick={() => openEditModal(p)}>
                       CHI TIẾT
                     </button>
                   </td>
@@ -134,29 +172,29 @@ const ProductsTab = ({ products, user, onRefresh }) => {
       </div>
 
       {showModal && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.9)', zIndex: 9999, display: 'flex', justifyContent: 'flex-end' }}>
-          <div className="glass-panel fade-in-right" style={{ width: '600px', height: '100%', borderLeft: '1px solid var(--admin-border)', padding: '4rem', overflowY: 'auto', borderRadius: 0 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3.5rem' }}>
-              <h2 className="brand-font" style={{ fontSize: '2.2rem', color: 'var(--admin-gold)' }}>
+        <div className="admin-modal-overlay admin-modal-overlay-right">
+          <div className="glass-panel fade-in-right admin-side-modal">
+            <div className="admin-modal-head">
+              <h2 className="brand-font admin-modal-title">
                 {editingProduct ? 'Hồ Sơ Kiệt Tác' : 'Kiến Tạo Tuyệt Tác'}
               </h2>
-              <button onClick={() => setShowModal(false)} style={{ background: 'none', border: 'none', color: '#555', fontSize: '2.5rem', cursor: 'pointer' }}>×</button>
+              <button className="admin-modal-close" onClick={() => setShowModal(false)}>×</button>
             </div>
 
-            <form style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }} onSubmit={handleSubmit}>
+            <form className="admin-modal-form" onSubmit={handleSubmit}>
               <div className="input-group">
-                <label style={{ fontSize: '0.65rem', color: 'var(--admin-gold)', letterSpacing: '2px' }}>TÊN SẢN PHẨM</label>
-                <input className="luxury-input-field" required value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} placeholder="Bleu de Chanel Parfum..." />
+                <label className="admin-field-label">TÊN SẢN PHẨM</label>
+                <input className="luxury-input-field admin-field-full" required value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} placeholder="Bleu de Chanel Parfum..." />
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+              <div className="admin-form-grid-2">
                 <div className="input-group">
-                  <label style={{ fontSize: '0.65rem', color: 'var(--admin-gold)', letterSpacing: '2px' }}>THƯƠNG HIỆU</label>
-                  <input className="luxury-input-field" value={formData.brand} onChange={e => setFormData({...formData, brand: e.target.value})} />
+                  <label className="admin-field-label">THƯƠNG HIỆU</label>
+                  <input className="luxury-input-field admin-field-full" value={formData.brand} onChange={e => setFormData({...formData, brand: e.target.value})} />
                 </div>
                 <div className="input-group">
-                   <label style={{ fontSize: '0.65rem', color: 'var(--admin-gold)', letterSpacing: '2px' }}>PHÂN LOẠI</label>
-                   <select className="luxury-input-field" value={formData.gender} onChange={e => setFormData({...formData, gender: e.target.value})}>
+                   <label className="admin-field-label">PHÂN LOẠI</label>
+                   <select className="luxury-input-field admin-field-full" value={formData.gender} onChange={e => setFormData({...formData, gender: e.target.value})}>
                       <option>Unisex</option>
                       <option>Nam</option>
                       <option>Nữ</option>
@@ -164,40 +202,40 @@ const ProductsTab = ({ products, user, onRefresh }) => {
                 </div>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+              <div className="admin-form-grid-2">
                 <div className="input-group">
-                   <label style={{ fontSize: '0.65rem', color: 'var(--admin-gold)', letterSpacing: '2px' }}>GIÁ NIÊM YẾT</label>
-                   <input type="number" className="luxury-input-field" required value={formData.price} onChange={e => setFormData({...formData, price: e.target.value})} />
+                   <label className="admin-field-label">GIÁ NIÊM YẾT</label>
+                   <input type="number" className="luxury-input-field admin-field-full" required value={formData.price} onChange={e => setFormData({...formData, price: e.target.value})} />
                 </div>
                 <div className="input-group">
-                   <label style={{ fontSize: '0.65rem', color: 'var(--admin-gold)', letterSpacing: '2px' }}>SỐ LƯỢNG KHO</label>
-                   <input type="number" className="luxury-input-field" value={formData.stockQuantity} onChange={e => setFormData({...formData, stockQuantity: e.target.value})} />
+                   <label className="admin-field-label">SỐ LƯỢNG KHO</label>
+                   <input type="number" className="luxury-input-field admin-field-full" value={formData.stockQuantity} onChange={e => setFormData({...formData, stockQuantity: e.target.value})} />
                 </div>
               </div>
 
               <div className="input-group">
-                <label style={{ fontSize: '0.65rem', color: 'var(--admin-gold)', letterSpacing: '2px' }}>LINK HÌNH ẢNH</label>
-                <input className="luxury-input-field" value={formData.imageUrl} onChange={e => setFormData({...formData, imageUrl: e.target.value})} placeholder="https://..." />
+                <label className="admin-field-label">LINK HÌNH ẢNH</label>
+                <input className="luxury-input-field admin-field-full" value={formData.imageUrl} onChange={e => setFormData({...formData, imageUrl: e.target.value})} placeholder="https://..." />
               </div>
 
-              <div style={{ padding: '2rem', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--admin-border)' }}>
-                <h4 className="brand-font" style={{ color: 'var(--admin-gold)', fontSize: '1rem', marginBottom: '1.5rem' }}>Scent Profile (Tầng Hương)</h4>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <div className="admin-modal-subpanel">
+                <h4 className="brand-font admin-modal-subtitle">Scent Profile (Tầng Hương)</h4>
+                <div className="admin-modal-stack">
                    <input className="luxury-input-field" placeholder="Top Notes: Citrus, Mint, Pink Pepper" value={formData.topNotes} onChange={e => setFormData({...formData, topNotes: e.target.value})} />
                    <input className="luxury-input-field" placeholder="Base Notes: Sandalwood, Cedar, White Musk" value={formData.baseNotes} onChange={e => setFormData({...formData, baseNotes: e.target.value})} />
                 </div>
               </div>
 
               <div className="input-group">
-                <label style={{ fontSize: '0.65rem', color: 'var(--admin-gold)', letterSpacing: '2px' }}>CÂU CHUYỆN SẢN PHẨM</label>
-                <textarea className="luxury-input-field" style={{ height: '120px', resize: 'none' }} value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})}></textarea>
+                <label className="admin-field-label">CÂU CHUYỆN SẢN PHẨM</label>
+                <textarea className="luxury-input-field admin-modal-textarea" value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})}></textarea>
               </div>
 
-              <div style={{ display: 'flex', gap: '1rem', marginTop: '2rem' }}>
+              <div className="admin-modal-actions">
                 <button type="submit" className="luxury-button-gold" style={{ flex: 1 }} disabled={saving}>
                   {saving ? 'ĐANG LƯU...' : (editingProduct ? 'CẬP NHẬT KIỆT TÁC' : 'TẠO MỚI')}
                 </button>
-                {editingProduct && <button type="button" className="luxury-input-field" style={{ color: '#e74c3c' }} onClick={() => handleDelete(editingProduct.id)}>XÓA</button>}
+                {editingProduct && <button type="button" className="luxury-input-field status-critical" onClick={() => handleDelete(editingProduct.id)}>XÓA</button>}
               </div>
             </form>
           </div>
@@ -208,3 +246,4 @@ const ProductsTab = ({ products, user, onRefresh }) => {
 };
 
 export default ProductsTab;
+

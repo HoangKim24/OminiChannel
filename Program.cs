@@ -1,18 +1,23 @@
 using System.Text;
+using System.Data;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.HttpLogging;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using Microsoft.Data.SqlClient;
 using Omnichannel.Infrastructure;
 using Omnichannel.Repositories;
 using Omnichannel.Services;
 using FluentValidation;
 using Omnichannel.Middleware;
 using Omnichannel.Swagger;
+using Hangfire;
+using Hangfire.SqlServer;
 
 var builder = WebApplication.CreateBuilder(args);
+var isTesting = builder.Environment.IsEnvironment("Testing");
 
 if (builder.Environment.IsDevelopment())
 {
@@ -94,6 +99,18 @@ if (string.IsNullOrWhiteSpace(jwtKey))
     jwtKey = "dev-only-change-me-32-chars-minimum";
 }
 
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+if (string.IsNullOrWhiteSpace(connectionString) && !isTesting)
+{
+    throw new InvalidOperationException(
+        "ConnectionStrings:DefaultConnection is not configured. Use user-secrets, environment variables, or appsettings.Development.json.");
+}
+
+if (string.IsNullOrWhiteSpace(connectionString) && isTesting)
+{
+    connectionString = "Server=(localdb)\\MSSQLLocalDB;Database=Omnichannel_TestBootstrap;Trusted_Connection=True;TrustServerCertificate=True;";
+}
+
 builder.Services
     .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
@@ -114,7 +131,7 @@ builder.Services.AddAuthorization();
 
 // Register SQL Database
 builder.Services.AddDbContext<OmnichannelDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseSqlServer(connectionString));
 
 // Register Patterns Implementation
 builder.Services.AddScoped<IUnitOfWork, SqlUnitOfWork>();
@@ -130,6 +147,19 @@ builder.Services.AddScoped<IOmnichannelAdapter, LazadaAdapter>();
 builder.Services.AddScoped<InventorySubject>();
 builder.Services.AddScoped<OrderFacade>();
 builder.Services.AddScoped<RecommendationService>();
+builder.Services.AddScoped<OmnichannelBackgroundSyncService>();
+
+// Add Hangfire Services
+if (!isTesting)
+{
+    builder.Services.AddHangfire(configuration => configuration
+        .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
+        .UseSimpleAssemblyNameTypeSerializer()
+        .UseRecommendedSerializerSettings()
+        .UseSqlServerStorage(connectionString));
+
+    builder.Services.AddHangfireServer();
+}
 
 // Configure CORS
 builder.Services.AddCors(options =>
@@ -163,12 +193,90 @@ app.UseAuthorization();
 app.MapControllers();
 app.MapFallbackToFile("index.html");
 
+if (!isTesting)
+{
+    app.UseHangfireDashboard("/hangfire");
+}
+
 // Initialize Observers in a dedicated scope
 using (var scope = app.Services.CreateScope())
 {
+    var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+    var dbContext = scope.ServiceProvider.GetRequiredService<OmnichannelDbContext>();
+    if (!isTesting && dbContext.Database.IsRelational())
+    {
+        var shouldRunMigrations = true;
+
+        if (dbContext.Database.GetDbConnection() is SqlConnection sqlConnection)
+        {
+            var initialState = sqlConnection.State;
+            if (initialState != ConnectionState.Open)
+            {
+                sqlConnection.Open();
+            }
+
+            try
+            {
+                using var cmd = sqlConnection.CreateCommand();
+                cmd.CommandText = "SELECT OBJECT_ID(N'[__EFMigrationsHistory]')";
+                var historyTableExists = cmd.ExecuteScalar() is not DBNull and not null;
+                cmd.CommandText = "SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME <> '__EFMigrationsHistory'";
+                var userTableCount = Convert.ToInt32(cmd.ExecuteScalar());
+
+                if (!historyTableExists)
+                {
+                    if (userTableCount > 0)
+                    {
+                        shouldRunMigrations = false;
+                        logger.LogInformation(
+                            "Database {Database} already has tables but no EF migration history. Skipping startup migrations to avoid duplicate-object failures.",
+                            sqlConnection.Database);
+                    }
+                }
+                else
+                {
+                    cmd.CommandText = "SELECT COUNT(*) FROM [__EFMigrationsHistory]";
+                    var migrationRows = Convert.ToInt32(cmd.ExecuteScalar());
+
+                    if (migrationRows == 0 && userTableCount > 0)
+                    {
+                        shouldRunMigrations = false;
+                        logger.LogInformation(
+                            "Database {Database} has existing schema but empty EF migration history. Skipping startup migrations to avoid duplicate-object failures.",
+                            sqlConnection.Database);
+                    }
+                }
+            }
+            finally
+            {
+                if (initialState != ConnectionState.Open)
+                {
+                    sqlConnection.Close();
+                }
+            }
+        }
+
+        if (shouldRunMigrations)
+        {
+            try
+            {
+                dbContext.Database.Migrate();
+            }
+            catch (SqlException ex) when (ex.Number == 2714)
+            {
+                logger.LogWarning(ex,
+                    "Skipping startup migration because target objects already exist in database {Database}.",
+                    dbContext.Database.GetDbConnection().Database);
+            }
+        }
+    }
+
     var subject = scope.ServiceProvider.GetRequiredService<InventorySubject>();
-    var adapters = scope.ServiceProvider.GetServices<IOmnichannelAdapter>();
-    subject.Attach(new OmnichannelSyncObserver(adapters));
+    if (!isTesting)
+    {
+        var jobClient = scope.ServiceProvider.GetRequiredService<IBackgroundJobClient>();
+        subject.Attach(new OmnichannelSyncObserver(jobClient));
+    }
 }
 
 app.Run();

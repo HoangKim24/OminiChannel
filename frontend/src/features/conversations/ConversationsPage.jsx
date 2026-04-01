@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { ConversationLayout } from './ConversationLayout/ConversationLayout';
 import { ConversationList } from './ConversationList/ConversationList';
 import { ConversationDetail } from './ConversationDetail/ConversationDetail';
@@ -31,3 +31,4 @@ export const ConversationsPage = () => {
     </div>
   );
 };
+

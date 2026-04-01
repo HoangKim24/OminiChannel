@@ -1,7 +1,19 @@
-import React from 'react';
+import { useAppStore } from '../store/useAppStore';
 import './PerfumeCard.css';
 
 const PerfumeCard = ({ product }) => {
+  const addToCart = useAppStore(state => state.addToCart);
+  const showToast = useAppStore(state => state.showToast);
+
+  const handleAddToCart = () => {
+    if (!product?.id) {
+      showToast('Sản phẩm không hợp lệ', 'error');
+      return;
+    }
+    addToCart(product, 1);
+    showToast(`✨ Đã thêm "${product.name}" vào giỏ hàng!`);
+  };
+
   // Defensive fallbacks for data
   const {
     image = 'https://images.unsplash.com/photo-1594035910387-fea47794261f?q=80&w=800&auto=format&fit=crop',
@@ -22,7 +34,7 @@ const PerfumeCard = ({ product }) => {
         
         {/* Hidden Add to cart layer that slides up on hover */}
         <div className="perfume-action-layer">
-          <button className="perfume-add-btn">
+          <button className="perfume-add-btn" onClick={handleAddToCart}>
             Thêm vào giỏ hàng
           </button>
         </div>

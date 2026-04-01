@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import './OrdersTable.css';
 
 const OrdersTable = ({ orders }) => {
@@ -72,7 +72,7 @@ const OrdersTable = ({ orders }) => {
             </tr>
           </thead>
           <tbody>
-            {data.map((order, index) => (
+            {data.map((order) => (
               <tr key={order.id}>
                 <td className="ot-order-id">{order.id}</td>
                 <td>
@@ -132,3 +132,4 @@ const OrdersTable = ({ orders }) => {
 };
 
 export default OrdersTable;
+

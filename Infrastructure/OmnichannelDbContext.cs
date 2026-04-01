@@ -19,6 +19,7 @@ namespace Omnichannel.Infrastructure
         public DbSet<ChannelProduct> ChannelProducts { get; set; }
         public DbSet<ChannelOrder> ChannelOrders { get; set; }
         public DbSet<Comment> Comments { get; set; }
+        public DbSet<Voucher> Vouchers { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -68,7 +69,10 @@ namespace Omnichannel.Infrastructure
 
             modelBuilder.Entity<Perfume>().Property(p => p.Price).HasPrecision(18, 2);
             modelBuilder.Entity<Order>().Property(o => o.TotalAmount).HasPrecision(18, 2);
+            modelBuilder.Entity<Order>().Property(o => o.DiscountAmount).HasPrecision(18, 2);
             modelBuilder.Entity<OrderItem>().Property(oi => oi.Price).HasPrecision(18, 2);
+            modelBuilder.Entity<Voucher>().Property(v => v.DiscountAmount).HasPrecision(18, 2);
+            modelBuilder.Entity<Voucher>().Property(v => v.MinOrderValue).HasPrecision(18, 2);
 
             // Performance Indexes
             modelBuilder.Entity<Perfume>().HasIndex(p => p.Gender);
