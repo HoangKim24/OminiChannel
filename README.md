@@ -1,23 +1,33 @@
-# Omnichannel (.NET 8 + React Vite)
+# OmniChannel - Software Project Management & Perfume Store Platform
 
 Nền tảng bán hàng đa kênh cho nước hoa, gồm backend ASP.NET Core 8, database SQL Server, frontend React (Vite), thanh toán giả lập + VNPay sandbox, JWT auth, seed data, swagger, unit test và integration test.
 
-## Mục tiêu hiện trạng
-1. Chạy được full-stack bằng một lệnh dotnet run.
-2. Cấu hình nhạy cảm không nằm trong appsettings tracked by git.
-3. Có migration + seed cho môi trường local.
-4. Có auth JWT, validation, middleware xử lý lỗi thống nhất.
+---
 
-## Tech Stack
-1. Backend: ASP.NET Core 8, EF Core 8, FluentValidation, JWT Bearer.
-2. Frontend: React 18, Vite 5, Zustand.
-3. Database: SQL Server.
-4. Test: xUnit, Moq, ASP.NET Core integration testing.
+## 📌 Tổng Quan Dự Án (Project Management)
 
-## Cấu hình bảo mật
+Đây là dự án **toàn bộ quy trình quản lý dự án phần mềm** chia thành **5 Labs** tương ứng với 5 giai đoạn của dự án:
+
+1. **Lab 1: Project Initiating** - Khởi động & xác định dự án
+2. **Lab 2: Project Planning** - Lên kế hoạch chi tiết
+3. **Lab 3: Project Executing** - Thực hiện dự án
+4. **Lab 4: Project Controlling** - Theo dõi & kiểm soát
+5. **Lab 5: Project Closing** - Đóng dự án & rút kinh nghiệm
+
+---
+
+## 🚀 Technical Implementation (Hướng dẫn kỹ thuật)
+
+### Tech Stack
+1. **Backend**: ASP.NET Core 8, EF Core 8, FluentValidation, JWT Bearer.
+2. **Frontend**: React 18, Vite 5, Zustand.
+3. **Database**: SQL Server.
+4. **Test**: xUnit, Moq, ASP.NET Core integration testing.
+
+### Cấu hình bảo mật
 Không commit secret vào mã nguồn. Dùng User Secrets hoặc biến môi trường.
 
-### Backend secrets (khuyến nghị cho local)
+#### Backend secrets (khuyến nghị cho local)
 Chạy tại thư mục gốc:
 
 ```bash
@@ -32,11 +42,7 @@ dotnet user-secrets set "VNPay:ReturnUrl" "https://localhost:7111/api/payment/vn
 dotnet user-secrets set "Frontend:BaseUrl" "http://localhost:5173"
 ```
 
-### Env templates
-1. Sao chép file mẫu backend: .env.example
-2. Sao chép file mẫu frontend: frontend/.env.example
-
-## Khởi tạo database
+### Khởi tạo database
 
 ```bash
 dotnet ef database update
@@ -48,90 +54,80 @@ Migration đã seed dữ liệu demo:
 3. Perfumes demo.
 4. Sales channels demo.
 
-Tài khoản seed mặc định:
-1. Username: admin
-2. Password: password
+### Chạy ứng dụng
 
-## Chạy ứng dụng
-
-### Cách 1: Chạy full-stack bằng dotnet run
+#### Cách 1: Chạy full-stack bằng dotnet run
 
 ```bash
 dotnet run --launch-profile http
 ```
 
-Hoặc trên Windows dùng script ổn định (tự dọn process cũ, pre-build và retry khi build lỗi ngắt quãng):
+Hoặc trên Windows dùng script ổn định:
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\run-backend.ps1
 ```
 
-Ứng dụng sẽ chạy tại:
-1. http://localhost:5285/
-
-Lưu ý: project đã cấu hình tự build và sync frontend vào wwwroot trước khi build backend, nên dotnet run là đủ để lên UI mới nhất.
-
-### Cách 2: Dev frontend hot-reload
+#### Cách 2: Dev frontend hot-reload
 Terminal 1:
-
 ```bash
 dotnet run --launch-profile http -p:SkipFrontendBuild=true
 ```
-
 Terminal 2:
-
 ```bash
 cd frontend
 npm install
 npm run dev
 ```
 
-## Scripts hữu ích
+---
 
-### Backend
-```bash
-dotnet build
-dotnet test
-dotnet ef database update
-```
+## 📊 Lab Management Details
 
-### Frontend
-```bash
-cd frontend
-npm install
-npm run dev
-npm run build
-npm run build:sync
-```
+### 📊 Lab 1: Project Initiating
+**Thời gian**: Tuần 1-2 | **Trạng thái**: 📋 In Progress | **Due Date**: 2026-03-31
 
-## API và tài liệu
-1. Swagger: /swagger (môi trường Development).
-2. Postman collection: postman/Omnichannel.postman_collection.json
+- [📄 Stakeholder Analysis](./docs/01_Lab_Initiation/Stakeholders.md)
+- [📄 SOW](./docs/01_Lab_Initiation/SOW.md)
+- [📄 Risk Management](./docs/01_Lab_Initiation/Risks.md)
 
-Sau khi login, lấy accessToken để truyền header:
+### 📋 Lab 2: Project Planning
+**Thời gian**: Tuần 3-4 | **Trạng thái**: ⚪ Not Started | **Due Date**: 2026-04-14
 
-```text
-Authorization: Bearer <token>
-```
+- [📄 WBS](./docs/02_Lab_Planning/WBS.md)
+- [📄 Schedule](./docs/02_Lab_Planning/Schedule.md)
+- [📄 Budget](./docs/02_Lab_Planning/Budget.md)
 
-## Kiến trúc thư mục chính
-```text
-Omnichannel/
-|- Controllers/
-|- Infrastructure/
-|- Migrations/
-|- Models/
-|- Repositories/
-|- Services/
-|- Validators/
-|- Middleware/
-|- Omnichannel.Tests/
-|- frontend/
-|- wwwroot/
-```
+### 🔨 Lab 3: Project Execution
+**Thời gian**: Tuần 5-12 | **Trạng thái**: ⚪ Not Started | **Due Date**: 2026-05-05
 
-## Troubleshooting nhanh
-1. Lỗi address already in use ở port 5285: tắt process cũ đang chiếm cổng.
-2. Lỗi DB connection: kiểm tra lại User Secrets ConnectionStrings:DefaultConnection.
-3. Không thấy UI mới khi chạy backend: chạy lại dotnet run hoặc npm run build:sync.
-4. Lỗi "Couldn't find a project to run": đang đứng sai thư mục (thường là frontend). Hãy chạy ở thư mục gốc hoặc dùng `dotnet run --project .\Omnichannel.csproj`.
+- [📄 Change Control](./docs/03_Lab_Execution/Change_Control.md)
+- [📄 QA/QC Plan](./docs/03_Lab_Execution/QA_QC_Plan.md)
+
+### 🏁 Lab 5: Project Closing
+**Thời gian**: Tuần 16 | **Trạng thái**: ⚪ Not Started | **Due Date**: 2026-06-02
+
+---
+
+## 📈 Dashboard & Status
+
+| Lab | Status | Completion | Issues | Due Date |
+|-----|--------|-----------|--------|----------|
+| Lab 1 - Initiating | 📋 In Progress | 20% | 6 | 2026-03-31 |
+| Lab 2 - Planning | ⚪ Not Started | 0% | 6 | 2026-04-14 |
+| Lab 3 - Execution | ⚪ Not Started | 0% | 5 | 2026-05-05 |
+| Lab 4 - Controlling | ⚪ Not Started | 0% | 3 | 2026-05-19 |
+| Lab 5 - Closing | ⚪ Not Started | 0% | 4 | 2026-06-02 |
+| **TOTAL** | **📋 In Progress** | **4%** | **24** | **2026-06-02** |
+
+---
+
+## 👥 Team
+
+| Role | Name | GitHub | Email |
+|------|------|--------|-------|
+| Project Manager | HoangKim24 | [HoangKim24](https://github.com/HoangKim24) | [email] |
+
+---
+
+**Last Updated**: 2026-04-01
