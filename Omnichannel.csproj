@@ -4,11 +4,21 @@
     <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <UserSecretsId>omnichannel-5c5f54a8-7e71-4d0a-9bd2-3bb3f8ed1d77</UserSecretsId>
+    <SkipFrontendBuild>false</SkipFrontendBuild>
   </PropertyGroup>
+
+  <Target Name="BuildFrontendAssets"
+          BeforeTargets="Build"
+          Condition="'$(DesignTimeBuild)' != 'true' and '$(SkipFrontendBuild)' != 'true' and Exists('frontend\\package.json')">
+    <Message Text="Building frontend assets (npm run build:sync)..." Importance="high" />
+    <Exec Command="npm run build:sync" WorkingDirectory="frontend" />
+  </Target>
 
   <ItemGroup>
     <PackageReference Include="BCrypt.Net-Next" Version="4.1.0" />
     <PackageReference Include="FluentValidation.AspNetCore" Version="11.3.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.4" />
     <PackageReference Include="MediatR" Version="12.4.1" />
     <PackageReference Include="Microsoft.Data.SqlClient" Version="6.1.4" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0.0" />

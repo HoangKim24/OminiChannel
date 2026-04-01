@@ -11,6 +11,8 @@ namespace Omnichannel.Infrastructure
         public IOrderRepository Orders { get; private set; }
         public IUserRepository Users { get; private set; }
         public ISalesChannelRepository SalesChannels { get; private set; }
+        public IChannelProductRepository ChannelProducts { get; private set; }
+        public IChannelOrderRepository ChannelOrders { get; private set; }
         public ICommentRepository Comments { get; private set; }
 
         public SqlUnitOfWork(OmnichannelDbContext context)
@@ -20,6 +22,8 @@ namespace Omnichannel.Infrastructure
             Orders = new SqlOrderRepository(_context);
             Users = new SqlUserRepository(_context);
             SalesChannels = new SqlSalesChannelRepository(_context);
+            ChannelProducts = new SqlChannelProductRepository(_context);
+            ChannelOrders = new SqlChannelOrderRepository(_context);
             Comments = new SqlCommentRepository(_context);
         }
 

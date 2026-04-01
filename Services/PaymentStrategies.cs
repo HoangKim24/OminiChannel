@@ -8,6 +8,7 @@ using System.Text;
 using System.Web;
 using System.Net;
 using System.Globalization;
+using Microsoft.AspNetCore.Http;
 
 namespace Omnichannel.Services
 {
@@ -50,6 +51,12 @@ namespace Omnichannel.Services
             var vnp_Url = _configuration["VNPay:BaseUrl"];
             var vnp_Returnurl = _configuration["VNPay:ReturnUrl"];
 
+            if (string.IsNullOrWhiteSpace(vnp_TmnCode) || string.IsNullOrWhiteSpace(vnp_HashSecret) ||
+                string.IsNullOrWhiteSpace(vnp_Url) || string.IsNullOrWhiteSpace(vnp_Returnurl))
+            {
+                throw new InvalidOperationException("VNPay configuration is missing.");
+            }
+
             // 1. Initialize parameters
             var vnp_Params = new SortedList<string, string>(new VNPayCompare())
             {
@@ -91,6 +98,41 @@ namespace Omnichannel.Services
             return Task.FromResult(paymentUrl);
         }
 
+        public bool VerifyReturnSignature(IQueryCollection queryParams)
+        {
+            var hashSecret = _configuration["VNPay:HashSecret"];
+            if (string.IsNullOrWhiteSpace(hashSecret))
+            {
+                return false;
+            }
+
+            var receivedHash = queryParams["vnp_SecureHash"].ToString();
+            if (string.IsNullOrWhiteSpace(receivedHash))
+            {
+                return false;
+            }
+
+            var sorted = new SortedList<string, string>(new VNPayCompare());
+            foreach (var key in queryParams.Keys)
+            {
+                if (key.Equals("vnp_SecureHash", StringComparison.OrdinalIgnoreCase) ||
+                    key.Equals("vnp_SecureHashType", StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                var value = queryParams[key].ToString();
+                if (!string.IsNullOrWhiteSpace(value))
+                {
+                    sorted[key] = value;
+                }
+            }
+
+            var hashData = string.Join("&", sorted.Select(kv => $"{kv.Key}={kv.Value}"));
+            var computedHash = HmacSHA512(hashSecret, hashData);
+            return string.Equals(computedHash, receivedHash, StringComparison.OrdinalIgnoreCase);
+        }
+
         private string HmacSHA512(string key, string inputData)
         {
             var hash = new StringBuilder();
@@ -110,7 +152,7 @@ namespace Omnichannel.Services
 
     public class VNPayCompare : IComparer<string>
     {
-        public int Compare(string x, string y)
+        public int Compare(string? x, string? y)
         {
             if (x == y) return 0;
             if (x == null) return -1;

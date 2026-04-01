@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Omnichannel.Models;
+using Omnichannel.Services;
 
 namespace Omnichannel.Controllers
 {
@@ -7,11 +8,11 @@ namespace Omnichannel.Controllers
     [Route("api/[controller]")]
     public class AuthController : ControllerBase
     {
-        private readonly Infrastructure.IUnitOfWork _unitOfWork;
+        private readonly IAuthService _authService;
 
-        public AuthController(Infrastructure.IUnitOfWork unitOfWork)
+        public AuthController(IAuthService authService)
         {
-            _unitOfWork = unitOfWork;
+            _authService = authService;
         }
 
         [HttpPost("login")]
@@ -20,18 +21,11 @@ namespace Omnichannel.Controllers
             if (!ModelState.IsValid)
                 return BadRequest(new { message = "Dữ liệu không hợp lệ", errors = ModelState });
 
-            var user = await _unitOfWork.Users.GetByUsernameAsync(request.Username);
-            if (user == null || user.Password != request.Password)
+            var response = await _authService.LoginAsync(request);
+            if (response == null)
                 return Unauthorized(new { message = "Sai tài khoản hoặc mật khẩu" });
 
-            return Ok(new LoginResponse
-            {
-                Id = user.Id,
-                Username = user.Username,
-                Role = user.Role,
-                FullName = user.FullName,
-                Email = user.Email
-            });
+            return Ok(response);
         }
 
         [HttpPost("register")]
@@ -40,24 +34,11 @@ namespace Omnichannel.Controllers
             if (!ModelState.IsValid)
                 return BadRequest(new { message = "Dữ liệu không hợp lệ", errors = ModelState });
 
-            if (await _unitOfWork.Users.GetByUsernameAsync(request.Username) != null)
-                return BadRequest(new { message = "Tên đăng nhập đã tồn tại" });
+            var result = await _authService.RegisterAsync(request);
+            if (!result.Success)
+                return BadRequest(new { message = result.Message });
 
-            var user = new User
-            {
-                Username = request.Username,
-                Password = request.Password,
-                Email = request.Email,
-                FullName = request.FullName,
-                PhoneNumber = request.PhoneNumber,
-                Address = request.Address,
-                Role = "User"
-            };
-
-            await _unitOfWork.Users.AddAsync(user);
-            await _unitOfWork.CompleteAsync();
-
-            return Created("", new { message = "Đăng ký thành công" });
+            return Created("", new { message = result.Message });
         }
     }
 }

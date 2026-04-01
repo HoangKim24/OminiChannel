@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import '../../styles/AdminLogin.css';
 
+const API_BASE = import.meta.env.VITE_API_BASE_URL || '';
+
 const AdminLogin = ({ onLogin, setPage, showToast }) => {
     const [formData, setFormData] = useState({ username: '', password: '' });
     const [loading, setLoading] = useState(false);
@@ -9,7 +11,7 @@ const AdminLogin = ({ onLogin, setPage, showToast }) => {
         e.preventDefault();
         setLoading(true);
         try {
-            const res = await fetch('/api/auth/login', {
+            const res = await fetch(`${API_BASE}/api/auth/login`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(formData)

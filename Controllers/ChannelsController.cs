@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Omnichannel.Infrastructure;
 using Omnichannel.Models;
+using Omnichannel.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -13,10 +14,12 @@ namespace Omnichannel.Controllers
     public class ChannelsController : ControllerBase
     {
         private readonly IUnitOfWork _unitOfWork;
+        private readonly InventorySubject _inventorySubject;
 
-        public ChannelsController(IUnitOfWork unitOfWork)
+        public ChannelsController(IUnitOfWork unitOfWork, InventorySubject inventorySubject)
         {
             _unitOfWork = unitOfWork;
+            _inventorySubject = inventorySubject;
         }
 
         // ========== SALES CHANNELS ==========
@@ -173,6 +176,8 @@ namespace Omnichannel.Controllers
                 // Update stock
                 perfume.StockQuantity -= request.Quantity;
                 _unitOfWork.Perfumes.Update(perfume);
+
+                await _inventorySubject.NotifyAsync(perfume);
 
                 await _unitOfWork.CompleteAsync();
 

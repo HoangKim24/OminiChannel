@@ -37,6 +37,9 @@ namespace Omnichannel.Models
         public string Role { get; set; } = string.Empty;
         public string? FullName { get; set; }
         public string? Email { get; set; }
+        public string AccessToken { get; set; } = string.Empty;
+        public string TokenType { get; set; } = "Bearer";
+        public DateTime ExpiresAt { get; set; }
     }
 
     // ========== ORDERS ==========

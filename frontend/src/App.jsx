@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
 import './index.css'
 import AdminDashboard from './AdminDashboard'
 import AdminLogin from './components/admin/AdminLogin'
@@ -8,7 +9,12 @@ import ProductsSection from './components/user/ProductsSection'
 import Footer from './components/user/Footer'
 import Chatbot from './components/user/Chatbot'
 
+const API_BASE = import.meta.env.VITE_API_BASE_URL || ''
+
 function App() {
+  const location = useLocation()
+  const navigate = useNavigate()
+
   // === CORE STATE ===
   const [page, setPage] = useState('home') // 'home'|'detail'|'favorites'|'cart'|'checkout'
   const [products, setProducts] = useState([])
@@ -58,6 +64,13 @@ function App() {
   const [toasts, setToasts] = useState([])
   const isAdmin = (user?.role || '').toString().trim().toLowerCase() === 'admin'
 
+  const authHeaders = (currentUser) => {
+    const headers = {}
+    if (currentUser?.role) headers['X-User-Role'] = currentUser.role
+    if (currentUser?.accessToken) headers.Authorization = `Bearer ${currentUser.accessToken}`
+    return headers
+  }
+
   // Search & Filter
   const [searchTerm, setSearchTerm] = useState('')
   const [sortBy, setSortBy] = useState('default')
@@ -105,15 +118,18 @@ function App() {
     const handleScroll = () => setScrolled(window.scrollY > 50)
     window.addEventListener('scroll', handleScroll)
     
-    // Sync page state with URL path
-    const path = window.location.pathname.toLowerCase();
-    if (path.startsWith('/admin')) {
-      setPage('admin');
-    }
-
     refreshProducts()
     return () => window.removeEventListener('scroll', handleScroll)
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    const path = location.pathname.toLowerCase()
+    if (path.startsWith('/admin')) {
+      setPage('admin')
+    } else if (page === 'admin') {
+      setPage('home')
+    }
+  }, [location.pathname]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Ensure only admins can access the admin page
   // Removed automatic redirect to home for admin page to allow AdminLogin to show
@@ -126,6 +142,15 @@ function App() {
   // Scroll to top on page change
   useEffect(() => { window.scrollTo(0, 0) }, [page])
 
+  useEffect(() => {
+    if (page === 'admin' && location.pathname !== '/admin') {
+      navigate('/admin')
+    }
+    if (page !== 'admin' && location.pathname === '/admin') {
+      navigate('/')
+    }
+  }, [page, location.pathname, navigate])
+
   // Fetch orders (User-specific or All for Admin)
   useEffect(() => {
     if (!user) { setOrders([]); return }
@@ -133,8 +158,8 @@ function App() {
       try {
         setLoadingOrders(true)
         const endpoint = user.role === 'Admin' ? '/api/orders' : `/api/orders/user/${user.id}`
-        const res = await fetch(endpoint, {
-          headers: { 'X-User-Role': user.role || 'User' }
+        const res = await fetch(`${API_BASE}${endpoint}`, {
+          headers: authHeaders(user)
         })
         if (res.ok) {
           const data = await res.json()
@@ -152,11 +177,11 @@ function App() {
   const refreshProducts = async () => {
     try {
       setLoading(true)
-      const res = await fetch('/api/perfumes')
+      const res = await fetch(`${API_BASE}/api/perfumes`)
       if (res.ok) setProducts(await res.json())
 
       // Fetch active channels
-      const resChannels = await fetch('/api/channels')
+      const resChannels = await fetch(`${API_BASE}/api/channels`)
       if (resChannels.ok) {
         const data = await resChannels.json()
         setChannels(data.filter(c => c.isActive))
@@ -164,8 +189,8 @@ function App() {
 
       // If admin, also refresh all orders to sync dashboard
       if (user?.role === 'Admin') {
-        const resOrders = await fetch('/api/orders', {
-          headers: { 'X-User-Role': 'Admin' }
+        const resOrders = await fetch(`${API_BASE}/api/orders`, {
+          headers: authHeaders(user)
         })
         if (resOrders.ok) {
           const orderData = await resOrders.json()
@@ -180,7 +205,7 @@ function App() {
   const handleLogin = async (e) => {
     e.preventDefault()
     try {
-      const res = await fetch('/api/auth/login', {
+      const res = await fetch(`${API_BASE}/api/auth/login`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(authForm)
       })
@@ -195,7 +220,7 @@ function App() {
   const handleRegister = async (e) => {
     e.preventDefault()
     try {
-      const res = await fetch('/api/auth/register', {
+      const res = await fetch(`${API_BASE}/api/auth/register`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...authForm, role: 'User' })
       })
@@ -260,7 +285,7 @@ function App() {
     
     // Fetch real comments from DB
     try {
-      const res = await fetch(`/api/comments/perfume/${product.id}`)
+      const res = await fetch(`${API_BASE}/api/comments/perfume/${product.id}`)
       if (res.ok) {
         const data = await res.json()
         // Map backend fields to frontend display format
@@ -287,7 +312,7 @@ function App() {
     }
     
     try {
-      const res = await fetch('/api/comments', {
+      const res = await fetch(`${API_BASE}/api/comments`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(commentData)
@@ -315,8 +340,8 @@ function App() {
     if (cart.length === 0) { showToast('Giỏ hàng trống', 'error'); return }
 
     try {
-      const res = await fetch('/api/orders/batch', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
+      const res = await fetch(`${API_BASE}/api/orders/batch`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json', ...authHeaders(user) },
         body: JSON.stringify({
           userId: user.id,
           items: cart.map(item => ({ perfumeId: item.id, quantity: item.quantity })),
@@ -331,7 +356,9 @@ function App() {
         setCart([]); setCheckoutForm({ fullName: '', address: '', phone: '', isPickup: false })
         showToast('🎉 Đặt hàng thành công! Cảm ơn bạn.')
         // Refresh orders
-        const ordersRes = await fetch(`/api/orders/user/${user.id}`)
+        const ordersRes = await fetch(`${API_BASE}/api/orders/user/${user.id}`, {
+          headers: authHeaders(user)
+        })
         if (ordersRes.ok) setOrders(await ordersRes.json())
         setPage('home')
       } else {
