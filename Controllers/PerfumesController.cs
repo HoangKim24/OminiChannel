@@ -12,10 +12,12 @@ namespace Omnichannel.Controllers
     public class PerfumesController : ControllerBase
     {
         private readonly IUnitOfWork _unitOfWork;
+        private readonly Services.IRecommendationFacade _recommendationFacade;
 
-        public PerfumesController(IUnitOfWork unitOfWork)
+        public PerfumesController(IUnitOfWork unitOfWork, Services.IRecommendationFacade recommendationFacade)
         {
             _unitOfWork = unitOfWork;
+            _recommendationFacade = recommendationFacade;
         }
 
         [HttpGet]
@@ -100,8 +102,60 @@ namespace Omnichannel.Controllers
         [HttpPost("recommend")]
         public async Task<IActionResult> Recommend([FromBody] Services.RecommendationRequest req, [FromServices] Services.RecommendationService rcService)
         {
-            var data = await rcService.GetRecommendationsAsync(req, 5);
+            var data = await rcService.GetRecommendationsByNotesAsync(req, 5);
             return Ok(data);
+        }
+
+        /// <summary>
+        /// GET /api/perfumes/{id}/recommendations
+        /// Get product recommendations for a specific perfume
+        /// Uses combined algorithm: co-occurrence + related products
+        /// </summary>
+        [HttpGet("{id}/recommendations")]
+        public async Task<ActionResult<List<Services.PerfumeBasicDto>>> GetProductRecommendations(int id, [FromQuery] int limit = 5)
+        {
+            try
+            {
+                var recommendations = await _recommendationFacade.GetProductRecommendationsAsync(id, limit);
+                return Ok(new
+                {
+                    perfumeId = id,
+                    recommendations = recommendations,
+                    count = recommendations.Count
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Lỗi khi lấy gợi ý sản phẩm", error = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// POST /api/perfumes/recommend-by-preferences
+        /// Get recommendations based on customer preferences (notes, gender, etc.)
+        /// </summary>
+        [HttpPost("recommend-by-preferences")]
+        public async Task<ActionResult<List<Services.RecommendedPerfumeDto>>> GetPreferenceRecommendations(
+            [FromBody] Services.RecommendationRequest request,
+            [FromQuery] int limit = 5)
+        {
+            try
+            {
+                if (request == null)
+                    return BadRequest(new { message = "Yêu cầu không hợp lệ" });
+
+                var recommendations = await _recommendationFacade.GetPreferenceBasedRecommendationsAsync(request, limit);
+                return Ok(new
+                {
+                    recommendations = recommendations,
+                    count = recommendations.Count,
+                    request = request
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Lỗi khi lấy gợi ý theo sở thích", error = ex.Message });
+            }
         }
     }
 }

@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { useAppStore } from '../store/useAppStore'
+import RecommendationSection from '../components/RecommendationSection'
+import '../styles/recommendation.css'
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || ''
 
@@ -408,6 +410,9 @@ const ProductDetailPage = () => {
             ))}
           </div>
         </div>
+
+        {/* Recommendation Section */}
+        <RecommendationSection perfumeId={product?.id} />
 
       </div>
     </div>

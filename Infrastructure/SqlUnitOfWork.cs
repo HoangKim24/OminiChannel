@@ -16,6 +16,7 @@ namespace Omnichannel.Infrastructure
         public IChannelOrderRepository ChannelOrders { get; private set; }
         public ICommentRepository Comments { get; private set; }
         public IVoucherRepository Vouchers { get; private set; }
+        public IRecommendationRepository Recommendations { get; private set; }
 
         public SqlUnitOfWork(OmnichannelDbContext context)
         {
@@ -29,6 +30,7 @@ namespace Omnichannel.Infrastructure
             ChannelOrders = new SqlChannelOrderRepository(_context);
             Comments = new SqlCommentRepository(_context);
             Vouchers = new SqlVoucherRepository(_context);
+            Recommendations = new SqlRecommendationRepository(_context);
         }
 
         public async Task<int> CompleteAsync(System.Threading.CancellationToken cancellationToken = default)

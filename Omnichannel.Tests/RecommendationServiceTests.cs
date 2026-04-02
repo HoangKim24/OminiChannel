@@ -29,7 +29,7 @@ namespace Omnichannel.Tests
         }
 
         [Fact]
-        public async Task GetRecommendationsAsync_ShouldFilterByGenderAndNotes()
+        public async Task GetRecommendationsByNotesAsync_ShouldFilterByGenderAndNotes()
         {
             // Arrange
             using var context = GetInMemoryContext();
@@ -42,7 +42,7 @@ namespace Omnichannel.Tests
             };
 
             // Act
-            var results = await service.GetRecommendationsAsync(req, 5);
+            var results = await service.GetRecommendationsByNotesAsync(req, 5);
 
             // Assert
             Assert.NotEmpty(results);
@@ -55,7 +55,7 @@ namespace Omnichannel.Tests
         }
 
         [Fact]
-        public async Task GetRecommendationsAsync_NoMatches_ShouldReturnEmpty()
+        public async Task GetRecommendationsByNotesAsync_NoMatches_ShouldReturnEmpty()
         {
             // Arrange
             using var context = GetInMemoryContext();
@@ -68,7 +68,7 @@ namespace Omnichannel.Tests
             };
 
             // Act
-            var results = await service.GetRecommendationsAsync(req, 5);
+            var results = await service.GetRecommendationsByNotesAsync(req, 5);
 
             // Assert
             Assert.Empty(results);

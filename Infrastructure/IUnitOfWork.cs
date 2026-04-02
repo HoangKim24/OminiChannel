@@ -15,6 +15,7 @@ namespace Omnichannel.Infrastructure
         IChannelOrderRepository ChannelOrders { get; }
         ICommentRepository Comments { get; }
         IVoucherRepository Vouchers { get; }
+        IRecommendationRepository Recommendations { get; }
         Task<int> CompleteAsync(System.Threading.CancellationToken cancellationToken = default);
     }
 }

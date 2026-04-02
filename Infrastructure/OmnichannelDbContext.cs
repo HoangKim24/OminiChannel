@@ -21,6 +21,7 @@ namespace Omnichannel.Infrastructure
         public DbSet<Comment> Comments { get; set; }
         public DbSet<Voucher> Vouchers { get; set; }
         public DbSet<VoucherRedemption> VoucherRedemptions { get; set; }
+        public DbSet<Recommendation> Recommendations { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -33,12 +34,25 @@ namespace Omnichannel.Infrastructure
             modelBuilder.Entity<ChannelProduct>().ToTable("ChannelProducts");
             modelBuilder.Entity<ChannelOrder>().ToTable("ChannelOrders");
             modelBuilder.Entity<Comment>().ToTable("Comments");
+            modelBuilder.Entity<Recommendation>().ToTable("Recommendations");
 
             modelBuilder.Entity<Perfume>()
                 .HasOne(p => p.Category)
                 .WithMany()
                 .HasForeignKey(p => p.CategoryId)
                 .OnDelete(DeleteBehavior.SetNull);
+
+            modelBuilder.Entity<Recommendation>()
+                .HasOne(r => r.SourcePerfume)
+                .WithMany()
+                .HasForeignKey(r => r.SourcePerfumeId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<Recommendation>()
+                .HasOne(r => r.RecommendedPerfume)
+                .WithMany()
+                .HasForeignKey(r => r.RecommendedPerfumeId)
+                .OnDelete(DeleteBehavior.NoAction);
 
             modelBuilder.Entity<Order>()
                 .HasOne<User>()
@@ -78,6 +92,8 @@ namespace Omnichannel.Infrastructure
             modelBuilder.Entity<Order>().HasIndex(o => o.UserId);
             modelBuilder.Entity<Order>().HasIndex(o => o.Status);
             modelBuilder.Entity<Comment>().HasIndex(c => c.PerfumeId);
+            modelBuilder.Entity<Recommendation>().HasIndex(r => r.SourcePerfumeId);
+            modelBuilder.Entity<Recommendation>().HasIndex(r => r.CoOccurrenceScore);
             modelBuilder.Entity<User>().HasIndex(u => u.Username).IsUnique();
 
             modelBuilder.Entity<ChannelOrder>()

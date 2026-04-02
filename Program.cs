@@ -152,6 +152,7 @@ builder.Services.AddScoped<InventorySubject>();
 builder.Services.AddScoped<OrderFacade>();
 builder.Services.AddScoped<VoucherPricingService>();
 builder.Services.AddScoped<RecommendationService>();
+builder.Services.AddScoped<IRecommendationFacade, RecommendationFacade>();
 builder.Services.AddScoped<OmnichannelBackgroundSyncService>();
 
 // Add Hangfire Services
