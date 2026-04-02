@@ -20,6 +20,7 @@ namespace Omnichannel.Infrastructure
         public DbSet<ChannelOrder> ChannelOrders { get; set; }
         public DbSet<Comment> Comments { get; set; }
         public DbSet<Voucher> Vouchers { get; set; }
+        public DbSet<VoucherRedemption> VoucherRedemptions { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -71,8 +72,6 @@ namespace Omnichannel.Infrastructure
             modelBuilder.Entity<Order>().Property(o => o.TotalAmount).HasPrecision(18, 2);
             modelBuilder.Entity<Order>().Property(o => o.DiscountAmount).HasPrecision(18, 2);
             modelBuilder.Entity<OrderItem>().Property(oi => oi.Price).HasPrecision(18, 2);
-            modelBuilder.Entity<Voucher>().Property(v => v.DiscountAmount).HasPrecision(18, 2);
-            modelBuilder.Entity<Voucher>().Property(v => v.MinOrderValue).HasPrecision(18, 2);
 
             // Performance Indexes
             modelBuilder.Entity<Perfume>().HasIndex(p => p.Gender);
@@ -91,6 +90,35 @@ namespace Omnichannel.Infrastructure
                 .WithMany()
                 .HasForeignKey(co => co.OrderId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<Voucher>(entity =>
+            {
+                entity.ToTable("Vouchers");
+                entity.Property(v => v.Code).HasMaxLength(64).IsRequired();
+                entity.Property(v => v.Name).HasMaxLength(120).IsRequired();
+                entity.Property(v => v.VoucherType).HasMaxLength(20).IsRequired();
+                entity.Property(v => v.DiscountType).HasMaxLength(20).IsRequired();
+                entity.Property(v => v.DiscountValue).HasPrecision(18, 2);
+                entity.Property(v => v.MaxDiscountAmount).HasPrecision(18, 2);
+                entity.Property(v => v.MinOrderValue).HasPrecision(18, 2);
+                entity.HasIndex(v => v.Code).IsUnique();
+                entity.HasOne(v => v.SalesChannel)
+                    .WithMany()
+                    .HasForeignKey(v => v.SalesChannelId)
+                    .OnDelete(DeleteBehavior.SetNull);
+            });
+
+            modelBuilder.Entity<VoucherRedemption>(entity =>
+            {
+                entity.ToTable("VoucherRedemptions");
+                entity.Property(v => v.DiscountAmount).HasPrecision(18, 2);
+                entity.HasOne(v => v.Voucher)
+                    .WithMany(v => v.Redemptions)
+                    .HasForeignKey(v => v.VoucherId)
+                    .OnDelete(DeleteBehavior.Cascade);
+                entity.HasIndex(v => new { v.VoucherId, v.UserId });
+                entity.HasIndex(v => v.OrderId).IsUnique();
+            });
 
             // Seed demo data
             modelBuilder.Entity<User>().HasData(
@@ -212,6 +240,104 @@ namespace Omnichannel.Infrastructure
                     IsActive = true,
                     LogoUrl = "https://cdn-icons-png.flaticon.com/512/3046/3046121.png",
                     CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc)
+                }
+            );
+
+            modelBuilder.Entity<Voucher>().HasData(
+                new Voucher
+                {
+                    Id = 1,
+                    Code = "WELCOME10",
+                    Name = "Welcome 10%",
+                    Description = "Giảm 10% cho đơn hàng đầu tiên",
+                    VoucherType = VoucherTypes.Order,
+                    DiscountType = VoucherDiscountTypes.Percentage,
+                    DiscountValue = 10m,
+                    MaxDiscountAmount = 4.17m,
+                    MinOrderValue = 15m,
+                    StartAt = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc),
+                    EndAt = new DateTime(2026, 12, 31, 23, 59, 59, DateTimeKind.Utc),
+                    UsageLimitTotal = 100,
+                    UsageLimitPerUser = 1,
+                    SalesChannelId = null,
+                    IsActive = true,
+                    IsDeleted = false
+                },
+                new Voucher
+                {
+                    Id = 2,
+                    Code = "ORDER50K",
+                    Name = "Order -50K",
+                    Description = "Giảm 50,000đ trên tổng đơn hàng",
+                    VoucherType = VoucherTypes.Order,
+                    DiscountType = VoucherDiscountTypes.FixedAmount,
+                    DiscountValue = 2.08m,
+                    MaxDiscountAmount = null,
+                    MinOrderValue = 20m,
+                    StartAt = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc),
+                    EndAt = new DateTime(2026, 12, 31, 23, 59, 59, DateTimeKind.Utc),
+                    UsageLimitTotal = 50,
+                    UsageLimitPerUser = 2,
+                    SalesChannelId = null,
+                    IsActive = true,
+                    IsDeleted = false
+                },
+                new Voucher
+                {
+                    Id = 3,
+                    Code = "VIP15",
+                    Name = "VIP 15%",
+                    Description = "Giảm 15% cho khách VIP trên website",
+                    VoucherType = VoucherTypes.Order,
+                    DiscountType = VoucherDiscountTypes.Percentage,
+                    DiscountValue = 15m,
+                    MaxDiscountAmount = 8.33m,
+                    MinOrderValue = 40m,
+                    StartAt = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc),
+                    EndAt = new DateTime(2026, 12, 31, 23, 59, 59, DateTimeKind.Utc),
+                    UsageLimitTotal = 20,
+                    UsageLimitPerUser = 1,
+                    SalesChannelId = 1,
+                    IsActive = true,
+                    IsDeleted = false
+                },
+                new Voucher
+                {
+                    Id = 4,
+                    Code = "SHIP20K",
+                    Name = "Ship -20K",
+                    Description = "Giảm 20,000đ phí ship",
+                    VoucherType = VoucherTypes.Shipping,
+                    DiscountType = VoucherDiscountTypes.FixedAmount,
+                    DiscountValue = 0.83m,
+                    MaxDiscountAmount = null,
+                    MinOrderValue = 12m,
+                    StartAt = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc),
+                    EndAt = new DateTime(2026, 12, 31, 23, 59, 59, DateTimeKind.Utc),
+                    UsageLimitTotal = 100,
+                    UsageLimitPerUser = 3,
+                    SalesChannelId = null,
+                    IsActive = true,
+                    IsDeleted = false
+                },
+                new Voucher
+                {
+                    Id = 5,
+                    Code = "SHIP10",
+                    Name = "Ship 10%",
+                    Description = "Giảm 10% phí ship, tối đa 50,000đ",
+                    VoucherType = VoucherTypes.Shipping,
+                    DiscountType = VoucherDiscountTypes.Percentage,
+                    DiscountValue = 10m,
+                    MaxDiscountAmount = 2.08m,
+                    MinOrderValue = 20m,
+                    StartAt = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc),
+                    EndAt = new DateTime(2026, 12, 31, 23, 59, 59, DateTimeKind.Utc),
+                    UsageLimitTotal = 75,
+                    UsageLimitPerUser = 2,
+                    SalesChannelId = 1,
+                    IsActive = true,
+                    IsDeleted = false
                 }
             );
         }

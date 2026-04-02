@@ -80,9 +80,19 @@ namespace Omnichannel.Models
         [Required(ErrorMessage = "Số điện thoại là bắt buộc")]
         public string ReceiverPhone { get; set; } = string.Empty;
 
+        [Range(0, double.MaxValue, ErrorMessage = "Phí ship không hợp lệ")]
+        public decimal ShippingFee { get; set; } = 0;
+
         public string? Note { get; set; }
         public bool IsPickup { get; set; } = false;
         public string? VoucherCode { get; set; }
+        public string? OrderVoucherCode { get; set; }
+        public string? ShippingVoucherCode { get; set; }
+        public int? SalesChannelId { get; set; }
+
+        [Required(ErrorMessage = "Hình thức thanh toán là bắt buộc")]
+        [RegularExpression("^(Cash|BankTransfer)$", ErrorMessage = "Hình thức thanh toán không hợp lệ")]
+        public string PaymentMethod { get; set; } = "Cash";
     }
 
     public class PlaceBatchOrderItem

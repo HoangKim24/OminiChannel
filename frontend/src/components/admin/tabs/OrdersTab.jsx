@@ -40,6 +40,31 @@ const OrdersTab = ({ orders, user, onRefresh }) => {
 
   const getStatusLabel = (status) => statusLabelMap[String(status || '').trim().toLowerCase()] || 'Chưa xác định';
 
+  const parsePaymentMeta = (rawNote) => {
+    const note = String(rawNote || '');
+    const paymentMatch = note.match(/\[PAYMENT:([^\]]+)\]/i);
+    const transferRefMatch = note.match(/\[TRANSFER_REF:([^\]]+)\]/i);
+
+    const paymentCode = (paymentMatch?.[1] || '').trim().toUpperCase();
+    const paymentLabel = paymentCode === 'CHUYEN_KHOAN'
+      ? 'Chuyển khoản'
+      : paymentCode === 'TIEN_MAT'
+        ? 'Tiền mặt'
+        : 'Chưa rõ';
+
+    const cleanedNote = note
+      .replace(/\[PAYMENT:[^\]]+\]/ig, '')
+      .replace(/\[TRANSFER_REF:[^\]]+\]/ig, '')
+      .replace(/\s{2,}/g, ' ')
+      .trim();
+
+    return {
+      paymentLabel,
+      transferRef: transferRefMatch?.[1]?.trim() || '',
+      cleanedNote,
+    };
+  };
+
   const openDetail = (order) => {
     setSelectedOrder(order);
     setShowDetail(true);
@@ -118,6 +143,7 @@ const OrdersTab = ({ orders, user, onRefresh }) => {
                 <th className="admin-th">Khách hàng</th>
                 <th className="admin-th">Sản phẩm</th>
                 <th className="admin-th">Tổng tiền</th>
+                <th className="admin-th">Thanh toán</th>
                 <th className="admin-th">Trạng thái</th>
                 <th className="admin-th admin-th-center">Thao tác</th>
               </tr>
@@ -131,6 +157,8 @@ const OrdersTab = ({ orders, user, onRefresh }) => {
                   const itemLabel = items.length ? `${firstItem.perfumeName || firstItem.PerfumeName || 'Sản phẩm'}${items.length > 1 ? ` +${items.length - 1}` : ''}` : '—';
                   const amount = o.totalAmount ?? o.TotalAmount ?? 0;
                   const currentStatus = o.status || o.Status || 'Pending';
+                  const note = o.note || o.Note || '';
+                  const paymentMeta = parsePaymentMeta(note);
 
                   return (
                     <tr key={id} className="table-row-hover admin-tr">
@@ -143,6 +171,9 @@ const OrdersTab = ({ orders, user, onRefresh }) => {
                       </td>
                       <td className="admin-td admin-cell-text">{itemLabel}</td>
                       <td className="admin-td"><strong className="admin-amount">{vnd(amount)}</strong></td>
+                       <td className="admin-td">
+                        <span className="luxury-badge" style={{ whiteSpace: 'nowrap' }}>{paymentMeta.paymentLabel}</span>
+                       </td>
                       <td className="admin-td">
                          <span className={`luxury-badge ${getStatusClass(currentStatus)}`}>
                             {getStatusLabel(currentStatus)}
@@ -157,7 +188,7 @@ const OrdersTab = ({ orders, user, onRefresh }) => {
                   );
                 })
               ) : (
-                <tr><td colSpan={6} className="admin-empty-cell">Chưa có đơn hàng nào cần xử lý.</td></tr>
+                <tr><td colSpan={7} className="admin-empty-cell">Chưa có đơn hàng nào cần xử lý.</td></tr>
               )}
             </tbody>
           </table>
@@ -171,6 +202,7 @@ const OrdersTab = ({ orders, user, onRefresh }) => {
         const address = selectedOrder.shippingAddress || selectedOrder.ShippingAddress || 'Chưa có';
         const phone = selectedOrder.receiverPhone || selectedOrder.ReceiverPhone || 'Chưa có';
         const note = selectedOrder.note || selectedOrder.Note || '';
+        const paymentMeta = parsePaymentMeta(note);
         const orderDate = selectedOrder.orderDate || selectedOrder.OrderDate;
 
         return (
@@ -191,7 +223,9 @@ const OrdersTab = ({ orders, user, onRefresh }) => {
                  <div className="admin-modal-subpanel">
                       <h4 className="admin-info-label">🚚 Thông tin giao hàng</h4>
                       <p className="admin-info-address">Địa chỉ: {address}</p>
-                      {note && <p className="admin-info-line">Ghi chú: {note}</p>}
+                    <p className="admin-info-line">Thanh toán: {paymentMeta.paymentLabel}</p>
+                    {paymentMeta.transferRef && <p className="admin-info-line">Mã chuyển khoản: {paymentMeta.transferRef}</p>}
+                    {paymentMeta.cleanedNote && <p className="admin-info-line">Ghi chú: {paymentMeta.cleanedNote}</p>}
                     <div className={`luxury-badge ${getStatusClass(currentStatus)}`} style={{ marginTop: '1rem', display: 'inline-block' }}>{currentStatusLabel}</div>
                  </div>
               </div>

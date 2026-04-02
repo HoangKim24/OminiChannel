@@ -26,7 +26,7 @@ const ProductCard = ({
           <button 
             className="add-to-cart-btn" 
             onClick={onAddToCart} 
-            aria-label="Add to cart"
+            aria-label="Thêm vào giỏ hàng"
           >
             <svg 
               xmlns="http://www.w3.org/2000/svg" 

@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Omnichannel.Services;
+using Microsoft.EntityFrameworkCore;
 
 namespace Omnichannel.Controllers
 {
@@ -17,11 +18,15 @@ namespace Omnichannel.Controllers
 
         private readonly IUnitOfWork _unitOfWork;
         private readonly OrderFacade _orderFacade;
+        private readonly OmnichannelDbContext _context;
+        private readonly VoucherPricingService _voucherPricingService;
 
-        public OrdersController(IUnitOfWork unitOfWork, OrderFacade orderFacade)
+        public OrdersController(IUnitOfWork unitOfWork, OrderFacade orderFacade, OmnichannelDbContext context, VoucherPricingService voucherPricingService)
         {
             _unitOfWork = unitOfWork;
             _orderFacade = orderFacade;
+            _context = context;
+            _voucherPricingService = voucherPricingService;
         }
 
         [HttpGet("{id}")]
@@ -63,7 +68,7 @@ namespace Omnichannel.Controllers
 
         // New batch endpoint — handles multi-item checkout in 1 transaction
         [HttpPost("batch")]
-        public async Task<IActionResult> PlaceBatchOrder([FromBody] PlaceBatchOrderRequest request)
+        public async Task<IActionResult> PlaceBatchOrder([FromBody] PlaceBatchOrderRequest request, System.Threading.CancellationToken cancellationToken)
         {
             if (!ModelState.IsValid)
                 return BadRequest(new { message = "Dữ liệu không hợp lệ", errors = ModelState });
@@ -71,73 +76,124 @@ namespace Omnichannel.Controllers
             if (request.Items == null || request.Items.Count == 0)
                 return BadRequest(new { message = "Giỏ hàng trống" });
 
-            // Validate all items first
-            var orderItems = new List<OrderItem>();
-            decimal totalAmount = 0;
-
-            foreach (var item in request.Items)
+            await using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
+            try
             {
-                var perfume = await _unitOfWork.Perfumes.GetByIdAsync(item.PerfumeId);
-                if (perfume == null)
-                    return NotFound(new { message = $"Sản phẩm ID={item.PerfumeId} không tồn tại" });
+                var orderItems = new List<OrderItem>();
+                decimal itemsSubtotal = 0;
 
-                if (perfume.StockQuantity < item.Quantity)
-                    return BadRequest(new { message = $"Sản phẩm '{perfume.Name}' chỉ còn {perfume.StockQuantity} trong kho" });
-
-                orderItems.Add(new OrderItem
+                foreach (var item in request.Items)
                 {
-                    PerfumeId = perfume.Id,
-                    PerfumeName = perfume.Name,
-                    Quantity = item.Quantity,
-                    Price = perfume.Price
-                });
+                    var perfume = await _unitOfWork.Perfumes.GetByIdAsync(item.PerfumeId, cancellationToken);
+                    if (perfume == null)
+                        return NotFound(new { message = $"Sản phẩm ID={item.PerfumeId} không tồn tại" });
 
-                totalAmount += perfume.Price * item.Quantity;
+                    if (perfume.StockQuantity < item.Quantity)
+                        return BadRequest(new { message = $"Sản phẩm '{perfume.Name}' chỉ còn {perfume.StockQuantity} trong kho" });
 
-                // Deduct stock
-                perfume.StockQuantity -= item.Quantity;
-                _unitOfWork.Perfumes.Update(perfume);
-            }
-
-            decimal discountAmount = 0;
-            if (!string.IsNullOrEmpty(request.VoucherCode))
-            {
-                var voucher = await _unitOfWork.Vouchers.GetByCodeAsync(request.VoucherCode);
-                if (voucher != null && voucher.IsActive && voucher.ExpiryDate > DateTime.Now)
-                {
-                    if (totalAmount >= voucher.MinOrderValue)
+                    orderItems.Add(new OrderItem
                     {
-                        if (voucher.UsageLimit == 0 || voucher.UsedCount < voucher.UsageLimit)
-                        {
-                            discountAmount = voucher.DiscountAmount;
-                            voucher.UsedCount++;
-                            _unitOfWork.Vouchers.Update(voucher);
-                        }
+                        PerfumeId = perfume.Id,
+                        PerfumeName = perfume.Name,
+                        Quantity = item.Quantity,
+                        Price = perfume.Price
+                    });
+
+                    itemsSubtotal += perfume.Price * item.Quantity;
+
+                    perfume.StockQuantity -= item.Quantity;
+                    _unitOfWork.Perfumes.Update(perfume);
+                }
+
+                var shippingFee = request.IsPickup ? 0 : request.ShippingFee;
+                var hasVoucherCodes = !string.IsNullOrWhiteSpace(request.VoucherCode)
+                    || !string.IsNullOrWhiteSpace(request.OrderVoucherCode)
+                    || !string.IsNullOrWhiteSpace(request.ShippingVoucherCode);
+
+                VoucherApplyResponse? quote = null;
+                if (hasVoucherCodes)
+                {
+                    quote = await _voucherPricingService.QuoteAsync(new VoucherApplyRequest
+                    {
+                        UserId = request.UserId,
+                        ItemsSubtotal = itemsSubtotal,
+                        ShippingFee = shippingFee,
+                        VoucherCode = request.VoucherCode,
+                        OrderVoucherCode = request.OrderVoucherCode,
+                        ShippingVoucherCode = request.ShippingVoucherCode,
+                        SalesChannelId = request.SalesChannelId
+                    }, cancellationToken);
+                }
+
+                var paymentLabel = string.Equals(request.PaymentMethod, "BankTransfer", StringComparison.OrdinalIgnoreCase)
+                    ? "CHUYEN_KHOAN"
+                    : "TIEN_MAT";
+
+                var voucherCodes = quote?.AppliedVouchers.Select(v => v.Code).ToList() ?? new List<string>();
+                var composedNote = string.IsNullOrWhiteSpace(request.Note)
+                    ? $"[PAYMENT:{paymentLabel}]"
+                    : $"{request.Note} [PAYMENT:{paymentLabel}]";
+
+                if (voucherCodes.Count > 0)
+                {
+                    composedNote += $" [VOUCHERS:{string.Join(",", voucherCodes)}]";
+                }
+
+                var order = new Order
+                {
+                    UserId = request.UserId,
+                    OrderDate = DateTime.UtcNow,
+                    Status = "Pending",
+                    TotalAmount = quote?.FinalTotal ?? (itemsSubtotal + shippingFee),
+                    ShippingAddress = request.ShippingAddress,
+                    ReceiverPhone = request.ReceiverPhone,
+                    Note = composedNote,
+                    IsPickup = request.IsPickup,
+                    VoucherCode = voucherCodes.Count > 0 ? string.Join(",", voucherCodes) : request.VoucherCode,
+                    DiscountAmount = (quote?.OrderVoucherDiscount ?? 0) + (quote?.ShippingVoucherDiscount ?? 0),
+                    Items = orderItems
+                };
+
+                await _unitOfWork.Orders.AddAsync(order, cancellationToken);
+                await _unitOfWork.CompleteAsync(cancellationToken);
+
+                if (quote != null)
+                {
+                    var redemptions = VoucherPricingService.BuildRedemptions(order.Id, request.UserId, quote);
+                    if (redemptions.Count > 0)
+                    {
+                        await _context.VoucherRedemptions.AddRangeAsync(redemptions, cancellationToken);
+                        await _context.SaveChangesAsync(cancellationToken);
                     }
                 }
+
+                await transaction.CommitAsync(cancellationToken);
+
+                return Created("", new
+                {
+                    message = "Đặt hàng thành công",
+                    orderId = order.Id,
+                    totalAmount = order.TotalAmount,
+                    breakdown = new
+                    {
+                        itemsSubtotal,
+                        shippingFee,
+                        orderVoucherDiscount = quote?.OrderVoucherDiscount ?? 0,
+                        shippingVoucherDiscount = quote?.ShippingVoucherDiscount ?? 0,
+                        finalTotal = quote?.FinalTotal ?? (itemsSubtotal + shippingFee)
+                    }
+                });
             }
-
-            totalAmount = Math.Max(0, totalAmount - discountAmount);
-
-            var order = new Order
+            catch (InvalidOperationException ex)
             {
-                UserId = request.UserId,
-                OrderDate = DateTime.Now,
-                Status = "Pending",
-                TotalAmount = totalAmount,
-                ShippingAddress = request.ShippingAddress,
-                ReceiverPhone = request.ReceiverPhone,
-                Note = request.Note,
-                IsPickup = request.IsPickup,
-                VoucherCode = request.VoucherCode,
-                DiscountAmount = discountAmount,
-                Items = orderItems
-            };
-
-            await _unitOfWork.Orders.AddAsync(order);
-            await _unitOfWork.CompleteAsync();
-
-            return Created("", new { message = "Đặt hàng thành công", orderId = order.Id, totalAmount = order.TotalAmount });
+                await transaction.RollbackAsync(cancellationToken);
+                return BadRequest(new { message = ex.Message });
+            }
+            catch
+            {
+                await transaction.RollbackAsync(cancellationToken);
+                throw;
+            }
         }
 
         [HttpPut("{id}/status")]

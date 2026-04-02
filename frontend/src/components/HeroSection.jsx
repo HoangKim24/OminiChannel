@@ -33,10 +33,10 @@ const HeroSection = () => {
           <li><a href="#contact">Liên hệ</a></li>
         </ul>
         <div className="nav-icons">
-          <button className="icon-btn" aria-label="Search">
+          <button className="icon-btn" aria-label="Tìm kiếm">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
           </button>
-          <button className="icon-btn" aria-label="Cart">
+          <button className="icon-btn" aria-label="Giỏ hàng">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path><line x1="3" y1="6" x2="21" y2="6"></line><path d="M16 10a4 4 0 0 1-8 0"></path></svg>
           </button>
         </div>
@@ -48,7 +48,7 @@ const HeroSection = () => {
         {/* URL ảnh tĩnh hoặc ảnh local tùy vào assets của dự án */}
         <img 
           src="https://images.unsplash.com/photo-1594035910387-fea47794261f?q=80&w=2600&auto=format&fit=crop" 
-          alt="Luxury Perfume" 
+          alt="Nước hoa cao cấp" 
           className={`bg-image ${isLoaded ? 'zoom-in' : ''}`}
         />
       </div>

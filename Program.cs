@@ -11,10 +11,12 @@ using Omnichannel.Infrastructure;
 using Omnichannel.Repositories;
 using Omnichannel.Services;
 using FluentValidation;
+using FluentValidation.AspNetCore;
 using Omnichannel.Middleware;
 using Omnichannel.Swagger;
 using Hangfire;
 using Hangfire.SqlServer;
+using Swashbuckle.AspNetCore.Annotations;
 
 var builder = WebApplication.CreateBuilder(args);
 var isTesting = builder.Environment.IsEnvironment("Testing");
@@ -62,9 +64,11 @@ builder.Services.AddSwaggerGen(options =>
     });
 
     options.OperationFilter<SwaggerDefaultResponsesOperationFilter>();
+    options.EnableAnnotations();
 });
 
 builder.Services.AddValidatorsFromAssemblyContaining<Program>();
+builder.Services.AddFluentValidationAutoValidation();
 builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssemblyContaining<Program>());
 builder.Services.AddHttpLogging(options =>
 {
@@ -146,6 +150,7 @@ builder.Services.AddScoped<IOmnichannelAdapter, TikTokAdapter>();
 builder.Services.AddScoped<IOmnichannelAdapter, LazadaAdapter>();
 builder.Services.AddScoped<InventorySubject>();
 builder.Services.AddScoped<OrderFacade>();
+builder.Services.AddScoped<VoucherPricingService>();
 builder.Services.AddScoped<RecommendationService>();
 builder.Services.AddScoped<OmnichannelBackgroundSyncService>();
 

@@ -2,6 +2,24 @@ import Hero from '../components/user/Hero'
 import ProductsSection from '../components/user/ProductsSection'
 import { useAppStore } from '../store/useAppStore'
 
+const KNOWN_CHANNEL_LOGOS = {
+  website: 'https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f310.svg',
+  shopee: 'https://upload.wikimedia.org/wikipedia/commons/f/fe/Shopee.svg',
+  lazada: 'https://upload.wikimedia.org/wikipedia/commons/d/df/Lazada_Logo.png',
+  tiktok: 'https://upload.wikimedia.org/wikipedia/en/a/a9/TikTok_logo.svg',
+}
+
+const resolveChannelLogo = (channel) => {
+  const channelName = String(channel?.channelName || '').trim().toLowerCase()
+
+  if (channelName.includes('shopee')) return KNOWN_CHANNEL_LOGOS.shopee
+  if (channelName.includes('lazada')) return KNOWN_CHANNEL_LOGOS.lazada
+  if (channelName.includes('tiktok')) return KNOWN_CHANNEL_LOGOS.tiktok
+  if (channelName.includes('website') || channelName.includes('web')) return KNOWN_CHANNEL_LOGOS.website
+
+  return channel?.logoUrl || KNOWN_CHANNEL_LOGOS.website
+}
+
 const HomePage = ({ resetQuiz }) => {
   const channels = useAppStore(state => state.channels)
 
@@ -20,13 +38,20 @@ const HomePage = ({ resetQuiz }) => {
             <span>Trải Nghiệm Đa Kênh</span>
             Kênh Bán Hàng Trực Tuyến
           </h2>
-          <div style={{ display: 'flex', justifyContent: 'center', gap: '3rem', flexWrap: 'wrap' }}>
+          <div className="channel-grid">
             {channels.map(channel => (
-              <div key={channel.id} style={{ textAlign: 'center', cursor: 'pointer', transition: 'transform 0.3s' }} className="channel-logo-hover">
-                <img src={channel.channelName === 'Lazada' ? 'https://upload.wikimedia.org/wikipedia/commons/d/df/Lazada_Logo.png' : channel.logoUrl} 
-                  alt={channel.channelName} style={{ width: '64px', height: '64px', marginBottom: '1rem', objectFit: 'contain' }} 
-                  onError={e => { e.target.src = `https://ui-avatars.com/api/?name=${channel.channelName}&background=222&color=c5a059` }} />
-                <p style={{ color: 'var(--accent-gold)', fontSize: '0.9rem', fontWeight: 600 }}>{channel.channelName}</p>
+              <div key={channel.id} className="channel-card channel-logo-hover">
+                <div className="channel-logo-wrap">
+                  <img
+                    src={resolveChannelLogo(channel)}
+                    alt={channel.channelName}
+                    className="channel-logo"
+                    onError={(e) => {
+                      e.currentTarget.src = KNOWN_CHANNEL_LOGOS.website
+                    }}
+                  />
+                </div>
+                <p className="channel-name">{channel.channelName}</p>
               </div>
             ))}
           </div>

@@ -324,6 +324,50 @@
   border: 1px solid var(--border-light);
 }
 
+/* Sales channels */
+.channel-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 1.25rem;
+  max-width: 760px;
+  margin: 0 auto;
+}
+
+.channel-card {
+  text-align: center;
+  cursor: pointer;
+  border: 1px solid var(--border-light);
+  background: var(--bg-elevated);
+  border-radius: var(--radius-md);
+  padding: 1rem 0.75rem;
+}
+
+.channel-logo-wrap {
+  width: 76px;
+  height: 76px;
+  margin: 0 auto 0.85rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border-light);
+}
+
+.channel-logo {
+  width: 56px;
+  height: 56px;
+  object-fit: contain;
+}
+
+.channel-name {
+  color: var(--accent-gold);
+  font-size: 0.95rem;
+  font-weight: 600;
+  line-height: 1.35;
+  margin: 0;
+}
+
 @media (max-width: 768px) {
   .products-section {
     padding: 5rem 0;
@@ -372,6 +416,10 @@
 @media (max-width: 560px) {
   .product-grid {
     grid-template-columns: 1fr;
+  }
+
+  .channel-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 

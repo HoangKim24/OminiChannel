@@ -6,6 +6,7 @@ import ProductsTab from './components/admin/tabs/ProductsTab';
 import InventoryTab from './components/admin/tabs/InventoryTab';
 import CustomersTab from './components/admin/tabs/CustomersTab';
 import AdminAccountsTab from './components/admin/tabs/AdminAccountsTab';
+import VouchersTab from './components/admin/tabs/VouchersTab';
 
 const AdminDashboard = ({ products, channelProducts, cartTotal, orders, setPage, user, onRefresh }) => {
   const [activeTab, setActiveTab] = useState('overview');
@@ -45,6 +46,7 @@ const AdminDashboard = ({ products, channelProducts, cartTotal, orders, setPage,
           {activeTab === 'products' && <ProductsTab products={products} user={user} onRefresh={onRefresh} />}
           {activeTab === 'orders' && <OrdersTab orders={orders} user={user} onRefresh={onRefresh} />}
           {activeTab === 'inventory' && <InventoryTab products={products} channelProducts={channelProducts} user={user} />}
+          {activeTab === 'voucher-management' && <VouchersTab user={user} />}
           {activeTab === 'customers' && <CustomersTab user={user} />}
           {activeTab === 'admin-accounts' && <AdminAccountsTab user={user} onRefresh={onRefresh} />}
         </main>

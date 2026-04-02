@@ -132,7 +132,38 @@
 .detail-qty-wrap:hover { border-color: var(--color-gold-500); }
 .detail-qty-btn { width: 48px; height: 48px; background: transparent; border: none; color: var(--text-primary); font-size: 1.25rem; cursor: pointer; transition: var(--transition-fast); }
 .detail-qty-btn:hover { color: var(--color-gold-500); background: rgba(255,255,255,0.05); }
+.detail-qty-btn:disabled { opacity: 0.35; cursor: not-allowed; }
 .detail-qty-input { width: 60px; height: 48px; background: transparent; border: none; color: var(--text-primary); text-align: center; font-size: 1.1rem; outline: none; font-weight: 500; font-family: var(--font-sans); }
+
+.detail-qty-tools {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.65rem;
+  flex-wrap: wrap;
+}
+
+.detail-qty-chip {
+  border: 1px solid var(--border-color);
+  background: rgba(255, 255, 255, 0.02);
+  color: var(--text-secondary);
+  border-radius: 999px;
+  padding: 0.28rem 0.7rem;
+  font-size: 0.78rem;
+  cursor: pointer;
+  transition: var(--transition-fast);
+}
+
+.detail-qty-chip:hover {
+  border-color: var(--color-gold-500);
+  color: var(--color-gold-500);
+  background: rgba(212, 175, 55, 0.08);
+}
+
+.detail-qty-helper {
+  margin: 0.5rem 0 0;
+  font-size: 0.78rem;
+  color: var(--text-tertiary);
+}
 
 /* Action Buttons */
 .detail-actions { display: flex; gap: 1rem; margin-bottom: 2.5rem; flex-wrap: wrap; }

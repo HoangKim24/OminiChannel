@@ -39,8 +39,6 @@ const Navbar = ({ setIsCartOpen }) => {
 
   const cartCount = cart.reduce((a, b) => a + b.quantity, 0);
   const closeMobileMenu = () => setIsMobileMenuOpen(false);
-  const isAdmin = String(user?.role || '').toLowerCase() === 'admin';
-
   const filteredProducts = products.filter(p => p.name.toLowerCase().includes(searchTerm.toLowerCase()));
   const vnd = (price) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price * 24000);
 
@@ -104,18 +102,6 @@ const Navbar = ({ setIsCartOpen }) => {
           {user ? (
             <>
               <Link to="/profile" className="nav-link-btn" onClick={closeMobileMenu}>Hồ Sơ Của Tôi</Link>
-              {isAdmin && (
-                <Link
-                  to="/admin"
-                  className="nav-link-btn"
-                  style={{ color: 'var(--accent-gold)' }}
-                  aria-label="Quản trị"
-                  title="Quản trị"
-                  onClick={closeMobileMenu}
-                >
-                  ⚙
-                </Link>
-              )}
               <button type="button" className="nav-link-btn" onClick={() => { logout(); closeMobileMenu(); navigate('/'); }}>Đăng Xuất</button>
             </>
           ) : (

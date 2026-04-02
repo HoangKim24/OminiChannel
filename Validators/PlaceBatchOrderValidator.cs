@@ -20,6 +20,7 @@ namespace Omnichannel.Validators
             RuleFor(x => x.UserId).GreaterThan(0).WithMessage("UserId là bắt buộc");
             RuleFor(x => x.ShippingAddress).NotEmpty().WithMessage("Địa chỉ giao hàng là bắt buộc");
             RuleFor(x => x.ReceiverPhone).NotEmpty().WithMessage("Số điện thoại là bắt buộc");
+            RuleFor(x => x.ShippingFee).GreaterThanOrEqualTo(0).WithMessage("Phí ship không hợp lệ");
             RuleFor(x => x.Items)
                 .NotEmpty().WithMessage("Danh sách sản phẩm không được rỗng");
             

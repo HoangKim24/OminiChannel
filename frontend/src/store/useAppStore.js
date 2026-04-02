@@ -69,6 +69,8 @@ export const useAppStore = create(
 
       // Cart
       cart: [],
+      cartNote: '',
+      setCartNote: (cartNote) => set({ cartNote }),
       addToCart: (product, qty = 1, engraving = null) => {
         set((state) => {
           const existing = state.cart.find(i => i.id === product.id)
@@ -90,8 +92,14 @@ export const useAppStore = create(
           cart: state.cart.map(i => i.id === id ? { ...i, quantity: Math.max(1, i.quantity + change) } : i)
         }))
       },
+      setCartItemQty: (id, quantity) => {
+        const normalizedQty = Math.max(1, Number.parseInt(quantity, 10) || 1)
+        set((state) => ({
+          cart: state.cart.map(i => i.id === id ? { ...i, quantity: normalizedQty } : i)
+        }))
+      },
       removeFromCart: (id) => set((state) => ({ cart: state.cart.filter(i => i.id !== id) })),
-      clearCart: () => set({ cart: [] }),
+      clearCart: () => set({ cart: [], cartNote: '' }),
 
       // Favorites
       favorites: [],
@@ -216,7 +224,7 @@ export const useAppStore = create(
     }),
     {
       name: 'kp-storage', // unique localstorage key
-      partialize: (state) => ({ user: state.user, cart: state.cart, favorites: state.favorites }),
+      partialize: (state) => ({ user: state.user, cart: state.cart, cartNote: state.cartNote, favorites: state.favorites }),
     }
   )
 )

@@ -1,11 +1,14 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAppStore } from '../../store/useAppStore';
 import '../../styles/AdminLogin.css';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || '';
 
-const AdminLogin = ({ onLogin, setPage, showToast }) => {
+const AdminLogin = () => {
     const navigate = useNavigate();
+    const setUser = useAppStore(state => state.setUser);
+    const showToast = useAppStore(state => state.showToast);
     const [formData, setFormData] = useState({ username: '', password: '' });
     const [loading, setLoading] = useState(false);
 
@@ -13,22 +16,19 @@ const AdminLogin = ({ onLogin, setPage, showToast }) => {
         e.preventDefault();
         setLoading(true);
         try {
-            const res = await fetch(`${API_BASE}/api/auth/login`, {
+            const res = await fetch(`${API_BASE}/api/auth/admin-login`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(formData)
+                body: JSON.stringify({ ...formData, loginRole: 'Admin' })
             });
             const data = await res.json();
             
             if (res.ok) {
-                if (String(data.role || '').toLowerCase() === 'admin') {
-                    onLogin(data);
-                    showToast(`Chào mừng Admin ${data.username} trở lại!`, 'success');
-                } else {
-                    showToast('Tài khoản này không có quyền truy cập Admin.', 'error');
-                }
+                setUser({ id: data.id, username: data.username, role: data.role, accessToken: data.accessToken, fullName: data.fullName });
+                showToast(`Chào mừng Admin ${data.fullName || data.username} trở lại!`, 'success');
+                navigate('/admin', { replace: true });
             } else {
-                showToast(data.message || 'Đăng nhập thất bại', 'error');
+                showToast(data.message || 'Đăng nhập admin thất bại', 'error');
             }
         } catch {
             showToast('Lỗi kết nối máy chủ', 'error');
@@ -41,7 +41,8 @@ const AdminLogin = ({ onLogin, setPage, showToast }) => {
         <div className="admin-login-page">
             <div className="login-card fade-in-up">
                 <span className="login-logo">KP LUXURY</span>
-                <p className="login-subtitle">Management Console</p>
+                <p className="login-subtitle">Bảng điều khiển quản trị</p>
+                <p style={{ margin: '0 0 1rem', color: '#b7b7b7', textAlign: 'center' }}>Đăng nhập dành riêng cho tài khoản quản trị.</p>
                 
                 <form className="login-form" onSubmit={handleSubmit}>
                     <div className="input-group">
@@ -74,7 +75,7 @@ const AdminLogin = ({ onLogin, setPage, showToast }) => {
                 </form>
 
                 <div className="login-footer">
-                    <a href="/" onClick={(e) => { e.preventDefault(); if (typeof setPage === 'function') setPage('home'); else navigate('/'); }} className="back-link">
+                    <a href="/" onClick={(e) => { e.preventDefault(); navigate('/'); }} className="back-link">
                         ← Quay lại trang chủ
                     </a>
                 </div>

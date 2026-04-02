@@ -360,6 +360,18 @@
   flex-wrap: wrap;
 }
 
+.admin-app .vouchers-tab .admin-cell-text {
+  max-width: 26ch;
+}
+
+.admin-app .vouchers-tab .admin-cell-sub {
+  line-height: 1.4;
+}
+
+.admin-app .vouchers-tab .admin-table-modern td {
+  vertical-align: top;
+}
+
 .admin-app .admin-modal-actions-end {
   justify-content: flex-end;
 }

@@ -73,6 +73,50 @@ namespace Omnichannel.Tests
                     });
                 }
 
+                if (!db.Vouchers.Any(x => x.Id == 1001))
+                {
+                    db.Vouchers.AddRange(
+                        new Voucher
+                        {
+                            Id = 1001,
+                            Code = "TESTORDER10",
+                            Name = "Test Order 10%",
+                            Description = "Integration test order voucher",
+                            VoucherType = VoucherTypes.Order,
+                            DiscountType = VoucherDiscountTypes.Percentage,
+                            DiscountValue = 10m,
+                            MaxDiscountAmount = 50000m,
+                            MinOrderValue = 50m,
+                            StartAt = DateTime.UtcNow.AddDays(-1),
+                            EndAt = DateTime.UtcNow.AddDays(30),
+                            UsageLimitTotal = 10,
+                            UsageLimitPerUser = 2,
+                            IsActive = true,
+                            IsDeleted = false,
+                            SalesChannelId = null
+                        },
+                        new Voucher
+                        {
+                            Id = 1002,
+                            Code = "TESTSHIP5K",
+                            Name = "Test Shipping 5K",
+                            Description = "Integration test shipping voucher",
+                            VoucherType = VoucherTypes.Shipping,
+                            DiscountType = VoucherDiscountTypes.FixedAmount,
+                            DiscountValue = 5000m,
+                            MaxDiscountAmount = null,
+                            MinOrderValue = 50m,
+                            StartAt = DateTime.UtcNow.AddDays(-1),
+                            EndAt = DateTime.UtcNow.AddDays(30),
+                            UsageLimitTotal = 10,
+                            UsageLimitPerUser = 2,
+                            IsActive = true,
+                            IsDeleted = false,
+                            SalesChannelId = null
+                        }
+                    );
+                }
+
                 db.SaveChanges();
             });
         }

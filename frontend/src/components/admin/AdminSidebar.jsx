@@ -6,6 +6,7 @@ const AdminSidebar = ({ activeTab, setActiveTab, setPage, isMobileOpen, setIsMob
     { id: 'overview', label: 'TỔNG QUAN' },
     { id: 'products', label: 'SẢN PHẨM' },
     { id: 'orders', label: 'ĐƠN HÀNG' },
+    { id: 'voucher-management', label: 'MÃ GIẢM GIÁ' },
     { id: 'customers', label: 'KHÁCH HÀNG' },
     { id: 'admin-accounts', label: 'TÀI KHOẢN ADMIN' },
     { id: 'inventory', label: 'KHO HÀNG' },

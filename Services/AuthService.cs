@@ -29,7 +29,7 @@ namespace Omnichannel.Services
 
         public async Task<LoginResponse?> LoginAsync(LoginRequest request, CancellationToken cancellationToken = default)
         {
-            return await LoginInternalAsync(request, requiredRole: null, cancellationToken);
+            return await LoginInternalAsync(request, requiredRole: "User", cancellationToken);
         }
 
         public async Task<LoginResponse?> LoginAsAdminAsync(LoginRequest request, CancellationToken cancellationToken = default)

@@ -324,7 +324,6 @@ const ProfilePage = () => {
                         <span>{items.length} sản phẩm</span>
                         <strong>{vnd(total)}</strong>
                       </div>
-                      <button type="button" className="profile-link-btn" onClick={() => navigate('/admin')}>Mở trung tâm đơn hàng</button>
                     </article>
                   );
                 })}

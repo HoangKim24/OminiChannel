@@ -130,6 +130,7 @@ const ProductDetailPage = () => {
   const currentPrice = (product?.price || 0) * (activeSize.multiplier || 1)
   const stockQty = product?.stockQuantity ?? 0
   const stockStatus = stockQty === 0 ? 'out' : stockQty <= 10 ? 'low' : 'in'
+  const maxQtyAllowed = Math.max(1, stockQty)
 
   useEffect(() => {
     if (!sizes.length) return
@@ -175,6 +176,15 @@ const ProductDetailPage = () => {
     } finally {
       setIsSubmittingComment(false)
     }
+  }
+
+  const setDetailQtyClamped = (nextQty) => {
+    const parsedQty = Number.parseInt(nextQty, 10)
+    if (Number.isNaN(parsedQty)) {
+      setDetailQty(1)
+      return
+    }
+    setDetailQty(Math.min(maxQtyAllowed, Math.max(1, parsedQty)))
   }
 
   const handleAddToCartWithEngraving = (redirectToCheckout = false) => {
@@ -275,10 +285,39 @@ const ProductDetailPage = () => {
             {/* Quantity */}
             <div className="detail-qty" style={{ marginTop: '1.5rem' }}>
               <label>Số lượng</label>
-              <div className="detail-qty-wrap">
-                <button type="button" className="detail-qty-btn" onClick={() => setDetailQty(q => Math.max(1, q - 1))}>−</button>
-                <input className="detail-qty-input" type="number" value={detailQty} readOnly />
-                <button type="button" className="detail-qty-btn" onClick={() => setDetailQty(q => q + 1)}>+</button>
+              <div>
+                <div className="detail-qty-wrap">
+                  <button
+                    type="button"
+                    className="detail-qty-btn"
+                    disabled={detailQty <= 1}
+                    onClick={() => setDetailQtyClamped(detailQty - 1)}
+                  >
+                    −
+                  </button>
+                  <input
+                    className="detail-qty-input"
+                    type="number"
+                    min="1"
+                    max={maxQtyAllowed}
+                    value={detailQty}
+                    onChange={(e) => setDetailQtyClamped(e.target.value)}
+                  />
+                  <button
+                    type="button"
+                    className="detail-qty-btn"
+                    disabled={detailQty >= maxQtyAllowed}
+                    onClick={() => setDetailQtyClamped(detailQty + 1)}
+                  >
+                    +
+                  </button>
+                </div>
+                <div className="detail-qty-tools">
+                  <button type="button" className="detail-qty-chip" onClick={() => setDetailQtyClamped(detailQty + 1)}>+1</button>
+                  <button type="button" className="detail-qty-chip" onClick={() => setDetailQtyClamped(detailQty + 5)}>+5</button>
+                  <button type="button" className="detail-qty-chip" onClick={() => setDetailQtyClamped(maxQtyAllowed)}>Lấy tối đa</button>
+                </div>
+                <p className="detail-qty-helper">Giới hạn hiện tại: tối đa {maxQtyAllowed} sản phẩm.</p>
               </div>
             </div>
 
