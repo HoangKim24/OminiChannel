@@ -14,6 +14,10 @@ namespace Omnichannel.Validators
             RuleFor(x => x.Password)
                 .NotEmpty().WithMessage("Mật khẩu là bắt buộc")
                 .MinimumLength(6).WithMessage("Mật khẩu phải có ít nhất 6 ký tự");
+
+            RuleFor(x => x.LoginRole)
+                .Must(role => string.IsNullOrWhiteSpace(role) || role is "User" or "Admin")
+                .WithMessage("Vai trò đăng nhập không hợp lệ");
         }
     }
 }

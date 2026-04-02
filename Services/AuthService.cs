@@ -12,6 +12,7 @@ namespace Omnichannel.Services
     public interface IAuthService
     {
         Task<LoginResponse?> LoginAsync(LoginRequest request, CancellationToken cancellationToken = default);
+        Task<LoginResponse?> LoginAsAdminAsync(LoginRequest request, CancellationToken cancellationToken = default);
         Task<(bool Success, string Message)> RegisterAsync(RegisterRequest request, CancellationToken cancellationToken = default);
     }
 
@@ -28,6 +29,16 @@ namespace Omnichannel.Services
 
         public async Task<LoginResponse?> LoginAsync(LoginRequest request, CancellationToken cancellationToken = default)
         {
+            return await LoginInternalAsync(request, requiredRole: null, cancellationToken);
+        }
+
+        public async Task<LoginResponse?> LoginAsAdminAsync(LoginRequest request, CancellationToken cancellationToken = default)
+        {
+            return await LoginInternalAsync(request, requiredRole: "Admin", cancellationToken);
+        }
+
+        private async Task<LoginResponse?> LoginInternalAsync(LoginRequest request, string? requiredRole, CancellationToken cancellationToken)
+        {
             var normalizedUsername = NormalizeUsername(request.Username);
             if (string.IsNullOrWhiteSpace(normalizedUsername))
             {
@@ -42,6 +53,11 @@ namespace Omnichannel.Services
 
             var isPasswordValid = BCrypt.Net.BCrypt.Verify(request.Password, user.Password);
             if (!isPasswordValid)
+            {
+                return null;
+            }
+
+            if (!string.IsNullOrWhiteSpace(requiredRole) && !string.Equals(user.Role, requiredRole, StringComparison.OrdinalIgnoreCase))
             {
                 return null;
             }

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAppStore } from '../../store/useAppStore';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || '';
@@ -8,12 +9,14 @@ const AuthModal = () => {
   const setAuthModal = useAppStore(state => state.setAuthModal);
   const setUser = useAppStore(state => state.setUser);
   const showToast = useAppStore(state => state.showToast);
+  const navigate = useNavigate();
 
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
+  const [loginRole, setLoginRole] = useState('User');
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
 
@@ -24,6 +27,7 @@ const AuthModal = () => {
     setFullName('')
     setEmail('')
     setPhoneNumber('')
+    setLoginRole(mode === 'admin-login' ? 'Admin' : 'User')
     setErrors({})
   }, [mode])
 
@@ -98,7 +102,7 @@ const AuthModal = () => {
         const res = await fetch(`${API_BASE}/api/auth/login`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ username, password })
+          body: JSON.stringify({ username, password, loginRole: 'User' })
         });
         const data = await res.json();
         if (res.ok) {
@@ -111,6 +115,25 @@ const AuthModal = () => {
         } else {
           showToast(data.message || 'Đăng nhập thất bại', 'error');
           setErrors({ form: data.message || 'Đăng nhập thất bại' });
+        }
+      } else if (mode === 'admin-login') {
+        const res = await fetch(`${API_BASE}/api/auth/admin-login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password, loginRole: 'Admin' })
+        });
+        const data = await res.json();
+        if (res.ok) {
+          setUser({ id: data.id, username: data.username, role: data.role, accessToken: data.accessToken, fullName: data.fullName });
+          setAuthModal(null);
+          setUsername('');
+          setPassword('');
+          setErrors({});
+          showToast(`Chào mừng Admin ${data.fullName || data.username} trở lại! 🌟`);
+          navigate('/admin');
+        } else {
+          showToast(data.message || 'Đăng nhập admin thất bại', 'error');
+          setErrors({ form: data.message || 'Đăng nhập admin thất bại' });
         }
       } else {
         const res = await fetch(`${API_BASE}/api/auth/register`, {
@@ -154,6 +177,27 @@ const AuthModal = () => {
         <h2 className="brand-font" style={{ textAlign: 'center', marginBottom: '2rem' }}>
           {mode === 'login' ? 'Đăng Nhập' : 'Tạo Tài Khoản'}
         </h2>
+
+        {mode !== 'register' && (
+          <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
+            <button
+              type="button"
+              className="auth-role-chip"
+              onClick={() => { setAuthModal(mode === 'admin-login' ? 'admin-login' : 'login'); setErrors({}); }}
+              aria-pressed={mode !== 'admin-login'}
+            >
+              Tài khoản người dùng
+            </button>
+            <button
+              type="button"
+              className="auth-role-chip"
+              onClick={() => { setAuthModal('admin-login'); setErrors({}); }}
+              aria-pressed={mode === 'admin-login'}
+            >
+              Tài khoản admin
+            </button>
+          </div>
+        )}
         
         {errors.form && (
           <div style={{ background: '#ef44441a', color: '#ffb3b3', padding: '0.75rem', borderRadius: '4px', marginBottom: '1rem', fontSize: '0.9rem' }}>
@@ -189,11 +233,11 @@ const AuthModal = () => {
             {errors.password && <div style={{ color: '#ef4444', fontSize: '0.8rem', marginTop: '0.25rem' }}>{errors.password}</div>}
           </div>
           <button className="btn-gold" type="submit" style={{ marginTop: '1rem', width: '100%', opacity: isLoading ? 0.6 : 1 }} disabled={isLoading}>
-            {isLoading ? '⏳ Đang xử lý...' : (mode === 'login' ? 'Đăng Nhập' : 'Đăng Ký')}
+            {isLoading ? '⏳ Đang xử lý...' : (mode === 'register' ? 'Đăng Ký' : mode === 'admin-login' ? 'Đăng Nhập Admin' : 'Đăng Nhập')}
           </button>
         </form>
         <div style={{ textAlign: 'center', marginTop: '1.5rem', fontSize: '0.9rem', color: '#888' }}>
-          {mode === 'login' ? (
+          {mode !== 'register' ? (
             <p>Chưa có tài khoản? <span style={{ color: 'var(--accent-gold)', cursor: 'pointer', fontWeight: '500' }} onClick={() => { setAuthModal('register'); setErrors({}); }}>Đăng ký ngay</span></p>
           ) : (
              <p>Đã có tài khoản? <span style={{ color: 'var(--accent-gold)', cursor: 'pointer', fontWeight: '500' }} onClick={() => { setAuthModal('login'); setErrors({}); }}>Đăng nhập</span></p>

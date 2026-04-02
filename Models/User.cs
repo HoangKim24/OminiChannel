@@ -19,5 +19,7 @@ namespace Omnichannel.Models
 
         [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "Mật khẩu là bắt buộc")]
         public string Password { get; set; } = string.Empty;
+
+        public string? LoginRole { get; set; }
     }
 }

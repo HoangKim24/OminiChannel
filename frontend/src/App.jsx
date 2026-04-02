@@ -53,7 +53,7 @@ const App = () => {
 
   useEffect(() => {
     if (isAdminRoute && !isAdminUser) {
-      setAuthModal('login');
+      setAuthModal('admin-login');
       return;
     }
 
@@ -109,11 +109,11 @@ const App = () => {
                 ) : (
                   <div className="container" style={{ paddingTop: '120px', paddingBottom: '120px', minHeight: '70vh' }}>
                     <div className="admin-panel shadow-gold" style={{ padding: '2rem', borderRadius: '16px', textAlign: 'center' }}>
-                      <h2 className="brand-font" style={{ marginBottom: '0.8rem' }}>Admin login required</h2>
+                      <h2 className="brand-font" style={{ marginBottom: '0.8rem' }}>Cần đăng nhập tài khoản admin</h2>
                       <p style={{ color: '#b7b7b7', marginBottom: '1.2rem' }}>
-                        This area requires an Admin account. The login dialog is open now so you can sign in again.
+                        Khu vực này chỉ dành cho tài khoản quản trị. Hộp đăng nhập admin đã được mở.
                       </p>
-                      <button className="btn-gold" onClick={() => setAuthModal('login')}>Open login</button>
+                      <button className="btn-gold" onClick={() => setAuthModal('admin-login')}>Mở đăng nhập admin</button>
                     </div>
                   </div>
                 )

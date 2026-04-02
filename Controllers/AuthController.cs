@@ -28,6 +28,22 @@ namespace Omnichannel.Controllers
             return Ok(response);
         }
 
+        [HttpPost("admin-login")]
+        public async Task<IActionResult> AdminLogin([FromBody] LoginRequest request)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(new { message = "Dữ liệu không hợp lệ", errors = ModelState });
+
+            var response = await _authService.LoginAsAdminAsync(request);
+            if (response == null)
+                return Unauthorized(new { message = "Tài khoản admin hoặc mật khẩu không đúng" });
+
+            if (!string.Equals(response.Role, "Admin", StringComparison.OrdinalIgnoreCase))
+                return Unauthorized(new { message = "Tài khoản này không phải admin" });
+
+            return Ok(response);
+        }
+
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] RegisterRequest request)
         {

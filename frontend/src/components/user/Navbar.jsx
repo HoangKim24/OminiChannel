@@ -104,7 +104,18 @@ const Navbar = ({ setIsCartOpen }) => {
           {user ? (
             <>
               <Link to="/profile" className="nav-link-btn" onClick={closeMobileMenu}>Hồ Sơ Của Tôi</Link>
-              {isAdmin && <Link to="/admin" className="nav-link-btn" style={{ color: 'var(--accent-gold)' }} onClick={closeMobileMenu}>Trang Quản Trị</Link>}
+              {isAdmin && (
+                <Link
+                  to="/admin"
+                  className="nav-link-btn"
+                  style={{ color: 'var(--accent-gold)' }}
+                  aria-label="Quản trị"
+                  title="Quản trị"
+                  onClick={closeMobileMenu}
+                >
+                  ⚙
+                </Link>
+              )}
               <button type="button" className="nav-link-btn" onClick={() => { logout(); closeMobileMenu(); navigate('/'); }}>Đăng Xuất</button>
             </>
           ) : (
