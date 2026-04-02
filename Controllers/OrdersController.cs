@@ -13,6 +13,8 @@ namespace Omnichannel.Controllers
     [Route("api/[controller]")]
     public class OrdersController : ControllerBase
     {
+        private static bool IsAdminRole(string? role) => string.Equals(role?.Trim(), "Admin", StringComparison.OrdinalIgnoreCase);
+
         private readonly IUnitOfWork _unitOfWork;
         private readonly OrderFacade _orderFacade;
 
@@ -20,6 +22,14 @@ namespace Omnichannel.Controllers
         {
             _unitOfWork = unitOfWork;
             _orderFacade = orderFacade;
+        }
+
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetOrderById(int id)
+        {
+            var order = await _unitOfWork.Orders.GetByIdAsync(id);
+            if (order == null) return NotFound(new { message = "Đơn hàng không tồn tại" });
+            return Ok(order);
         }
 
         [HttpGet("user/{userId}")]
@@ -32,7 +42,7 @@ namespace Omnichannel.Controllers
         [HttpGet]
         public async Task<IActionResult> GetAllOrders([FromHeader(Name = "X-User-Role")] string role)
         {
-            if (role != "Admin") return Unauthorized(new { message = "Chỉ Admin mới có quyền xem tất cả đơn hàng" });
+            if (!IsAdminRole(role)) return Unauthorized(new { message = "Chỉ Admin mới có quyền xem tất cả đơn hàng" });
             var orders = await _unitOfWork.Orders.GetAllAsync();
             return Ok(orders);
         }
@@ -136,7 +146,7 @@ namespace Omnichannel.Controllers
             [FromHeader(Name = "X-User-Role")] string role,
             [FromBody] UpdateOrderStatusRequest request)
         {
-            if (role != "Admin") return Unauthorized(new { message = "Chỉ Admin mới có quyền cập nhật trạng thái" });
+            if (!IsAdminRole(role)) return Unauthorized(new { message = "Chỉ Admin mới có quyền cập nhật trạng thái" });
 
             if (!ModelState.IsValid)
                 return BadRequest(new { message = "Dữ liệu không hợp lệ" });

@@ -12,6 +12,8 @@ const AuthModal = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
+  const [email, setEmail] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
 
@@ -20,6 +22,8 @@ const AuthModal = () => {
     setUsername('')
     setPassword('')
     setFullName('')
+    setEmail('')
+    setPhoneNumber('')
     setErrors({})
   }, [mode])
 
@@ -46,6 +50,20 @@ const AuthModal = () => {
     return '';
   };
 
+  const validateEmail = (email) => {
+    if (email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return 'Email không hợp lệ';
+    }
+    return '';
+  };
+
+  const validatePhoneNumber = (phone) => {
+    if (phone.trim() && !/^[0-9]{9,11}$/.test(phone.replace(/\D/g, ''))) {
+      return 'Số điện thoại phải từ 9-11 chữ số';
+    }
+    return '';
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     const newErrors = {};
@@ -60,6 +78,12 @@ const AuthModal = () => {
     if (mode === 'register') {
       const nameErr = validateFullName(fullName);
       if (nameErr) newErrors.fullName = nameErr;
+      
+      const emailErr = validateEmail(email);
+      if (emailErr) newErrors.email = emailErr;
+      
+      const phoneErr = validatePhoneNumber(phoneNumber);
+      if (phoneErr) newErrors.phoneNumber = phoneErr;
     }
 
     if (Object.keys(newErrors).length > 0) {
@@ -92,7 +116,13 @@ const AuthModal = () => {
         const res = await fetch(`${API_BASE}/api/auth/register`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ username, password, fullName })
+          body: JSON.stringify({ 
+            username, 
+            password, 
+            fullName,
+            email: email.trim() || undefined,
+            phoneNumber: phoneNumber.trim() || undefined
+          })
         });
         const data = await res.json();
         if (res.ok) {
@@ -100,6 +130,8 @@ const AuthModal = () => {
           setUsername('');
           setPassword('');
           setFullName('');
+          setEmail('');
+          setPhoneNumber('');
           setErrors({});
           setAuthModal('login');
         } else {
@@ -134,6 +166,18 @@ const AuthModal = () => {
             <div>
               <input className="form-input" type="text" placeholder="Họ và tên" value={fullName} onChange={e => { setFullName(e.target.value); setErrors({ ...errors, fullName: '' }); }} style={{ borderColor: errors.fullName ? '#ef4444' : undefined }} />
               {errors.fullName && <div style={{ color: '#ef4444', fontSize: '0.8rem', marginTop: '0.25rem' }}>{errors.fullName}</div>}
+            </div>
+          )}
+          {mode === 'register' && (
+            <div>
+              <input className="form-input" type="email" placeholder="Email liên hệ (tùy chọn)" value={email} onChange={e => { setEmail(e.target.value); setErrors({ ...errors, email: '' }); }} style={{ borderColor: errors.email ? '#ef4444' : undefined }} />
+              {errors.email && <div style={{ color: '#ef4444', fontSize: '0.8rem', marginTop: '0.25rem' }}>{errors.email}</div>}
+            </div>
+          )}
+          {mode === 'register' && (
+            <div>
+              <input className="form-input" type="tel" placeholder="Số điện thoại liên hệ (tùy chọn)" value={phoneNumber} onChange={e => { setPhoneNumber(e.target.value); setErrors({ ...errors, phoneNumber: '' }); }} style={{ borderColor: errors.phoneNumber ? '#ef4444' : undefined }} />
+              {errors.phoneNumber && <div style={{ color: '#ef4444', fontSize: '0.8rem', marginTop: '0.25rem' }}>{errors.phoneNumber}</div>}
             </div>
           )}
           <div>

@@ -59,11 +59,10 @@ const buildRevenueSeries = (orders, totalRevenue = 0) => {
     });
   }
 
-  if (matchedOrders === 0 && totalRevenue > 0) {
-    return months.map((item, index) => ({
-      ...item,
-      revenue: Math.round(totalRevenue * FALLBACK_RATIO[index]),
-    }));
+  // Only use fallback if we have no matched orders AND no total revenue context
+  if (matchedOrders === 0 && totalRevenue === 0) {
+    // Return empty series instead of fallback distribution
+    return months;
   }
 
   return months;
@@ -109,18 +108,29 @@ const OverviewTab = ({ products, orders, user }) => {
     setError('');
 
     try {
+      const userRole = String(user?.role || 'Admin').trim();
       const res = await fetch('/api/statistics/dashboard', {
-        headers: { 'X-User-Role': user?.role || 'Admin' },
+        headers: { 'X-User-Role': userRole },
       });
 
       if (!res.ok) {
-        throw new Error(`Dashboard API responded with status ${res.status}`);
+        if (res.status === 401) {
+          throw new Error('DASHBOARD_UNAUTHORIZED');
+        }
+        const errData = await res.text();
+        console.error(`Dashboard API error ${res.status}:`, errData);
+        throw new Error(`Dashboard API error ${res.status}: ${errData.substring(0, 100)}`);
       }
 
       setDashboardData(await res.json());
     } catch (err) {
-      setError('Không tải được dữ liệu realtime. Đang hiển thị dữ liệu dự phòng.');
+      if (err instanceof Error && err.message === 'DASHBOARD_UNAUTHORIZED') {
+        setError('Ban khong co quyen xem dashboard admin. Vui long dang nhap tai khoan Admin.');
+      } else {
+        setError('Khong tai duoc du lieu realtime. Dang hien thi du lieu du phong.');
+      }
       console.error('Dashboard fetch error:', err);
+      console.warn('User role:', user?.role, '| Trimmed:', String(user?.role || '').trim());
     } finally {
       setIsLoading(false);
     }

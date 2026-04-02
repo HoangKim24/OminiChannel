@@ -1,4 +1,4 @@
-import { cpSync, existsSync, mkdirSync } from 'node:fs';
+import { cpSync, existsSync, mkdirSync, rmSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 const distDir = resolve(process.cwd(), 'dist');
@@ -11,6 +11,12 @@ if (!existsSync(distDir)) {
 
 if (!existsSync(targetDir)) {
   mkdirSync(targetDir, { recursive: true });
+}
+
+const targetAssetsDir = resolve(targetDir, 'assets');
+
+if (existsSync(targetAssetsDir)) {
+  rmSync(targetAssetsDir, { recursive: true, force: true });
 }
 
 cpSync(distDir, targetDir, { recursive: true, force: true });

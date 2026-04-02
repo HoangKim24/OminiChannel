@@ -18,16 +18,10 @@ namespace Omnichannel.Repositories
 
         public async Task<IEnumerable<Order>> GetAllAsync(CancellationToken cancellationToken = default)
         {
-            // Projected list view: minimal data included to avoid heavy loads
+            // Include Items for admin to see products in order list
             return await _context.Orders
+                .Include(o => o.Items)
                 .AsNoTracking()
-                .Select(o => new Order {
-                    Id = o.Id,
-                    UserId = o.UserId,
-                    OrderDate = o.OrderDate,
-                    Status = o.Status,
-                    TotalAmount = o.TotalAmount
-                })
                 .ToListAsync(cancellationToken);
         }
 

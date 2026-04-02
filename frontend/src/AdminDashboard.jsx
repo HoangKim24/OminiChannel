@@ -4,9 +4,10 @@ import OverviewTab from './components/admin/tabs/OverviewTab';
 import OrdersTab from './components/admin/tabs/OrdersTab';
 import ProductsTab from './components/admin/tabs/ProductsTab';
 import InventoryTab from './components/admin/tabs/InventoryTab';
-import CrmTab from './components/admin/tabs/CrmTab';
+import CustomersTab from './components/admin/tabs/CustomersTab';
+import AdminAccountsTab from './components/admin/tabs/AdminAccountsTab';
 
-const AdminDashboard = ({ products, cartTotal, orders, setPage, user, onRefresh }) => {
+const AdminDashboard = ({ products, channelProducts, cartTotal, orders, setPage, user, onRefresh }) => {
   const [activeTab, setActiveTab] = useState('overview');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
@@ -43,8 +44,9 @@ const AdminDashboard = ({ products, cartTotal, orders, setPage, user, onRefresh 
           {activeTab === 'overview' && <OverviewTab products={products} orders={orders} cartTotal={cartTotal} user={user} />}
           {activeTab === 'products' && <ProductsTab products={products} user={user} onRefresh={onRefresh} />}
           {activeTab === 'orders' && <OrdersTab orders={orders} user={user} onRefresh={onRefresh} />}
-          {activeTab === 'inventory' && <InventoryTab products={products} />}
-          {activeTab === 'crm' && <CrmTab orders={orders} user={user} />}
+          {activeTab === 'inventory' && <InventoryTab products={products} channelProducts={channelProducts} user={user} />}
+          {activeTab === 'customers' && <CustomersTab user={user} />}
+          {activeTab === 'admin-accounts' && <AdminAccountsTab user={user} onRefresh={onRefresh} />}
         </main>
       </div>
 

@@ -1,9 +1,13 @@
+import { useNavigate } from 'react-router-dom';
+
 const AdminSidebar = ({ activeTab, setActiveTab, setPage, isMobileOpen, setIsMobileOpen }) => {
+  const navigate = useNavigate();
   const menuItems = [
     { id: 'overview', label: 'TỔNG QUAN' },
     { id: 'products', label: 'SẢN PHẨM' },
     { id: 'orders', label: 'ĐƠN HÀNG' },
-    { id: 'crm', label: 'KHÁCH HÀNG' },
+    { id: 'customers', label: 'KHÁCH HÀNG' },
+    { id: 'admin-accounts', label: 'TÀI KHOẢN ADMIN' },
     { id: 'inventory', label: 'KHO HÀNG' },
   ];
 
@@ -26,7 +30,18 @@ const AdminSidebar = ({ activeTab, setActiveTab, setPage, isMobileOpen, setIsMob
       </nav>
       
       <div className="admin-sidebar-footer">
-        <button className="admin-nav-item return-home-btn" onClick={() => setPage('home')}>
+        <button
+          className="admin-nav-item return-home-btn"
+          onClick={() => {
+            if (typeof setPage === 'function') {
+              setPage('home');
+              return;
+            }
+
+            navigate('/');
+            if (setIsMobileOpen) setIsMobileOpen(false);
+          }}
+        >
              <span>Về Trang Chủ</span>
          </button>
       </div>

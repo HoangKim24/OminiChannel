@@ -1,161 +1,291 @@
-import { useState } from 'react';
-const InventoryTab = ({ products }) => {
-  const [showTransfer, setShowTransfer] = useState(false);
+import { useEffect, useMemo, useState } from 'react';
 
-  const lowStockProducts = products?.filter(p => (p.stockQuantity || 0) < 10) || [];
+const API_BASE = import.meta.env.VITE_API_BASE_URL || '';
 
-   return (
-      <div className="fade-in admin-tab inventory-tab">
-         <div className="admin-tab-head-only">
-            <h2 className="brand-font admin-tab-title">Quản Trị Tồn Kho O2O</h2>
-            <p className="admin-tab-subtitle">
-          Tối ưu hóa chuỗi cung ứng và điều chuyển hàng hóa giữa các showroom LUXURY.
+const InventoryTab = ({ products, channelProducts, user }) => {
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showLowStockOnly, setShowLowStockOnly] = useState(false);
+  const [inventoryData, setInventoryData] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadInventory = async () => {
+      try {
+        setLoading(true);
+        const res = await fetch(`${API_BASE}/api/statistics/inventory`, {
+          headers: {
+            'X-User-Role': user?.role || 'Admin',
+            ...(user?.accessToken ? { Authorization: `Bearer ${user.accessToken}` } : {}),
+          },
+        });
+
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          throw new Error(data?.message || 'Không thể tải dữ liệu kho từ database');
+        }
+
+        setInventoryData(data);
+      } catch (err) {
+        console.error('Load inventory from API failed:', err);
+        setInventoryData(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadInventory();
+  }, [user?.accessToken, user?.role]);
+
+  const sourceProducts = inventoryData?.products || products || [];
+  const sourceChannels = inventoryData?.channels || [];
+
+  const lowStockProducts = sourceProducts.filter((product) => (product.stockQuantity || 0) < 10);
+
+  const totalStock = inventoryData?.totalStock ?? sourceProducts.reduce((sum, product) => sum + (product.stockQuantity || 0), 0);
+  const totalValue = inventoryData?.totalValue ?? sourceProducts.reduce((sum, product) => sum + (product.stockQuantity || 0) * (product.price || 0), 0);
+  const activeChannels = inventoryData?.activeChannels ?? sourceChannels.filter((channel) => (channel.activeListings || 0) > 0).length;
+  const totalListings = inventoryData?.totalListings ?? (channelProducts || []).length;
+
+  const channelSummary = useMemo(() => {
+    if (inventoryData?.channels?.length) {
+      return inventoryData.channels.map((channel) => ({
+        name: channel.channelName,
+        total: channel.totalListings || 0,
+        active: channel.activeListings || 0,
+        latestSync: channel.lastSyncedAt ? new Date(channel.lastSyncedAt) : null,
+        items: (channelProducts || [])
+          .filter((entry) => {
+            const channelName = entry.salesChannel?.channelName || entry.salesChannel?.ChannelName;
+            return channelName === channel.channelName;
+          })
+          .slice(0, 3)
+          .map((entry) => ({
+            id: entry.id,
+            perfumeName: entry.perfume?.name || 'Sản phẩm',
+            concentration: entry.perfume?.concentration || 'EDP',
+            channelPrice: entry.channelPrice || entry.perfume?.price || 0,
+            isListed: entry.isListed,
+          })),
+      }));
+    }
+
+    const groups = new Map();
+
+    (channelProducts || []).forEach((entry) => {
+      const channel = entry.salesChannel?.channelName || entry.salesChannel?.ChannelName || 'Kênh chưa rõ';
+      const perfume = entry.perfume || {};
+
+      if (!groups.has(channel)) {
+        groups.set(channel, {
+          name: channel,
+          total: 0,
+          active: 0,
+          latestSync: null,
+          items: [],
+        });
+      }
+
+      const group = groups.get(channel);
+      group.total += 1;
+      if (entry.isListed) group.active += 1;
+
+      const syncedAt = entry.lastSyncedAt ? new Date(entry.lastSyncedAt) : null;
+      if (syncedAt && (!group.latestSync || syncedAt > group.latestSync)) {
+        group.latestSync = syncedAt;
+      }
+
+      group.items.push({
+        id: entry.id,
+        perfumeName: perfume.name || 'Sản phẩm',
+        concentration: perfume.concentration || 'EDP',
+        channelPrice: entry.channelPrice || perfume.price || 0,
+        isListed: entry.isListed,
+      });
+    });
+
+    return Array.from(groups.values()).sort((a, b) => a.name.localeCompare(b.name));
+  }, [channelProducts, inventoryData?.channels]);
+
+  const filteredLowStockProducts = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+    return lowStockProducts.filter((product) => {
+      const matchesQuery = !query || [product.name, product.brand, product.concentration]
+        .some((field) => String(field || '').toLowerCase().includes(query));
+      return matchesQuery;
+    });
+  }, [lowStockProducts, searchQuery]);
+
+  const visibleChannelSummary = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+    if (!query) return channelSummary;
+
+    return channelSummary
+      .map((group) => ({
+        ...group,
+        items: group.items.filter((item) =>
+          [group.name, item.perfumeName, item.concentration]
+            .some((field) => String(field || '').toLowerCase().includes(query))
+        ),
+      }))
+      .filter((group) => group.items.length > 0);
+  }, [channelSummary, searchQuery]);
+
+  const displayedLowStockProducts = showLowStockOnly ? filteredLowStockProducts : lowStockProducts;
+
+  return (
+    <div className="fade-in admin-tab inventory-tab">
+      <div className="admin-tab-head-only">
+        <h2 className="brand-font admin-tab-title">Quản lý tồn kho</h2>
+        <p className="admin-tab-subtitle">
+          Dữ liệu kho được lấy trực tiếp từ database, gồm Perfumes, SalesChannels và ChannelProducts.
         </p>
       </div>
 
-         <div className="inventory-kpi-grid">
-         <div className="glass-panel shadow-gold">
-            <div className="inventory-kpi-label">Tổng Tồn Kho (SKUs)</div>
-            <div className="brand-font inventory-kpi-value">
-               {(products?.reduce((s, p) => s + (p.stockQuantity || 0), 0) || 0).toLocaleString()}
-            </div>
-            <div className="inventory-kpi-note">Hệ thống 12 chi nhánh toàn quốc</div>
-         </div>
-         <div className="glass-panel shadow-gold">
-            <div className="inventory-kpi-label">Giá Trị Tồn Kho (Vốn)</div>
-            <div className="brand-font inventory-kpi-value">
-               ~ {((products?.reduce((s, p) => s + (p.stockQuantity || 0) * (p.price || 0), 0) || 0) / 1000000000).toFixed(1)}B
-            </div>
-            <div className="inventory-kpi-note">Ước tính theo giá niêm yết (VNĐ)</div>
-         </div>
-         <div className="glass-panel shadow-gold inventory-kpi-alert">
-            <div className="inventory-kpi-alert-label">Cảnh Báo Tồn Kho Thấp</div>
-            <div className="brand-font inventory-kpi-alert-value">{lowStockProducts.length} SP</div>
-            <div className="inventory-kpi-alert-note">CẦN NHẬP HÀNG KHẨN CẤP</div>
-         </div>
+      <div className="admin-tab-actions" style={{ marginBottom: '1rem', flexWrap: 'wrap' }}>
+        <input
+          type="text"
+          className="luxury-input-field"
+          placeholder="🔍 Tìm sản phẩm, thương hiệu hoặc kênh bán..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          style={{ minWidth: '280px', flex: '1' }}
+        />
+        <button className="luxury-button-gold" type="button" onClick={() => setShowLowStockOnly((value) => !value)}>
+          {showLowStockOnly ? 'Hiện tất cả' : 'Chỉ hàng sắp hết'}
+        </button>
+      </div>
+
+      <div className="inventory-kpi-grid">
+        <div className="glass-panel shadow-gold">
+          <div className="inventory-kpi-label">Tổng tồn kho</div>
+          <div className="brand-font inventory-kpi-value">{totalStock.toLocaleString()}</div>
+          <div className="inventory-kpi-note">Từ bảng Perfumes trong database</div>
+        </div>
+        <div className="glass-panel shadow-gold">
+          <div className="inventory-kpi-label">Giá trị tồn kho</div>
+          <div className="brand-font inventory-kpi-value">~ {(Number(totalValue) / 1000000000).toFixed(1)}B</div>
+          <div className="inventory-kpi-note">Ước tính theo giá niêm yết (VND)</div>
+        </div>
+        <div className="glass-panel shadow-gold inventory-kpi-alert">
+          <div className="inventory-kpi-alert-label">Tồn kho thấp</div>
+          <div className="brand-font inventory-kpi-alert-value">{lowStockProducts.length} SP</div>
+          <div className="inventory-kpi-alert-note">Cần nhập hàng khẩn cấp</div>
+        </div>
+        <div className="glass-panel shadow-gold">
+          <div className="inventory-kpi-label">Kênh đang hoạt động</div>
+          <div className="brand-font inventory-kpi-value">{activeChannels}</div>
+          <div className="inventory-kpi-note">{totalListings} listing trong ChannelProducts</div>
+        </div>
       </div>
 
       <div className="inventory-main-grid">
-         <div className="glass-panel">
-            <div className="inventory-section-head">
-               <h3 className="brand-font inventory-section-title">📍 Phân Bổ Showroom & Kho Tổng</h3>
-               <button className="luxury-button-gold inventory-quick-action" onClick={() => setShowTransfer(true)}>⚡ ĐIỀU CHUYỂN NHANH</button>
-            </div>
-            
-            <div className="inventory-location-grid">
-               {[
-                 { node: 'Kho Tổng (Central WH)', type: 'Warehouse', stock: 8400, capacity: '65%', color: 'var(--admin-gold)' },
-                 { node: 'KP Luxury Quận 1', type: 'Showroom', stock: 1200, capacity: '85%', color: '#27ae60' },
-                 { node: 'KP Luxury Hoàn Kiếm', type: 'Showroom', stock: 950, capacity: '92%', color: '#e74c3c' },
-                 { node: 'KP Luxury Đà Nẵng', type: 'Showroom', stock: 150, capacity: '12%', color: '#3498db' },
-               ].map(loc => (
-                 <div key={loc.node} className="inventory-location-card" style={{ borderLeft: `4px solid ${loc.color}` }}>
-                    <div className="inventory-location-row">
-                       <span className="inventory-location-name">{loc.node}</span>
-                       <span className="luxury-badge" style={{ color: loc.color }}>{loc.type}</span>
-                    </div>
-                    <div className="brand-font inventory-location-stock">{loc.stock.toLocaleString()} <span className="inventory-location-unit">sp</span></div>
-                    <div className="inventory-capacity-track">
-                       <div className="inventory-capacity-fill" style={{ width: loc.capacity, background: loc.color, boxShadow: `0 0 10px ${loc.color}` }}></div>
-                    </div>
-                    <div className="inventory-capacity-meta">
-                       <span className="inventory-capacity-label">TẢI TRỌNG: {loc.capacity}</span>
-                       <span style={{ color: loc.color, fontWeight: '700' }}>TÌNH TRẠNG: {parseInt(loc.capacity) > 90 ? 'CRITICAL' : 'OPTIMAL'}</span>
-                    </div>
-                 </div>
-               ))}
-            </div>
-         </div>
+        <div className="glass-panel">
+          <div className="inventory-section-head">
+            <h3 className="brand-font inventory-section-title">Danh sách đang bán theo kênh</h3>
+          </div>
 
-         <div className="glass-panel">
-            <h3 className="brand-font inventory-section-title inventory-log-title">📜 Nhật Ký Kho Vận</h3>
-            <div className="inventory-log-list">
-               {[
-                 { date: '19/03, 09:12', msg: 'Nhập 500 chai Bleu de Chanel SP', p: '+500', loc: 'Kho Tổng' },
-                 { date: '18/03, 14:45', msg: 'Xuất 50 chai Dior Sauvage', p: '-50', loc: 'Showroom Q1' },
-                 { date: '17/03, 11:30', msg: 'Nhập nội bộ (Transfer)', p: '+20', loc: 'Showroom HN' },
-               ].map((log, i) => (
-                  <div key={i} className="inventory-log-item">
-                     <div className="inventory-log-row">
-                        <span className="inventory-log-date">{log.date}</span>
-                        <strong className={`inventory-log-amount ${log.p.startsWith('+') ? 'inventory-increase' : 'inventory-decrease'}`}>{log.p}</strong>
-                     </div>
-                     <div className="inventory-log-msg">{log.msg}</div>
-                     <div className="inventory-log-loc">Vị trí: {log.loc}</div>
-                  </div>
-               ))}
-               <button className="luxury-input-field inventory-log-more">XEM TOÀN BỘ LỊCH SỬ</button>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem', marginBottom: '1rem' }}>
+            <div style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
+              {loading ? 'Đang tải dữ liệu từ database...' : 'Dữ liệu được đồng bộ trực tiếp từ DB.'}
             </div>
-         </div>
+            <button type="button" className="luxury-input-field admin-mini-btn" onClick={() => window.location.reload()}>
+              Tải lại
+            </button>
+          </div>
+
+          <div className="inventory-location-grid">
+            {visibleChannelSummary.length === 0 ? (
+              <div className="admin-empty-cell" style={{ gridColumn: '1 / -1' }}>
+                Không có dữ liệu kênh phù hợp với bộ lọc hiện tại.
+              </div>
+            ) : visibleChannelSummary.map((group) => (
+              <div key={group.name} className="inventory-location-card" style={{ borderLeft: '4px solid var(--admin-gold)' }}>
+                <div className="inventory-location-row">
+                  <span className="inventory-location-name">{group.name}</span>
+                  <span className="luxury-badge">{group.active}/{group.total} listing</span>
+                </div>
+                <div className="brand-font inventory-location-stock">
+                  {group.active} <span className="inventory-location-unit">đang bán</span>
+                </div>
+                <div className="inventory-capacity-track">
+                  <div
+                    className="inventory-capacity-fill"
+                    style={{
+                      width: `${group.total > 0 ? Math.round((group.active / group.total) * 100) : 0}%`,
+                      background: 'var(--admin-gold)',
+                      boxShadow: '0 0 10px var(--admin-gold)',
+                    }}
+                  />
+                </div>
+                <div className="inventory-capacity-meta">
+                  <span className="inventory-capacity-label">Đang bán: {group.active}</span>
+                  <span style={{ color: 'var(--admin-gold)', fontWeight: '700' }}>
+                    Đồng bộ: {group.latestSync ? group.latestSync.toLocaleDateString('vi-VN') : 'Chưa có'}
+                  </span>
+                </div>
+                <div style={{ marginTop: '1rem', display: 'grid', gap: '0.5rem' }}>
+                  {group.items.slice(0, 3).map((item) => (
+                    <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', gap: '0.75rem', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                      <span>{item.perfumeName} · {item.concentration}</span>
+                      <span style={{ color: 'var(--text-primary)' }}>{(item.channelPrice || 0).toLocaleString()} đ</span>
+                    </div>
+                  ))}
+                  {group.items.length > 3 && (
+                    <div style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>... và {group.items.length - 3} listing khác</div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="glass-panel">
+          <h3 className="brand-font inventory-section-title inventory-log-title">Sản phẩm tồn kho thấp</h3>
+          <div className="inventory-log-list">
+            {filteredLowStockProducts.length === 0 ? (
+              <div className="admin-empty-cell">Không có sản phẩm nào dưới ngưỡng cảnh báo.</div>
+            ) : filteredLowStockProducts.map((product) => (
+              <div key={product.id} className="inventory-log-item">
+                <div className="inventory-log-row">
+                  <span className="inventory-log-date">{product.brand || 'KP Luxury'}</span>
+                  <strong className="inventory-log-amount inventory-decrease">{product.stockQuantity || 0}</strong>
+                </div>
+                <div className="inventory-log-msg">Tồn kho: {product.name}</div>
+                <div className="inventory-log-loc">Nồng độ: {product.concentration || 'EDP'}</div>
+              </div>
+            ))}
+            <div className="inventory-log-more" style={{ padding: '0.75rem 1rem', textAlign: 'center' }}>
+              Dữ liệu kênh bán được lấy trực tiếp từ database.
+            </div>
+          </div>
+        </div>
       </div>
 
-      {/* Low Stock Alert Section */}
-      {lowStockProducts.length > 0 && (
-         <div className="glass-panel shadow-gold" style={{ marginTop: '2rem', padding: '1.5rem', borderLeft: '4px solid #e74c3c' }}>
-            <h3 className="brand-font" style={{ color: '#e74c3c', marginBottom: '1rem', fontSize: '1.2rem' }}>
-               ⚠️ SẢN PHẨM TỒN KHO THẤP ({lowStockProducts.length})
-            </h3>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1rem' }}>
-               {lowStockProducts.map((p, i) => (
-                  <div key={i} style={{ padding: '1rem', background: 'rgba(231, 76, 60, 0.08)', border: '1px solid rgba(231, 76, 60, 0.2)', borderRadius: '8px' }}>
-                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '0.75rem' }}>
-                        <div style={{ flex: 1 }}>
-                           <div style={{ fontWeight: '700', marginBottom: '0.25rem' }}>{p.name}</div>
-                           <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{p.brand} - {p.concentration || 'EDP'}</div>
-                        </div>
-                        <div style={{ color: '#e74c3c', fontWeight: '700', fontSize: '1.3rem' }}>
-                           {p.stockQuantity || 0}
-                        </div>
-                     </div>
-                     <div style={{ fontSize: '0.75rem', color: '#e74c3c', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '0.75rem' }}>
-                        CẦN NHẬP NGAY
-                     </div>
-                     <button style={{ width: '100%', padding: '0.6rem', background: '#e74c3c', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem', fontWeight: '600', transition: 'opacity 0.2s' }} onMouseEnter={(e) => e.target.style.opacity = '0.8'} onMouseLeave={(e) => e.target.style.opacity = '1'}>
-                        NHẬP HÀNG
-                     </button>
+      {displayedLowStockProducts.length > 0 && (
+        <div className="glass-panel shadow-gold" style={{ marginTop: '2rem', padding: '1.5rem', borderLeft: '4px solid #e74c3c' }}>
+          <h3 className="brand-font" style={{ color: '#e74c3c', marginBottom: '1rem', fontSize: '1.2rem' }}>
+            Sản phẩm tồn kho thấp ({displayedLowStockProducts.length})
+          </h3>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1rem' }}>
+            {displayedLowStockProducts.map((product) => (
+              <div key={product.id} style={{ padding: '1rem', background: 'rgba(231, 76, 60, 0.08)', border: '1px solid rgba(231, 76, 60, 0.2)', borderRadius: '8px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '0.75rem' }}>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontWeight: '700', marginBottom: '0.25rem' }}>{product.name}</div>
+                    <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{product.brand} - {product.concentration || 'EDP'}</div>
                   </div>
-               ))}
-            </div>
-         </div>
-      )}
-
-      {showTransfer && (
-         <div className="admin-modal-overlay">
-            <div className="glass-panel shadow-gold fade-in admin-transfer-modal">
-               <h3 className="brand-font admin-modal-title">Điều Chuyển Nội Bộ</h3>
-               <div className="admin-modal-form">
-                  <div className="input-group">
-                     <label className="admin-field-label">SẢN PHẨM</label>
-                     <select className="luxury-input-field admin-field-full">
-                        <option>Dior Sauvage - 100ml</option>
-                        <option>Bleu de Chanel - 100ml</option>
-                     </select>
-                  </div>
-                  <div className="admin-form-grid-2">
-                     <div className="input-group">
-                        <label className="admin-field-label">TỪ (SOURCE)</label>
-                        <select className="luxury-input-field admin-field-full"><option>Kho Tổng</option></select>
-                     </div>
-                     <div className="input-group">
-                        <label className="admin-field-label">ĐẾN (TARGET)</label>
-                        <select className="luxury-input-field admin-field-full"><option>KP Luxury Q1</option></select>
-                     </div>
-                  </div>
-                  <div className="input-group">
-                     <label className="admin-field-label">SỐ LƯỢNG (SLOT)</label>
-                     <input type="number" className="luxury-input-field admin-field-full" defaultValue="20" />
-                  </div>
-                           <div className="admin-modal-actions admin-modal-actions-vertical">
-                    <button className="luxury-button-gold" onClick={() => setShowTransfer(false)}>XÁC NHẬN LỆNH ĐIỀU CHUYỂN</button>
-                    <button className="luxury-input-field" style={{ border: 'none' }} onClick={() => setShowTransfer(false)}>HỦY BỎ</button>
-                  </div>
-               </div>
-            </div>
-         </div>
+                  <div style={{ color: '#e74c3c', fontWeight: '700', fontSize: '1.3rem' }}>{product.stockQuantity || 0}</div>
+                </div>
+                <div style={{ fontSize: '0.75rem', color: '#e74c3c', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '0.75rem' }}>
+                  Cần nhập ngay
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
       )}
     </div>
   );
 };
 
 export default InventoryTab;
-

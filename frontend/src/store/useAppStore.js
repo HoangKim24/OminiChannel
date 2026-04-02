@@ -3,6 +3,62 @@ import { persist } from 'zustand/middleware'
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || ''
 
+const normalizeProduct = (product) => ({
+  id: product.id ?? product.Id,
+  name: product.name ?? product.Name ?? '',
+  brand: product.brand ?? product.Brand ?? 'KP',
+  price: Number(product.price ?? product.Price ?? 0),
+  description: product.description ?? product.Description ?? '',
+  imageUrl: product.imageUrl ?? product.ImageUrl ?? '',
+  categoryId: product.categoryId ?? product.CategoryId ?? null,
+  gender: product.gender ?? product.Gender ?? 'Unisex',
+  stockQuantity: Number(product.stockQuantity ?? product.StockQuantity ?? 0),
+  topNotes: product.topNotes ?? product.TopNotes ?? '',
+  middleNotes: product.middleNotes ?? product.MiddleNotes ?? '',
+  baseNotes: product.baseNotes ?? product.BaseNotes ?? '',
+  origin: product.origin ?? product.Origin ?? '',
+  concentration: product.concentration ?? product.Concentration ?? '',
+  brandStory: product.brandStory ?? product.BrandStory ?? '',
+  volumeOptions: product.volumeOptions ?? product.VolumeOptions ?? '',
+})
+
+const normalizeOrderItem = (item) => ({
+  id: item.id ?? item.Id,
+  orderId: item.orderId ?? item.OrderId,
+  perfumeId: item.perfumeId ?? item.PerfumeId,
+  perfumeName: item.perfumeName ?? item.PerfumeName ?? 'Sản phẩm',
+  quantity: Number(item.quantity ?? item.Quantity ?? 0),
+  price: Number(item.price ?? item.Price ?? 0),
+})
+
+const normalizeOrder = (order) => ({
+  id: order.id ?? order.Id,
+  userId: order.userId ?? order.UserId,
+  orderDate: order.orderDate ?? order.OrderDate,
+  totalAmount: Number(order.totalAmount ?? order.TotalAmount ?? 0),
+  status: order.status ?? order.Status ?? 'Pending',
+  shippingAddress: order.shippingAddress ?? order.ShippingAddress ?? '',
+  receiverPhone: order.receiverPhone ?? order.ReceiverPhone ?? '',
+  note: order.note ?? order.Note ?? '',
+  isPickup: order.isPickup ?? order.IsPickup ?? false,
+  voucherCode: order.voucherCode ?? order.VoucherCode ?? '',
+  discountAmount: Number(order.discountAmount ?? order.DiscountAmount ?? 0),
+  items: Array.isArray(order.items ?? order.Items) ? (order.items ?? order.Items).map(normalizeOrderItem) : [],
+})
+
+const normalizeChannelProduct = (channelProduct) => ({
+  id: channelProduct.id ?? channelProduct.Id,
+  salesChannelId: channelProduct.salesChannelId ?? channelProduct.SalesChannelId,
+  perfumeId: channelProduct.perfumeId ?? channelProduct.PerfumeId,
+  channelPrice: Number(channelProduct.channelPrice ?? channelProduct.ChannelPrice ?? 0),
+  isListed: channelProduct.isListed ?? channelProduct.IsListed ?? false,
+  lastSyncedAt: channelProduct.lastSyncedAt ?? channelProduct.LastSyncedAt,
+  salesChannel: channelProduct.salesChannel ?? channelProduct.SalesChannel ?? null,
+  perfume: channelProduct.perfume ? normalizeProduct(channelProduct.perfume) : channelProduct.Perfume ? normalizeProduct(channelProduct.Perfume) : null,
+})
+
+const isAdminRole = (role) => String(role || '').trim().toLowerCase() === 'admin'
+
 export const useAppStore = create(
   persist(
     (set, get) => ({
@@ -72,6 +128,7 @@ export const useAppStore = create(
       // Global Data
       products: [],
       channels: [],
+      channelProducts: [],
       loading: false,
       orders: [],
       loadingOrders: false,
@@ -98,7 +155,7 @@ export const useAppStore = create(
             throw new Error('Failed to fetch products')
           }
           const products = await res.json()
-          set({ products: Array.isArray(products) ? products : [] })
+          set({ products: Array.isArray(products) ? products.map(normalizeProduct) : [] })
 
           const resChannels = await fetch(`${API_BASE}/api/channels`)
           if (resChannels.ok) {
@@ -115,12 +172,25 @@ export const useAppStore = create(
         }
       },
 
+      fetchChannelProducts: async () => {
+        try {
+          const res = await fetch(`${API_BASE}/api/channels/products`)
+          if (!res.ok) {
+            throw new Error('Failed to fetch channel products')
+          }
+          const data = await res.json()
+          set({ channelProducts: Array.isArray(data) ? data.map(normalizeChannelProduct) : [] })
+        } catch (err) {
+          console.error('Fetch channel products error:', err)
+        }
+      },
+
       fetchOrders: async () => {
         const { user } = get()
         if (!user) { set({ orders: [] }); return }
         try {
           set({ loadingOrders: true })
-          const endpoint = user.role === 'Admin' ? '/api/orders' : `/api/orders/user/${user.id}`
+          const endpoint = isAdminRole(user.role) ? '/api/orders' : `/api/orders/user/${user.id}`
           const headers = {}
           if (user?.role) headers['X-User-Role'] = user.role
           if (user?.accessToken) headers.Authorization = `Bearer ${user.accessToken}`
@@ -136,7 +206,7 @@ export const useAppStore = create(
             throw new Error('Failed to fetch orders')
           }
           const data = await res.json()
-          set({ orders: Array.isArray(data) ? data : [] })
+          set({ orders: Array.isArray(data) ? data.map(normalizeOrder) : [] })
         } catch (err) { 
           console.error('Fetch orders error:', err)
           get().showToast?.('Lỗi tải danh sách đơn hàng', 'error')

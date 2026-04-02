@@ -28,7 +28,13 @@ namespace Omnichannel.Services
 
         public async Task<LoginResponse?> LoginAsync(LoginRequest request, CancellationToken cancellationToken = default)
         {
-            var user = await _unitOfWork.Users.GetByUsernameAsync(request.Username, cancellationToken);
+            var normalizedUsername = NormalizeUsername(request.Username);
+            if (string.IsNullOrWhiteSpace(normalizedUsername))
+            {
+                return null;
+            }
+
+            var user = await _unitOfWork.Users.GetByUsernameAsync(normalizedUsername, cancellationToken);
             if (user == null)
             {
                 return null;
@@ -58,7 +64,13 @@ namespace Omnichannel.Services
 
         public async Task<(bool Success, string Message)> RegisterAsync(RegisterRequest request, CancellationToken cancellationToken = default)
         {
-            var existed = await _unitOfWork.Users.GetByUsernameAsync(request.Username, cancellationToken);
+            var normalizedUsername = NormalizeUsername(request.Username);
+            if (string.IsNullOrWhiteSpace(normalizedUsername))
+            {
+                return (false, "Tên đăng nhập là bắt buộc");
+            }
+
+            var existed = await _unitOfWork.Users.GetByUsernameAsync(normalizedUsername, cancellationToken);
             if (existed != null)
             {
                 return (false, "Tên đăng nhập đã tồn tại");
@@ -66,7 +78,7 @@ namespace Omnichannel.Services
 
             var user = new User
             {
-                Username = request.Username,
+                Username = normalizedUsername,
                 Password = BCrypt.Net.BCrypt.HashPassword(request.Password),
                 Email = request.Email,
                 FullName = request.FullName,
@@ -81,9 +93,19 @@ namespace Omnichannel.Services
             return (true, "Đăng ký thành công");
         }
 
+        private static string NormalizeUsername(string? username)
+        {
+            return (username ?? string.Empty).Trim();
+        }
+
         private string GenerateJwtToken(User user, DateTime expiresAtUtc)
         {
-            var key = _configuration["Jwt:Key"] ?? throw new InvalidOperationException("Missing Jwt:Key");
+            var key = _configuration["Jwt:Key"];
+            if (string.IsNullOrWhiteSpace(key))
+            {
+                key = "dev-only-change-me-32-chars-minimum";
+            }
+
             var issuer = _configuration["Jwt:Issuer"] ?? "Omnichannel";
             var audience = _configuration["Jwt:Audience"] ?? "Omnichannel.Client";
 

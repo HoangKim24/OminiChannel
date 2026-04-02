@@ -10,7 +10,21 @@ const OrdersTab = ({ orders, user, onRefresh }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
 
-  const statuses = ['Pending', 'Confirmed', 'Shipping', 'Completed', 'Cancelled'];
+  const statuses = [
+    { value: 'Pending', label: 'Chờ xác nhận' },
+    { value: 'Confirmed', label: 'Đã xác nhận' },
+    { value: 'Shipping', label: 'Đang giao' },
+    { value: 'Completed', label: 'Hoàn thành' },
+    { value: 'Cancelled', label: 'Đã hủy' },
+  ];
+
+  const statusLabelMap = {
+    pending: 'Chờ xác nhận',
+    confirmed: 'Đã xác nhận',
+    shipping: 'Đang giao',
+    completed: 'Hoàn thành',
+    cancelled: 'Đã hủy',
+  };
 
   const getStatusClass = (status) => {
     const normalized = status?.toLowerCase() || 'default';
@@ -23,6 +37,8 @@ const OrdersTab = ({ orders, user, onRefresh }) => {
     };
     return classMap[normalized] || 'order-status-default';
   };
+
+  const getStatusLabel = (status) => statusLabelMap[String(status || '').trim().toLowerCase()] || 'Chưa xác định';
 
   const openDetail = (order) => {
     setSelectedOrder(order);
@@ -41,7 +57,7 @@ const OrdersTab = ({ orders, user, onRefresh }) => {
         body: JSON.stringify({ status: newStatus })
       });
       if (res.ok) {
-        success(`✓ Cập nhật trạng thái thành "${newStatus}" thành công!`);
+        success(`✓ Cập nhật trạng thái thành "${getStatusLabel(newStatus)}" thành công!`);
         // Update local state
         if (selectedOrder && (selectedOrder.id ?? selectedOrder.Id) === orderId) {
           setSelectedOrder({ ...selectedOrder, status: newStatus, Status: newStatus });
@@ -58,7 +74,8 @@ const OrdersTab = ({ orders, user, onRefresh }) => {
     return (Array.isArray(orders) ? orders : []).filter(o => {
       const orderId = o.id ?? o.Id;
       const searchMatches = searchQuery === '' || String(orderId).includes(searchQuery);
-      const statusMatches = filterStatus === 'all' || (o.status || o.Status) === filterStatus;
+      const currentStatus = String(o.status || o.Status || '').trim().toLowerCase();
+      const statusMatches = filterStatus === 'all' || currentStatus === filterStatus.toLowerCase();
       return searchMatches && statusMatches;
     });
   }, [orders, searchQuery, filterStatus]);
@@ -68,15 +85,15 @@ const OrdersTab = ({ orders, user, onRefresh }) => {
       <div className="glass-panel shadow-gold admin-tab-shell">
         <div className="admin-tab-header">
           <div>
-            <h2 className="brand-font admin-tab-title">Quản Lý Đơn Hàng</h2>
+            <h2 className="brand-font admin-tab-title">Quản lý đơn hàng</h2>
             <p className="admin-tab-subtitle">
-              Theo dõi và xử lý các đơn hàng kiệt tác từ khách hàng thượng lưu.
+              Theo dõi, xem chi tiết và xử lý đơn hàng của khách hàng.
             </p>
           </div>
           <div className="admin-tab-actions">
              <input 
                type="text" 
-               placeholder="🔍 Tìm mã đơn..." 
+               placeholder="🔍 Tìm mã đơn hàng..." 
                className="luxury-input-field"
                value={searchQuery}
                onChange={(e) => setSearchQuery(e.target.value)}
@@ -88,7 +105,7 @@ const OrdersTab = ({ orders, user, onRefresh }) => {
                onChange={(e) => setFilterStatus(e.target.value)}
              >
                <option value="all">Tất cả trạng thái</option>
-               {statuses.map(s => <option key={s} value={s}>{s}</option>)}
+               {statuses.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
              </select>
           </div>
         </div>
@@ -97,12 +114,12 @@ const OrdersTab = ({ orders, user, onRefresh }) => {
           <table className="admin-table-modern">
             <thead className="admin-table-head">
               <tr>
-                <th className="admin-th">Mã Đơn</th>
-                <th className="admin-th">Khách Hàng</th>
-                <th className="admin-th">Sản Phẩm</th>
-                <th className="admin-th">Tổng Tiền</th>
-                <th className="admin-th">Trạng Thái</th>
-                <th className="admin-th admin-th-center">Thao Tác</th>
+                <th className="admin-th">Mã đơn</th>
+                <th className="admin-th">Khách hàng</th>
+                <th className="admin-th">Sản phẩm</th>
+                <th className="admin-th">Tổng tiền</th>
+                <th className="admin-th">Trạng thái</th>
+                <th className="admin-th admin-th-center">Thao tác</th>
               </tr>
             </thead>
             <tbody>
@@ -119,7 +136,7 @@ const OrdersTab = ({ orders, user, onRefresh }) => {
                     <tr key={id} className="table-row-hover admin-tr">
                       <td className="admin-td"><strong className="admin-order-code">#{id}</strong></td>
                       <td className="admin-td">
-                         <div className="admin-user-cell">User #{o.userId ?? o.UserId}</div>
+                         <div className="admin-user-cell">Khách hàng #{o.userId ?? o.UserId}</div>
                          <div className="admin-cell-sub">
                            {o.orderDate ? new Date(o.orderDate).toLocaleDateString('vi-VN') : ''}
                          </div>
@@ -128,19 +145,19 @@ const OrdersTab = ({ orders, user, onRefresh }) => {
                       <td className="admin-td"><strong className="admin-amount">{vnd(amount)}</strong></td>
                       <td className="admin-td">
                          <span className={`luxury-badge ${getStatusClass(currentStatus)}`}>
-                            {currentStatus.toUpperCase()}
+                            {getStatusLabel(currentStatus)}
                          </span>
                       </td>
                       <td className="admin-td admin-td-center">
                         <button className="luxury-input-field admin-mini-btn" onClick={() => openDetail(o)}>
-                          CHI TIẾT
+                          Chi tiết
                         </button>
                       </td>
                     </tr>
                   );
                 })
               ) : (
-                <tr><td colSpan={6} className="admin-empty-cell">CHƯA CÓ ĐƠN HÀNG NÀO CẦN XỬ LÝ.</td></tr>
+                <tr><td colSpan={6} className="admin-empty-cell">Chưa có đơn hàng nào cần xử lý.</td></tr>
               )}
             </tbody>
           </table>
@@ -150,6 +167,7 @@ const OrdersTab = ({ orders, user, onRefresh }) => {
       {showDetail && selectedOrder && (() => {
         const orderId = selectedOrder.id ?? selectedOrder.Id;
         const currentStatus = selectedOrder.status || selectedOrder.Status || 'Pending';
+        const currentStatusLabel = getStatusLabel(currentStatus);
         const address = selectedOrder.shippingAddress || selectedOrder.ShippingAddress || 'Chưa có';
         const phone = selectedOrder.receiverPhone || selectedOrder.ReceiverPhone || 'Chưa có';
         const note = selectedOrder.note || selectedOrder.Note || '';
@@ -159,52 +177,52 @@ const OrdersTab = ({ orders, user, onRefresh }) => {
            <div className="admin-modal-overlay">
             <div className="glass-panel shadow-gold fade-in admin-centered-modal">
               <div className="admin-modal-head">
-                <h2 className="brand-font admin-modal-title">Chi Tiết Đơn Hàng #{orderId}</h2>
+                <h2 className="brand-font admin-modal-title">Chi tiết đơn hàng #{orderId}</h2>
                 <button className="admin-modal-close" onClick={() => setShowDetail(false)}>×</button>
               </div>
 
               <div className="admin-form-grid-2 admin-detail-grid">
                 <div className="admin-modal-subpanel">
-                      <h4 className="admin-info-label">👤 THÔNG TIN KHÁCH HÀNG</h4>
-                      <p className="admin-info-user">User #{selectedOrder.userId ?? selectedOrder.UserId}</p>
+                      <h4 className="admin-info-label">👤 Thông tin khách hàng</h4>
+                      <p className="admin-info-user">Khách hàng #{selectedOrder.userId ?? selectedOrder.UserId}</p>
                       <p className="admin-info-line">SĐT: {phone}</p>
-                      <p className="admin-info-line">Ngày: {orderDate ? new Date(orderDate).toLocaleString('vi-VN') : '—'}</p>
+                      <p className="admin-info-line">Ngày đặt: {orderDate ? new Date(orderDate).toLocaleString('vi-VN') : '—'}</p>
                  </div>
                  <div className="admin-modal-subpanel">
-                      <h4 className="admin-info-label">🚚 THÔNG TIN GIAO HÀNG</h4>
+                      <h4 className="admin-info-label">🚚 Thông tin giao hàng</h4>
                       <p className="admin-info-address">Địa chỉ: {address}</p>
                       {note && <p className="admin-info-line">Ghi chú: {note}</p>}
-                    <div className={`luxury-badge ${getStatusClass(currentStatus)}`} style={{ marginTop: '1rem', display: 'inline-block' }}>{currentStatus.toUpperCase()}</div>
+                    <div className={`luxury-badge ${getStatusClass(currentStatus)}`} style={{ marginTop: '1rem', display: 'inline-block' }}>{currentStatusLabel}</div>
                  </div>
               </div>
 
               {/* Status Update */}
               <div className="admin-modal-subpanel admin-status-panel">
-                <h4 className="admin-info-label">CẬP NHẬT TRẠNG THÁI</h4>
+                <h4 className="admin-info-label">Cập nhật trạng thái</h4>
                 <div className="admin-status-actions">
-                  {statuses.map(s => (
-                    <button key={s} disabled={updatingStatus || s === currentStatus}
-                      className={`luxury-input-field admin-mini-btn ${getStatusClass(s)}`}
+                  {statuses.map((s) => (
+                    <button key={s.value} disabled={updatingStatus || s.value === currentStatus}
+                      className={`luxury-input-field admin-mini-btn ${getStatusClass(s.value)}`}
                       style={{
-                        cursor: s === currentStatus ? 'default' : 'pointer',
-                        opacity: s === currentStatus ? 0.5 : 1
+                        cursor: s.value === currentStatus ? 'default' : 'pointer',
+                        opacity: s.value === currentStatus ? 0.5 : 1
                       }}
-                      onClick={() => handleUpdateStatus(orderId, s)}>
-                      {s.toUpperCase()}
+                      onClick={() => handleUpdateStatus(orderId, s.value)}>
+                      {s.label}
                     </button>
                   ))}
                 </div>
               </div>
 
-                <h4 className="brand-font admin-order-items-title">🛍️ DANH SÁCH SẢN PHẨM</h4>
+                <h4 className="brand-font admin-order-items-title">🛍️ Danh sách sản phẩm</h4>
               <div className="admin-order-items-table">
                  <table className="admin-items-table">
                    <thead className="admin-items-head">
                       <tr>
-                       <th className="admin-items-th">SẢN PHẨM</th>
-                       <th className="admin-items-th admin-items-th-center">SL</th>
-                       <th className="admin-items-th admin-items-th-right">GIÁ NIÊM YẾT</th>
-                       <th className="admin-items-th admin-items-th-right">THÀNH TIỀN</th>
+                       <th className="admin-items-th">Sản phẩm</th>
+                       <th className="admin-items-th admin-items-th-center">Số lượng</th>
+                       <th className="admin-items-th admin-items-th-right">Giá niêm yết</th>
+                       <th className="admin-items-th admin-items-th-right">Thành tiền</th>
                       </tr>
                    </thead>
                    <tbody>
@@ -219,7 +237,7 @@ const OrdersTab = ({ orders, user, onRefresh }) => {
                    </tbody>
                    <tfoot>
                      <tr className="admin-items-foot">
-                       <td colSpan={3} className="admin-items-total-label">GIÁ TRỊ ĐƠN HÀNG:</td>
+                       <td colSpan={3} className="admin-items-total-label">Giá trị đơn hàng:</td>
                        <td className="admin-items-total-value">{vnd(selectedOrder.totalAmount ?? selectedOrder.TotalAmount)}</td>
                       </tr>
                    </tfoot>
@@ -227,7 +245,7 @@ const OrdersTab = ({ orders, user, onRefresh }) => {
               </div>
 
                 <div className="admin-modal-actions admin-modal-actions-end">
-                 <button className="luxury-button-gold" onClick={() => setShowDetail(false)}>ĐÓNG CHI TIẾT</button>
+                 <button className="luxury-button-gold" onClick={() => setShowDetail(false)}>Đóng chi tiết</button>
               </div>
            </div>
           </div>

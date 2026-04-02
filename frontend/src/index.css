@@ -21,7 +21,6 @@
 @import './styles/admin.layout.css';
 @import './styles/admin.dashboard.css';
 @import './styles/admin.tabs.css';
-@import './styles/fix-ui.css';
 
 .user-app h1,
 .user-app h2,

@@ -79,6 +79,13 @@ namespace Omnichannel.Controllers
             return Ok(products);
         }
 
+        [HttpGet("products")]
+        public async Task<IActionResult> GetAllChannelProducts()
+        {
+            var products = await _unitOfWork.ChannelProducts.GetAllAsync();
+            return Ok(products);
+        }
+
         [HttpPost("{channelId}/products")]
         public async Task<IActionResult> ListProductOnChannel(
             int channelId,

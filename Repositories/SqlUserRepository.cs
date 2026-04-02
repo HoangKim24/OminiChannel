@@ -58,7 +58,11 @@ namespace Omnichannel.Repositories
 
         public async Task<User?> GetByUsernameAsync(string username, CancellationToken cancellationToken = default)
         {
-            return await _context.Users.FirstOrDefaultAsync(u => u.Username == username, cancellationToken);
+            var normalized = (username ?? string.Empty).Trim();
+            var lowered = normalized.ToLower();
+            return await _context.Users.FirstOrDefaultAsync(
+                u => u.Username.ToLower() == lowered,
+                cancellationToken);
         }
     }
 }

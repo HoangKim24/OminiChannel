@@ -42,6 +42,27 @@ namespace Omnichannel.Models
         public DateTime ExpiresAt { get; set; }
     }
 
+    public class UpdateProfileRequest
+    {
+        public string? Email { get; set; }
+        public string? FullName { get; set; }
+        public string? PhoneNumber { get; set; }
+        public string? Address { get; set; }
+    }
+
+    public class ChangePasswordRequest
+    {
+        [Required(ErrorMessage = "Mật khẩu hiện tại là bắt buộc")]
+        public string CurrentPassword { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Mật khẩu mới là bắt buộc")]
+        [MinLength(6, ErrorMessage = "Mật khẩu mới phải có ít nhất 6 ký tự")]
+        public string NewPassword { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Xác nhận mật khẩu là bắt buộc")]
+        public string ConfirmPassword { get; set; } = string.Empty;
+    }
+
     // ========== ORDERS ==========
 
     public class PlaceBatchOrderRequest
@@ -131,6 +152,38 @@ namespace Omnichannel.Models
         public int Id { get; set; }
         public string Name { get; set; } = string.Empty;
         public int StockQuantity { get; set; }
+    }
+
+    public class InventoryProductSummary
+    {
+        public int Id { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public string Brand { get; set; } = string.Empty;
+        public string Gender { get; set; } = string.Empty;
+        public string Concentration { get; set; } = string.Empty;
+        public decimal Price { get; set; }
+        public int StockQuantity { get; set; }
+        public bool IsLowStock { get; set; }
+    }
+
+    public class InventoryChannelSummary
+    {
+        public int SalesChannelId { get; set; }
+        public string ChannelName { get; set; } = string.Empty;
+        public int TotalListings { get; set; }
+        public int ActiveListings { get; set; }
+        public DateTime? LastSyncedAt { get; set; }
+    }
+
+    public class InventoryOverviewResponse
+    {
+        public int TotalStock { get; set; }
+        public decimal TotalValue { get; set; }
+        public int LowStockCount { get; set; }
+        public int ActiveChannels { get; set; }
+        public int TotalListings { get; set; }
+        public List<InventoryProductSummary> Products { get; set; } = new();
+        public List<InventoryChannelSummary> Channels { get; set; } = new();
     }
 
     public class CustomerSummary

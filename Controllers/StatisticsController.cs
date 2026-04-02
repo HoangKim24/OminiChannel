@@ -14,6 +14,8 @@ namespace Omnichannel.Controllers
     [Route("api/[controller]")]
     public class StatisticsController : ControllerBase
     {
+        private static bool IsAdminRole(string? role) => string.Equals(role?.Trim(), "Admin", StringComparison.OrdinalIgnoreCase);
+
         private readonly IUnitOfWork _unitOfWork;
         private readonly OmnichannelDbContext _dbContext;
 
@@ -26,7 +28,7 @@ namespace Omnichannel.Controllers
         [HttpGet("sales")]
         public async Task<IActionResult> GetSalesStats([FromHeader(Name = "X-User-Role")] string role)
         {
-            if (role != "Admin") return Unauthorized(new { message = "Chỉ Admin mới có quyền xem thống kê" });
+            if (!IsAdminRole(role)) return Unauthorized(new { message = "Chỉ Admin mới có quyền xem thống kê" });
             var report = await new SalesReportGenerator(_unitOfWork).GenerateReportAsync();
             return Ok(report);
         }
@@ -34,25 +36,74 @@ namespace Omnichannel.Controllers
         [HttpGet("stock")]
         public async Task<IActionResult> GetStockStats([FromHeader(Name = "X-User-Role")] string role)
         {
-            if (role != "Admin") return Unauthorized(new { message = "Chỉ Admin mới có quyền xem thống kê" });
+            if (!IsAdminRole(role)) return Unauthorized(new { message = "Chỉ Admin mới có quyền xem thống kê" });
             var report = await new StockReportGenerator(_unitOfWork).GenerateReportAsync();
             return Ok(report);
+        }
+
+        [HttpGet("inventory")]
+        public async Task<IActionResult> GetInventoryOverview([FromHeader(Name = "X-User-Role")] string role, CancellationToken cancellationToken)
+        {
+            if (!IsAdminRole(role)) return Unauthorized(new { message = "Chỉ Admin mới có quyền xem kho hàng" });
+
+            var perfumes = await _dbContext.Perfumes
+                .AsNoTracking()
+                .OrderBy(p => p.Name)
+                .Select(p => new InventoryProductSummary
+                {
+                    Id = p.Id,
+                    Name = p.Name ?? string.Empty,
+                    Brand = p.Brand ?? string.Empty,
+                    Gender = p.Gender ?? string.Empty,
+                    Concentration = p.Concentration ?? string.Empty,
+                    Price = p.Price,
+                    StockQuantity = p.StockQuantity,
+                    IsLowStock = p.StockQuantity < 10
+                })
+                .ToListAsync(cancellationToken);
+
+            var channels = await _dbContext.SalesChannels
+                .AsNoTracking()
+                .Select(channel => new InventoryChannelSummary
+                {
+                    SalesChannelId = channel.Id,
+                    ChannelName = channel.ChannelName,
+                    TotalListings = _dbContext.ChannelProducts.Count(cp => cp.SalesChannelId == channel.Id),
+                    ActiveListings = _dbContext.ChannelProducts.Count(cp => cp.SalesChannelId == channel.Id && cp.IsListed),
+                    LastSyncedAt = _dbContext.ChannelProducts
+                        .Where(cp => cp.SalesChannelId == channel.Id)
+                        .Max(cp => (DateTime?)cp.LastSyncedAt)
+                })
+                .OrderBy(channel => channel.ChannelName)
+                .ToListAsync(cancellationToken);
+
+            var response = new InventoryOverviewResponse
+            {
+                TotalStock = perfumes.Sum(p => p.StockQuantity),
+                TotalValue = perfumes.Sum(p => p.Price * p.StockQuantity),
+                LowStockCount = perfumes.Count(p => p.IsLowStock),
+                ActiveChannels = channels.Count(channel => channel.ActiveListings > 0),
+                TotalListings = await _dbContext.ChannelProducts.CountAsync(cancellationToken),
+                Products = perfumes,
+                Channels = channels
+            };
+
+            return Ok(response);
         }
 
         [HttpGet("dashboard")]
         public async Task<IActionResult> GetDashboardStats([FromHeader(Name = "X-User-Role")] string role, CancellationToken cancellationToken)
         {
-            if (role != "Admin") return Unauthorized(new { message = "Chỉ Admin mới có quyền xem dashboard" });
+            if (!IsAdminRole(role)) return Unauthorized(new { message = "Chỉ Admin mới có quyền xem dashboard" });
 
             try
             {
-                var totalRevenue = await _dbContext.Orders.SumAsync(o => o.TotalAmount, cancellationToken);
+                var totalRevenue = await _dbContext.Orders.SumAsync(o => (decimal?)o.TotalAmount, cancellationToken) ?? 0;
                 var totalOrders = await _dbContext.Orders.CountAsync(cancellationToken);
                 var totalProducts = await _dbContext.Perfumes.CountAsync(cancellationToken);
-                var totalCustomers = await _dbContext.Users.CountAsync(u => u.Role == "User", cancellationToken);
+                var totalCustomers = await _dbContext.Users.CountAsync(u => u.Role != null && u.Role.Trim().ToLower() == "user", cancellationToken);
 
                 var recentOrdersQuery = await _dbContext.Orders
-                    .Include(o => o.Items)
                     .OrderByDescending(o => o.OrderDate)
                     .Take(5)
                     .Select(o => new OrderSummary
@@ -62,9 +113,24 @@ namespace Omnichannel.Controllers
                         Status = o.Status,
                         TotalAmount = o.TotalAmount,
                         OrderDate = o.OrderDate,
-                        ItemCount = o.Items.Count
+                        ItemCount = 0
                     })
                     .ToListAsync(cancellationToken);
+
+                var recentOrderIds = recentOrdersQuery.Select(o => o.Id).ToList();
+                var itemCounts = await _dbContext.OrderItems
+                    .Where(item => recentOrderIds.Contains(item.OrderId))
+                    .GroupBy(item => item.OrderId)
+                    .Select(group => new { OrderId = group.Key, Count = group.Count() })
+                    .ToDictionaryAsync(x => x.OrderId, x => x.Count, cancellationToken);
+
+                foreach (var order in recentOrdersQuery)
+                {
+                    if (itemCounts.TryGetValue(order.Id, out var count))
+                    {
+                        order.ItemCount = count;
+                    }
+                }
 
                 var userIds = recentOrdersQuery.Select(o => o.UserId).Distinct().ToList();
                 var usersMap = await _dbContext.Users
@@ -108,12 +174,12 @@ namespace Omnichannel.Controllers
         [HttpGet("customers")]
         public async Task<IActionResult> GetCustomerStats([FromHeader(Name = "X-User-Role")] string role, CancellationToken cancellationToken)
         {
-            if (role != "Admin") return Unauthorized(new { message = "Chỉ Admin mới có quyền xem thống kê khách hàng" });
+            if (!IsAdminRole(role)) return Unauthorized(new { message = "Chỉ Admin mới có quyền xem thống kê khách hàng" });
 
             try
             {
                 var customers = await _dbContext.Users
-                    .Where(u => u.Role == "User")
+                    .Where(u => u.Role != null && u.Role.Trim().ToLower() == "user")
                     .Select(u => new CustomerSummary
                     {
                         Id = u.Id,

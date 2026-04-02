@@ -13,7 +13,7 @@ const ProductsTab = ({ products, user, onRefresh }) => {
 
   const openAddModal = () => {
     setEditingProduct(null);
-    setFormData({ name: '', brand: 'KP', gender: 'Unisex', price: '', stockQuantity: '', topNotes: '', baseNotes: '', description: '', imageUrl: '' });
+    setFormData({ name: '', brand: 'KP', gender: 'Unisex', price: '', stockQuantity: '', topNotes: '', middleNotes: '', baseNotes: '', concentration: 'EDP', volumeOptions: '30ml:0.7,50ml:1.0,100ml:1.6', description: '', imageUrl: '', origin: '', brandStory: '' });
     setShowModal(true);
   };
 
@@ -22,8 +22,9 @@ const ProductsTab = ({ products, user, onRefresh }) => {
     setFormData({
       name: product.name || '', brand: product.brand || '', gender: product.gender || 'Unisex',
       price: product.price || '', stockQuantity: product.stockQuantity || 0,
-      topNotes: product.topNotes || '', baseNotes: product.baseNotes || '',
-      description: product.description || '', imageUrl: product.imageUrl || ''
+      topNotes: product.topNotes || '', middleNotes: product.middleNotes || '', baseNotes: product.baseNotes || '',
+      concentration: product.concentration || 'EDP', volumeOptions: product.volumeOptions || '',
+      description: product.description || '', imageUrl: product.imageUrl || '', origin: product.origin || '', brandStory: product.brandStory || ''
     });
     setShowModal(true);
   };
@@ -36,7 +37,9 @@ const ProductsTab = ({ products, user, onRefresh }) => {
         ...(editingProduct ? { id: editingProduct.id } : {}),
         name: formData.name, brand: formData.brand, gender: formData.gender,
         price: parseFloat(formData.price) || 0, stockQuantity: parseInt(formData.stockQuantity) || 0,
-        topNotes: formData.topNotes, baseNotes: formData.baseNotes,
+        topNotes: formData.topNotes, middleNotes: formData.middleNotes, baseNotes: formData.baseNotes,
+        concentration: formData.concentration, volumeOptions: formData.volumeOptions,
+        origin: formData.origin, brandStory: formData.brandStory,
         description: formData.description, imageUrl: formData.imageUrl,
         categoryId: editingProduct?.categoryId || null
       };
@@ -80,8 +83,8 @@ const ProductsTab = ({ products, user, onRefresh }) => {
 
   const filteredProducts = useMemo(() => {
     return (products || []).filter(p => {
-      const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                           p.brand.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesSearch = (p.name || '').toLowerCase().includes(searchQuery.toLowerCase()) || 
+                           (p.brand || '').toLowerCase().includes(searchQuery.toLowerCase());
       const matchesGender = filterGender === 'all' || p.gender === filterGender;
       const matchesPrice = p.price >= priceRange.min && p.price <= priceRange.max;
       return matchesSearch && matchesGender && matchesPrice;
@@ -222,7 +225,30 @@ const ProductsTab = ({ products, user, onRefresh }) => {
                 <h4 className="brand-font admin-modal-subtitle">Scent Profile (Tầng Hương)</h4>
                 <div className="admin-modal-stack">
                    <input className="luxury-input-field" placeholder="Top Notes: Citrus, Mint, Pink Pepper" value={formData.topNotes} onChange={e => setFormData({...formData, topNotes: e.target.value})} />
+                   <input className="luxury-input-field" placeholder="Middle Notes: Rose, Jasmine, Lavender" value={formData.middleNotes} onChange={e => setFormData({...formData, middleNotes: e.target.value})} />
                    <input className="luxury-input-field" placeholder="Base Notes: Sandalwood, Cedar, White Musk" value={formData.baseNotes} onChange={e => setFormData({...formData, baseNotes: e.target.value})} />
+                </div>
+              </div>
+
+              <div className="admin-form-grid-2">
+                <div className="input-group">
+                  <label className="admin-field-label">NỒNG ĐỘ</label>
+                  <input className="luxury-input-field admin-field-full" value={formData.concentration} onChange={e => setFormData({...formData, concentration: e.target.value})} placeholder="EDP / EDT / Parfum" />
+                </div>
+                <div className="input-group">
+                  <label className="admin-field-label">TÙY CHỌN DUNG TÍCH</label>
+                  <input className="luxury-input-field admin-field-full" value={formData.volumeOptions} onChange={e => setFormData({...formData, volumeOptions: e.target.value})} placeholder="30ml:0.7,50ml:1.0,100ml:1.6" />
+                </div>
+              </div>
+
+              <div className="admin-form-grid-2">
+                <div className="input-group">
+                  <label className="admin-field-label">XUẤT XỨ</label>
+                  <input className="luxury-input-field admin-field-full" value={formData.origin} onChange={e => setFormData({...formData, origin: e.target.value})} placeholder="France / Italy / Spain" />
+                </div>
+                <div className="input-group">
+                  <label className="admin-field-label">CÂU CHUYỆN THƯƠNG HIỆU</label>
+                  <input className="luxury-input-field admin-field-full" value={formData.brandStory} onChange={e => setFormData({...formData, brandStory: e.target.value})} placeholder="Ngắn gọn mô tả cảm hứng sản phẩm" />
                 </div>
               </div>
 

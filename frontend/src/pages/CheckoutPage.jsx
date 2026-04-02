@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom'
 import { useAppStore } from '../store/useAppStore'
 
@@ -15,6 +15,7 @@ const CheckoutPage = () => {
   const [form, setForm] = useState({ fullName: '', address: '', phone: '', isPickup: false })
   const [errors, setErrors] = useState({})
   const [isLoading, setIsLoading] = useState(false)
+  const [pendingCheckoutAfterLogin, setPendingCheckoutAfterLogin] = useState(false)
   const vnd = (price) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price * 24000)
   
   const validateForm = () => {
@@ -32,18 +33,7 @@ const CheckoutPage = () => {
   }
   const cartTotal = cart.reduce((s, i) => s + i.price * i.quantity, 0)
 
-  const handleCheckout = async (e) => {
-    e.preventDefault()
-    
-    // Validate form
-    const newErrors = validateForm()
-    if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors)
-      showToast('Vui lòng kiểm tra các lỗi nhập liệu', 'error')
-      return
-    }
-
-    if (!user) { showToast('Vui lòng đăng nhập để thanh toán', 'error'); setAuthModal('login'); return }
+  const submitOrder = async () => {
     if (cart.length === 0) { showToast('Giỏ hàng trống', 'error'); return }
 
     setIsLoading(true)
@@ -77,6 +67,34 @@ const CheckoutPage = () => {
     } finally {
       setIsLoading(false)
     }
+  }
+
+  useEffect(() => {
+    if (pendingCheckoutAfterLogin && user && !isLoading) {
+      setPendingCheckoutAfterLogin(false)
+      void submitOrder()
+    }
+  }, [pendingCheckoutAfterLogin, user, isLoading])
+
+  const handleCheckout = async (e) => {
+    e.preventDefault()
+
+    // Validate form first so user can fix inputs before login
+    const newErrors = validateForm()
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors)
+      showToast('Vui lòng kiểm tra các lỗi nhập liệu', 'error')
+      return
+    }
+
+    if (!user) {
+      setPendingCheckoutAfterLogin(true)
+      showToast('Vui lòng đăng nhập để thanh toán', 'error')
+      setAuthModal('login')
+      return
+    }
+
+    await submitOrder()
   }
 
   if (cart.length === 0) {

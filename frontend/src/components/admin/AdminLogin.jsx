@@ -1,9 +1,11 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import '../../styles/AdminLogin.css';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || '';
 
 const AdminLogin = ({ onLogin, setPage, showToast }) => {
+    const navigate = useNavigate();
     const [formData, setFormData] = useState({ username: '', password: '' });
     const [loading, setLoading] = useState(false);
 
@@ -19,7 +21,7 @@ const AdminLogin = ({ onLogin, setPage, showToast }) => {
             const data = await res.json();
             
             if (res.ok) {
-                if (data.role === 'Admin') {
+                if (String(data.role || '').toLowerCase() === 'admin') {
                     onLogin(data);
                     showToast(`Chào mừng Admin ${data.username} trở lại!`, 'success');
                 } else {
@@ -72,7 +74,7 @@ const AdminLogin = ({ onLogin, setPage, showToast }) => {
                 </form>
 
                 <div className="login-footer">
-                    <a href="/" onClick={(e) => { e.preventDefault(); setPage('home'); }} className="back-link">
+                    <a href="/" onClick={(e) => { e.preventDefault(); if (typeof setPage === 'function') setPage('home'); else navigate('/'); }} className="back-link">
                         ← Quay lại trang chủ
                     </a>
                 </div>

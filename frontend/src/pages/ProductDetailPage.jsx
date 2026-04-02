@@ -4,6 +4,40 @@ import { useAppStore } from '../store/useAppStore'
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || ''
 
+const parseVolumeOptions = (volumeOptions) => {
+  if (!volumeOptions || typeof volumeOptions !== 'string') return []
+
+  return volumeOptions
+    .split(',')
+    .map(option => option.trim())
+    .filter(Boolean)
+    .map(option => {
+      const [label, multiplierValue] = option.split(':').map(part => part.trim())
+      return {
+        label: label || '50ml',
+        multiplier: Number(multiplierValue) || 1,
+      }
+    })
+    .filter(option => option.label)
+}
+
+const normalizeProduct = (product) => ({
+  id: product.id ?? product.Id,
+  name: product.name ?? product.Name ?? '',
+  brand: product.brand ?? product.Brand ?? 'KP',
+  price: Number(product.price ?? product.Price ?? 0),
+  description: product.description ?? product.Description ?? '',
+  imageUrl: product.imageUrl ?? product.ImageUrl ?? '',
+  categoryId: product.categoryId ?? product.CategoryId ?? null,
+  gender: product.gender ?? product.Gender ?? 'Unisex',
+  stockQuantity: Number(product.stockQuantity ?? product.StockQuantity ?? 0),
+  topNotes: product.topNotes ?? product.TopNotes ?? '',
+  middleNotes: product.middleNotes ?? product.MiddleNotes ?? '',
+  baseNotes: product.baseNotes ?? product.BaseNotes ?? '',
+  concentration: product.concentration ?? product.Concentration ?? '',
+  volumeOptions: product.volumeOptions ?? product.VolumeOptions ?? '',
+})
+
 const ProductDetailPage = () => {
   const { id } = useParams()
   const navigate = useNavigate()
@@ -18,6 +52,7 @@ const ProductDetailPage = () => {
   const [engravingText, setEngravingText] = useState('')
   const [isEngravingActive, setIsEngravingActive] = useState(false)
   const [activeTab, setActiveTab] = useState('desc')
+  const [productLoading, setProductLoading] = useState(true)
   
   const [comments, setComments] = useState([])
   const [commentsLoading, setCommentsLoading] = useState(false)
@@ -28,11 +63,33 @@ const ProductDetailPage = () => {
   useEffect(() => {
     // Scroll to top
     window.scrollTo(0, 0)
+
+    let cancelled = false
     
-    // Find product locally first
     const pId = Number(id)
-    const found = products.find(p => p.id === pId)
-    if (found) setProduct(found)
+    const found = products.find(p => Number(p.id ?? p.Id) === pId)
+    if (found) {
+      setProduct(normalizeProduct(found))
+      setProductLoading(false)
+    } else {
+      setProductLoading(true)
+      fetch(`${API_BASE}/api/perfumes/${pId}`)
+        .then(async (res) => {
+          if (!res.ok) return null
+          return res.json()
+        })
+        .then((data) => {
+          if (!cancelled && data) {
+            setProduct(normalizeProduct(data))
+          }
+        })
+        .catch((err) => {
+          console.error('Fetch product detail error', err)
+        })
+        .finally(() => {
+          if (!cancelled) setProductLoading(false)
+        })
+    }
     
     // Fetch comments
     const fetchComments = async () => {
@@ -55,9 +112,35 @@ const ProductDetailPage = () => {
       }
     }
     fetchComments()
+
+    return () => {
+      cancelled = true
+    }
   }, [id, products])
 
-  if (!product) return <div className="container" style={{ padding: '80px 0', textAlign: 'center' }}>Đang tải hoặc không tìm thấy sản phẩm...</div>
+  const parsedSizes = parseVolumeOptions(product?.volumeOptions)
+  const sizes = parsedSizes.length > 0
+    ? parsedSizes
+    : [
+        { label: '30ml', multiplier: 0.7 },
+        { label: '50ml', multiplier: 1 },
+        { label: '100ml', multiplier: 1.6 },
+      ]
+  const activeSize = sizes.find(sz => sz.label === selectedSize) || sizes[1] || sizes[0]
+  const currentPrice = (product?.price || 0) * (activeSize.multiplier || 1)
+  const stockQty = product?.stockQuantity ?? 0
+  const stockStatus = stockQty === 0 ? 'out' : stockQty <= 10 ? 'low' : 'in'
+
+  useEffect(() => {
+    if (!sizes.length) return
+    if (!sizes.some(size => size.label === selectedSize)) {
+      const defaultSize = sizes.find(size => size.label === '50ml') || sizes[0]
+      if (defaultSize) setSelectedSize(defaultSize.label)
+    }
+  }, [product?.volumeOptions, selectedSize])
+
+  if (productLoading) return <div className="container" style={{ padding: '80px 0', textAlign: 'center' }}>Đang tải sản phẩm...</div>
+  if (!product) return <div className="container" style={{ padding: '80px 0', textAlign: 'center' }}>Không tìm thấy sản phẩm.</div>
 
   const submitComment = async () => {
     if (!newComment.name.trim() || !newComment.text.trim()) { showToast('Vui lòng nhập tên và nội dung đánh giá', 'error'); return }
@@ -116,12 +199,10 @@ const ProductDetailPage = () => {
   const vnd = (price) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price * 24000)
   
   const avgRating = comments.length ? (comments.reduce((s, c) => s + c.stars, 0) / comments.length) : 5.0
-  const related = products.filter(p => p.id !== product.id && (p.categoryId === product.categoryId || p.gender === product.gender)).slice(0, 4)
-  const sizes = ['30ml', '50ml', '100ml']
-  const sizePrices = { '30ml': 0.7, '50ml': 1, '100ml': 1.6 }
-  const currentPrice = product.price * (sizePrices[selectedSize] || 1)
-  const stockQty = product.stockQuantity ?? 0
-  const stockStatus = stockQty === 0 ? 'out' : stockQty <= 10 ? 'low' : 'in'
+  const related = products
+    .map(normalizeProduct)
+    .filter(p => p.id !== product.id && (p.categoryId === product.categoryId || p.gender === product.gender))
+    .slice(0, 4)
 
   return (
     <div className="detail-page" style={{ paddingTop: '80px' }}>
@@ -168,10 +249,10 @@ const ProductDetailPage = () => {
               <label>Dung tích</label>
               <div className="size-options">
                 {sizes.map(sz => (
-                  <button key={sz} className={`size-btn ${selectedSize === sz ? 'active' : ''}`} onClick={() => setSelectedSize(sz)}>
-                    {sz}
+                  <button key={sz.label} type="button" className={`size-btn ${selectedSize === sz.label ? 'active' : ''}`} onClick={() => setSelectedSize(sz.label)}>
+                    {sz.label}
                     <span style={{ fontSize: '0.75rem', color: '#888', marginLeft: '0.25rem' }}>
-                      ({Math.round((sizePrices[sz] || 1) * 100)}% giá)
+                      ({Math.round((sz.multiplier || 1) * 100)}% giá)
                     </span>
                   </button>
                 ))}
@@ -195,9 +276,9 @@ const ProductDetailPage = () => {
             <div className="detail-qty" style={{ marginTop: '1.5rem' }}>
               <label>Số lượng</label>
               <div className="detail-qty-wrap">
-                <button className="detail-qty-btn" onClick={() => setDetailQty(q => Math.max(1, q - 1))}>−</button>
+                <button type="button" className="detail-qty-btn" onClick={() => setDetailQty(q => Math.max(1, q - 1))}>−</button>
                 <input className="detail-qty-input" type="number" value={detailQty} readOnly />
-                <button className="detail-qty-btn" onClick={() => setDetailQty(q => q + 1)}>+</button>
+                <button type="button" className="detail-qty-btn" onClick={() => setDetailQty(q => q + 1)}>+</button>
               </div>
             </div>
 
@@ -226,6 +307,7 @@ const ProductDetailPage = () => {
                      <li>Hương đầu: {product.topNotes || 'Đang cập nhật...'}</li>
                      <li>Hương giữa: {product.middleNotes || 'Đang cập nhật...'}</li>
                      <li>Hương cuối: {product.baseNotes || 'Đang cập nhật...'}</li>
+                     <li>Nồng độ: {product.concentration || 'Đang cập nhật...'}</li>
                   </ul>
                 )}
               </div>
