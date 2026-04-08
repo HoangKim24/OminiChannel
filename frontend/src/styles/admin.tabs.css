@@ -20,6 +20,8 @@
 .admin-app .admin-tab-title {
   font-size: clamp(1.4rem, 1rem + 1.1vw, 2rem);
   color: var(--admin-gold);
+  line-height: 1.28;
+  padding-top: 0.06em;
 }
 
 .admin-app .admin-tab-subtitle {
@@ -150,16 +152,20 @@
   justify-content: center;
   align-items: center;
   padding: 1rem;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .admin-app .admin-modal-overlay-right {
+  align-items: stretch;
   justify-content: flex-end;
   padding: 0;
 }
 
 .admin-app .admin-side-modal {
   width: min(620px, 100vw);
-  height: 100%;
+  height: 100dvh;
+  max-height: 100dvh;
   border-left: 1px solid var(--admin-border);
   border-radius: 0;
   padding: 2rem;
@@ -187,11 +193,18 @@
   justify-content: space-between;
   align-items: center;
   margin-bottom: 2rem;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: linear-gradient(180deg, rgba(7, 7, 7, 0.98) 0%, rgba(7, 7, 7, 0.92) 78%, rgba(7, 7, 7, 0) 100%);
+  padding-bottom: 0.75rem;
 }
 
 .admin-app .admin-modal-title {
   font-size: clamp(1.3rem, 1rem + 1.1vw, 2rem);
   color: var(--admin-gold);
+  line-height: 1.3;
+  padding-top: 0.06em;
 }
 
 .admin-app .admin-modal-close {
@@ -796,6 +809,9 @@
 
   .admin-app .admin-side-modal {
     width: 100vw;
+    height: 100dvh;
+    max-height: 100dvh;
+    border-radius: 0;
   }
 
   .admin-app .admin-modal-actions {

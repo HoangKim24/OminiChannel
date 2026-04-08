@@ -2,6 +2,8 @@ import { lazy, Suspense, useState, useEffect, useCallback } from 'react';
 import { Routes, Route, useLocation, useNavigate } from 'react-router-dom';
 import { useAppStore } from './store/useAppStore';
 import Toasts from './components/Toasts';
+import AdminLogin from './components/admin/AdminLogin';
+import AdminDashboard from './AdminDashboard';
 
 // Components
 const Navbar = lazy(() => import('./components/user/Navbar'));
@@ -9,7 +11,6 @@ const AuthModal = lazy(() => import('./components/user/AuthModal'));
 const Chatbot = lazy(() => import('./components/user/Chatbot'));
 const Footer = lazy(() => import('./components/user/Footer'));
 const QuizModal = lazy(() => import('./components/user/QuizModal'));
-const AdminLogin = lazy(() => import('./components/admin/AdminLogin'));
 
 // Pages
 const HomePage = lazy(() => import('./pages/HomePage'));
@@ -19,7 +20,6 @@ const CheckoutPage = lazy(() => import('./pages/CheckoutPage'));
 const ProfilePage = lazy(() => import('./pages/ProfilePage'));
 const InvoiceDetailPage = lazy(() => import('./pages/InvoiceDetailPage'));
 const FavoritesPage = lazy(() => import('./pages/FavoritesPage'));
-const AdminDashboard = lazy(() => import('./AdminDashboard'));
 
 import './App.css';
 

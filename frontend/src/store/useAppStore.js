@@ -279,7 +279,15 @@ export const useAppStore = create(
             throw new Error('Failed to fetch orders')
           }
           const data = await res.json()
-          set({ orders: Array.isArray(data) ? data.map(normalizeOrder) : [] })
+          const rawOrders = Array.isArray(data)
+            ? data
+            : Array.isArray(data?.data)
+              ? data.data
+              : Array.isArray(data?.Data)
+                ? data.Data
+                : []
+
+          set({ orders: rawOrders.map(normalizeOrder) })
         } catch (err) { 
           console.error('Fetch orders error:', err)
           get().showToast?.('Lỗi tải danh sách đơn hàng', 'error')

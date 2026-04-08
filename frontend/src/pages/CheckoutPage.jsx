@@ -37,6 +37,7 @@ const CheckoutPage = () => {
   const [isCreatingBankRequest, setIsCreatingBankRequest] = useState(false)
   const [bankCheckoutCompleted, setBankCheckoutCompleted] = useState(false)
   const [showThankYouModal, setShowThankYouModal] = useState(false)
+  const [isTriggeringWebhook, setIsTriggeringWebhook] = useState(false)
   const bankPollingRef = useRef(null)
 
   const vnd = (amount) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount || 0)
@@ -170,6 +171,41 @@ const CheckoutPage = () => {
       // Polling should fail silently and try again in next cycle
     }
   }, [bankCheckoutCompleted, completeBankTransferCheckout, getAuthHeaders])
+
+  const triggerBankTransferWebhook = useCallback(async () => {
+    if (!bankPayment?.paymentCode) {
+      showToast('Chưa có mã thanh toán để gửi xác nhận.', 'error')
+      return
+    }
+
+    setIsTriggeringWebhook(true)
+    try {
+      const res = await fetch(`${API_BASE}/api/payments/bank-transfer/webhook`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          paymentCode: bankPayment.paymentCode,
+          paidAmount: transferAmount,
+          destinationAccountNo: bankPayment.accountNo,
+          transferContent: `Thanh toan ${bankPayment.paymentCode}`,
+          externalTransactionId: `CLIENT-${Date.now()}`,
+        }),
+      })
+
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        showToast(data?.message || 'Không thể xác nhận chuyển khoản lúc này', 'error')
+        return
+      }
+
+      showToast('Đã gửi xác nhận chuyển khoản. Hệ thống đang cập nhật trạng thái...', 'success')
+      await checkBankTransferStatus(bankPayment.paymentCode)
+    } catch {
+      showToast('Lỗi kết nối khi gửi xác nhận chuyển khoản', 'error')
+    } finally {
+      setIsTriggeringWebhook(false)
+    }
+  }, [bankPayment?.accountNo, bankPayment?.paymentCode, checkBankTransferStatus, showToast, transferAmount])
 
   const createBankTransferRequest = useCallback(async () => {
     if (cart.length === 0) {
@@ -702,6 +738,16 @@ const CheckoutPage = () => {
                             Hệ thống sẽ tự động kiểm tra giao dịch. Khi nhận đúng số tiền, đơn hàng sẽ chuyển sang trạng thái thanh toán thành công.
                           </p>
                           {bankStatus && <p className="checkout-voucher-helper">Trạng thái: {bankStatus.message || bankStatus.paymentStatus}</p>}
+                          <div className="checkout-transfer-actions">
+                            <button
+                              type="button"
+                              className="checkout-rethink-btn checkout-verify-btn"
+                              onClick={triggerBankTransferWebhook}
+                              disabled={isTriggeringWebhook || bankCheckoutCompleted}
+                            >
+                              {isTriggeringWebhook ? 'Đang xác nhận...' : 'Tôi đã chuyển khoản'}
+                            </button>
+                          </div>
                         </div>
                       )}
                     </div>

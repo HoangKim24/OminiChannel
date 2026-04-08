@@ -18,7 +18,7 @@ namespace Omnichannel.Controllers
     [Route("api/[controller]")]
     public class StatisticsController : ControllerBase
     {
-        private static readonly string[] RevenueEligibleStatuses = { "paid", "completed" };
+        private static readonly string[] RevenueEligibleStatuses = { "paid", "confirmed", "shipping", "completed" };
         private static readonly string[] WeekdayLabels = { "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun" };
 
         private readonly IUnitOfWork _unitOfWork;
@@ -131,7 +131,9 @@ namespace Omnichannel.Controllers
         {
             try
             {
-                var totalRevenue = await _dbContext.Orders.SumAsync(o => (decimal?)o.TotalAmount, cancellationToken) ?? 0;
+                var totalRevenue = await _dbContext.Orders
+                    .Where(order => RevenueEligibleStatuses.Contains((order.Status ?? string.Empty).Trim().ToLower()))
+                    .SumAsync(o => (decimal?)o.TotalAmount, cancellationToken) ?? 0;
                 var totalOrders = await _dbContext.Orders.CountAsync(cancellationToken);
                 var totalProducts = await _dbContext.Perfumes.CountAsync(cancellationToken);
                 var totalCustomers = await _dbContext.Users.CountAsync(u => u.Role != null && u.Role.Trim().ToLower() == "user", cancellationToken);
