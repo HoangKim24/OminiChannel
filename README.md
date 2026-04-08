@@ -1,34 +1,46 @@
-# OmniChannel - Software Project Management & Perfume Store Platform
+# Omnichannel
 
-Nền tảng bán hàng đa kênh cho nước hoa, gồm backend ASP.NET Core 8, database SQL Server, frontend React (Vite), thanh toán giả lập + VNPay sandbox, JWT auth, seed data, swagger, unit test và integration test.
+Nền tảng thương mại điện tử đa kênh cho ngành nước hoa, gồm backend ASP.NET Core và frontend React/Vite.
 
----
+## Tổng quan
 
-## 📌 Tổng Quan Dự Án (Project Management)
+Omnichannel cung cấp:
 
-Đây là dự án **toàn bộ quy trình quản lý dự án phần mềm** chia thành **5 Labs** tương ứng với 5 giai đoạn của dự án:
+1. Quản lý sản phẩm, danh mục, đơn hàng, voucher.
+2. Xác thực JWT và phân quyền người dùng/admin.
+3. Thanh toán (bao gồm luồng mô phỏng và tích hợp VNPay sandbox).
+4. Dashboard quản trị, thống kê, đồng bộ dữ liệu nền.
+5. Bộ kiểm thử unit và integration.
 
-1. **Lab 1: Project Initiating** - Khởi động & xác định dự án
-2. **Lab 2: Project Planning** - Lên kế hoạch chi tiết
-3. **Lab 3: Project Executing** - Thực hiện dự án
-4. **Lab 4: Project Controlling** - Theo dõi & kiểm soát
-5. **Lab 5: Project Closing** - Đóng dự án & rút kinh nghiệm
+## Kiến trúc kỹ thuật
 
----
+1. Backend: ASP.NET Core 8, EF Core 8, SQL Server.
+2. Frontend: React 18, Vite 5, Zustand.
+3. Auth: JWT Bearer.
+4. Job nền: Hangfire.
+5. Test: xUnit, Moq, ASP.NET Core integration testing.
 
-## 🚀 Technical Implementation (Hướng dẫn kỹ thuật)
+## Cấu trúc thư mục chính
 
-### Tech Stack
-1. **Backend**: ASP.NET Core 8, EF Core 8, FluentValidation, JWT Bearer.
-2. **Frontend**: React 18, Vite 5, Zustand.
-3. **Database**: SQL Server.
-4. **Test**: xUnit, Moq, ASP.NET Core integration testing.
+1. Controllers: API endpoints.
+2. Services: business logic.
+3. Repositories + Infrastructure: truy cập dữ liệu, Unit of Work, DbContext.
+4. Models: entity và DTO.
+5. frontend: ứng dụng React.
+6. Omnichannel.Tests: test project.
+7. docs: tài liệu theo từng lab quản lý dự án.
 
-### Cấu hình bảo mật
-Không commit secret vào mã nguồn. Dùng User Secrets hoặc biến môi trường.
+## Yêu cầu môi trường
 
-#### Backend secrets (khuyến nghị cho local)
-Chạy tại thư mục gốc:
+1. .NET SDK 8.0+
+2. Node.js 18+ và npm 9+
+3. SQL Server
+
+## Cấu hình local an toàn
+
+Không đặt secret trực tiếp trong source code. Dùng User Secrets hoặc biến môi trường.
+
+Tại thư mục gốc dự án, chạy:
 
 ```bash
 dotnet user-secrets set "ConnectionStrings:DefaultConnection" "Server=YOUR_SERVER;Database=Omnichannel;User Id=sa;Password=YOUR_PASSWORD;TrustServerCertificate=True;"
@@ -42,92 +54,93 @@ dotnet user-secrets set "VNPay:ReturnUrl" "https://localhost:7111/api/payment/vn
 dotnet user-secrets set "Frontend:BaseUrl" "http://localhost:5173"
 ```
 
-### Khởi tạo database
+Lưu ý: Jwt:Key là bắt buộc và nên có độ dài ít nhất 32 ký tự.
+
+## Khởi tạo database
 
 ```bash
 dotnet ef database update
 ```
 
-Migration đã seed dữ liệu demo:
-1. User admin và user demo.
-2. Categories.
-3. Perfumes demo.
-4. Sales channels demo.
+Migration hiện tại có seed dữ liệu demo cơ bản (user, category, perfume, kênh bán).
 
-### Chạy ứng dụng
+## Cách chạy dự án
 
-#### Cách 1: Chạy full-stack bằng dotnet run
-
-```bash
-dotnet run --launch-profile http
-```
-
-Hoặc trên Windows dùng script ổn định:
+### Cách 1: Chạy backend phục vụ luôn frontend đã build sẵn
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\run-backend.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File .\run-dev.ps1
 ```
 
-#### Cách 2: Dev frontend hot-reload
+Ứng dụng sẽ chạy tại: http://localhost:5285
+
+### Cách 2: Build frontend rồi chạy full stack bằng script
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\build-and-run.ps1
+```
+
+Script này sẽ:
+
+1. Cài dependency frontend nếu thiếu.
+2. Build frontend và sync vào wwwroot.
+3. Chạy backend.
+
+### Cách 3: Dev mode tách backend và frontend (hot reload frontend)
+
 Terminal 1:
+
 ```bash
 dotnet run --launch-profile http -p:SkipFrontendBuild=true
 ```
+
 Terminal 2:
+
 ```bash
 cd frontend
 npm install
 npm run dev
 ```
 
----
+Frontend dev server mặc định: http://localhost:5173
 
-## 📊 Lab Management Details
+## Test và chất lượng
 
-### 📊 Lab 1: Project Initiating
-**Thời gian**: Tuần 1-2 | **Trạng thái**: 📋 In Progress | **Due Date**: 2026-03-31
+Chạy test .NET:
 
-- [📄 Stakeholder Analysis](./docs/01_Lab_Initiation/Stakeholders.md)
-- [📄 SOW](./docs/01_Lab_Initiation/SOW.md)
-- [📄 Risk Management](./docs/01_Lab_Initiation/Risks.md)
+```bash
+dotnet test
+```
 
-### 📋 Lab 2: Project Planning
-**Thời gian**: Tuần 3-4 | **Trạng thái**: ⚪ Not Started | **Due Date**: 2026-04-14
+Lint frontend:
 
-- [📄 WBS](./docs/02_Lab_Planning/WBS.md)
-- [📄 Schedule](./docs/02_Lab_Planning/Schedule.md)
-- [📄 Budget](./docs/02_Lab_Planning/Budget.md)
+```bash
+cd frontend
+npm run lint
+```
 
-### 🔨 Lab 3: Project Execution
-**Thời gian**: Tuần 5-12 | **Trạng thái**: ⚪ Not Started | **Due Date**: 2026-05-05
+## API docs
 
-- [📄 Change Control](./docs/03_Lab_Execution/Change_Control.md)
-- [📄 QA/QC Plan](./docs/03_Lab_Execution/QA_QC_Plan.md)
+Khi backend chạy ở profile http, có thể truy cập Swagger tại endpoint swagger của ứng dụng.
 
-### 🏁 Lab 5: Project Closing
-**Thời gian**: Tuần 16 | **Trạng thái**: ⚪ Not Started | **Due Date**: 2026-06-02
+## Tài liệu quản lý dự án
 
----
+Tham khảo các thư mục trong docs:
 
-## 📈 Dashboard & Status
+1. docs/01_Lab_Initiation
+2. docs/02_Lab_Planning
+3. docs/03_Lab_Execution
+4. docs/04_Lab_Controlling
+5. docs/05_Lab_Closing
 
-| Lab | Status | Completion | Issues | Due Date |
-|-----|--------|-----------|--------|----------|
-| Lab 1 - Initiating | 📋 In Progress | 20% | 6 | 2026-03-31 |
-| Lab 2 - Planning | ⚪ Not Started | 0% | 6 | 2026-04-14 |
-| Lab 3 - Execution | ⚪ Not Started | 0% | 5 | 2026-05-05 |
-| Lab 4 - Controlling | ⚪ Not Started | 0% | 3 | 2026-05-19 |
-| Lab 5 - Closing | ⚪ Not Started | 0% | 4 | 2026-06-02 |
-| **TOTAL** | **📋 In Progress** | **4%** | **24** | **2026-06-02** |
+Ngoài ra có tài liệu tổng hợp tại docs/README.md.
 
----
+## Một số lỗi thường gặp
 
-## 👥 Team
+1. Lỗi thiếu Jwt:Key khi khởi động: cấu hình lại User Secrets cho Jwt:Key.
+2. Frontend không cập nhật khi chạy backend-only: dùng Cách 3 hoặc chạy lại build frontend để sync vào wwwroot.
+3. Lỗi lock file khi build trên Windows: dừng tiến trình Omnichannel cũ trước khi chạy lại script.
 
-| Role | Name | GitHub | Email |
-|------|------|--------|-------|
-| Project Manager | HoangKim24 | [HoangKim24](https://github.com/HoangKim24) | [email] |
+## Liên hệ
 
----
-
-**Last Updated**: 2026-04-01
+Maintainer: HoangKim24
