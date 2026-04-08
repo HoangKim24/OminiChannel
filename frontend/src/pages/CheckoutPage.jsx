@@ -34,12 +34,9 @@ const CheckoutPage = () => {
   const [isLoadingVoucherList, setIsLoadingVoucherList] = useState(false)
   const [bankPayment, setBankPayment] = useState(null)
   const [bankStatus, setBankStatus] = useState(null)
-  const [transferContent, setTransferContent] = useState('')
-  const [externalTransactionId, setExternalTransactionId] = useState('')
   const [isCreatingBankRequest, setIsCreatingBankRequest] = useState(false)
-  const [isVerifyingBankPayment, setIsVerifyingBankPayment] = useState(false)
-  const [isConfirmingBankOrder, setIsConfirmingBankOrder] = useState(false)
   const [bankCheckoutCompleted, setBankCheckoutCompleted] = useState(false)
+  const [showThankYouModal, setShowThankYouModal] = useState(false)
   const bankPollingRef = useRef(null)
 
   const vnd = (amount) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount || 0)
@@ -78,8 +75,6 @@ const CheckoutPage = () => {
     if (form.paymentMethod !== 'BankTransfer') {
       setBankPayment(null)
       setBankStatus(null)
-      setTransferContent('')
-      setExternalTransactionId('')
       setBankCheckoutCompleted(false)
       if (bankPollingRef.current) {
         clearInterval(bankPollingRef.current)
@@ -133,34 +128,25 @@ const CheckoutPage = () => {
     if (bankCheckoutCompleted) return
     setBankCheckoutCompleted(true)
     clearCart()
-    showToast('Thanh toán thành công. Đơn hàng đã được xác nhận.', 'success')
-    navigate('/profile')
-  }, [bankCheckoutCompleted, clearCart, navigate, showToast])
+    showToast('Thanh toán thành công. Cảm ơn bạn đã mua hàng.', 'success')
+    setShowThankYouModal(true)
+  }, [bankCheckoutCompleted, clearCart, showToast])
 
-  const confirmPaidOrder = useCallback(async (paymentCode) => {
-    if (!paymentCode || isConfirmingBankOrder || bankCheckoutCompleted) return
-
-    setIsConfirmingBankOrder(true)
-    try {
-      const res = await fetch(`${API_BASE}/api/payments/bank-transfer/confirm/${encodeURIComponent(paymentCode)}`, {
-        method: 'POST',
-        headers: getAuthHeaders(),
-      })
-      const data = await res.json()
-
-      if (!res.ok) {
-        showToast(data.message || 'Không thể xác nhận đơn hàng sau thanh toán', 'error')
-        return
-      }
-
-      setBankStatus((prev) => ({ ...prev, orderStatus: data.orderStatus || 'Confirmed' }))
-      completeBankTransferCheckout()
-    } catch {
-      showToast('Lỗi kết nối khi xác nhận đơn hàng', 'error')
-    } finally {
-      setIsConfirmingBankOrder(false)
+  const handleRethinkBankTransfer = useCallback(() => {
+    setBankPayment(null)
+    setBankStatus(null)
+    setForm((prev) => ({ ...prev, paymentMethod: 'Cash' }))
+    if (bankPollingRef.current) {
+      clearInterval(bankPollingRef.current)
+      bankPollingRef.current = null
     }
-  }, [bankCheckoutCompleted, completeBankTransferCheckout, getAuthHeaders, isConfirmingBankOrder, showToast])
+    showToast('Đã hủy chuyển khoản. Bạn có thể chọn phương thức thanh toán khác.', 'info')
+  }, [showToast])
+
+  const handleCloseThankYouModal = useCallback(() => {
+    setShowThankYouModal(false)
+    navigate('/profile')
+  }, [navigate])
 
   const checkBankTransferStatus = useCallback(async (paymentCode) => {
     if (!paymentCode || bankCheckoutCompleted) return
@@ -176,17 +162,14 @@ const CheckoutPage = () => {
       setBankStatus(data)
 
       if (data?.isPaid) {
-        if (data.orderStatus === 'Confirmed' || data.orderStatus === 'Placed') {
+        if (data.orderStatus === 'Confirmed' || data.orderStatus === 'Placed' || data.orderStatus === 'Paid') {
           completeBankTransferCheckout()
-          return
         }
-
-        await confirmPaidOrder(paymentCode)
       }
     } catch {
       // Polling should fail silently and try again in next cycle
     }
-  }, [bankCheckoutCompleted, completeBankTransferCheckout, confirmPaidOrder, getAuthHeaders])
+  }, [bankCheckoutCompleted, completeBankTransferCheckout, getAuthHeaders])
 
   const createBankTransferRequest = useCallback(async () => {
     if (cart.length === 0) {
@@ -217,10 +200,10 @@ const CheckoutPage = () => {
         isPaid: false,
         paymentStatus: data.status,
         orderStatus: 'PendingPayment',
-        message: 'Đang chờ xác nhận thanh toán',
+        message: 'Đang chờ hệ thống xác nhận giao dịch tự động',
       })
 
-      showToast('Đã tạo yêu cầu thanh toán. Vui lòng chuyển khoản theo QR.', 'success')
+      showToast('Đã tạo yêu cầu chuyển khoản. Hệ thống sẽ tự động xác nhận khi nhận đúng số tiền.', 'success')
       await checkBankTransferStatus(data.paymentCode)
     } catch {
       showToast('Lỗi kết nối khi tạo yêu cầu thanh toán', 'error')
@@ -228,46 +211,6 @@ const CheckoutPage = () => {
       setIsCreatingBankRequest(false)
     }
   }, [buildCheckoutPayload, cart.length, checkBankTransferStatus, getAuthHeaders, showToast])
-
-  const verifyBankTransfer = useCallback(async () => {
-    if (!bankPayment?.paymentCode) {
-      showToast('Chưa có yêu cầu thanh toán để xác minh', 'error')
-      return
-    }
-
-    if (!transferContent.trim()) {
-      showToast('Vui lòng nhập nội dung chuyển khoản', 'error')
-      return
-    }
-
-    setIsVerifyingBankPayment(true)
-    try {
-      const res = await fetch(`${API_BASE}/api/payments/bank-transfer/verify`, {
-        method: 'POST',
-        headers: getAuthHeaders(),
-        body: JSON.stringify({
-          paymentCode: bankPayment.paymentCode,
-          paidAmount: bankPayment.amount,
-          transferContent,
-          destinationAccountNo: bankPayment.accountNo,
-          externalTransactionId: externalTransactionId || null,
-        }),
-      })
-
-      const data = await res.json()
-      if (!res.ok) {
-        showToast(data.message || 'Xác minh thanh toán thất bại', 'error')
-        return
-      }
-
-      showToast('Đã xác minh thanh toán thành công', 'success')
-      await checkBankTransferStatus(bankPayment.paymentCode)
-    } catch {
-      showToast('Lỗi kết nối khi xác minh thanh toán', 'error')
-    } finally {
-      setIsVerifyingBankPayment(false)
-    }
-  }, [bankPayment, checkBankTransferStatus, externalTransactionId, getAuthHeaders, showToast, transferContent])
 
   const submitCashOrder = useCallback(async () => {
     if (cart.length === 0) {
@@ -316,7 +259,7 @@ const CheckoutPage = () => {
       if (!bankPayment) {
         await createBankTransferRequest()
       } else {
-        showToast('Yêu cầu chuyển khoản đã được tạo. Vui lòng hoàn tất chuyển khoản và xác minh.', 'info')
+        showToast('Yêu cầu chuyển khoản đã được tạo. Vui lòng hoàn tất chuyển khoản để hệ thống tự xác nhận.', 'info')
       }
       return
     }
@@ -755,46 +698,25 @@ const CheckoutPage = () => {
 
                       {bankPayment && (
                         <div className="checkout-transfer-confirm">
-                          <div className="form-group">
-                            <label htmlFor="transferContent">Nội dung chuyển khoản</label>
-                            <input
-                              id="transferContent"
-                              type="text"
-                              className="checkout-input"
-                              value={transferContent}
-                              onChange={(e) => setTransferContent(e.target.value)}
-                              placeholder={`Thanh toan ${bankPayment.paymentCode}`}
-                            />
-                          </div>
-
-                          <div className="form-group">
-                            <label htmlFor="externalTransactionId">Mã giao dịch (tuỳ chọn)</label>
-                            <input
-                              id="externalTransactionId"
-                              type="text"
-                              className="checkout-input"
-                              value={externalTransactionId}
-                              onChange={(e) => setExternalTransactionId(e.target.value)}
-                              placeholder="Nhập mã giao dịch ngân hàng"
-                            />
-                          </div>
-
-                          <button
-                            type="button"
-                            className="cart-secondary-btn checkout-voucher-btn"
-                            onClick={verifyBankTransfer}
-                            disabled={isVerifyingBankPayment || isConfirmingBankOrder || bankCheckoutCompleted}
-                          >
-                            {isVerifyingBankPayment ? 'Đang xác minh...' : 'Tôi đã chuyển khoản, xác minh ngay'}
-                          </button>
-
+                          <p className="checkout-voucher-helper">
+                            Hệ thống sẽ tự động kiểm tra giao dịch. Khi nhận đúng số tiền, đơn hàng sẽ chuyển sang trạng thái thanh toán thành công.
+                          </p>
                           {bankStatus && <p className="checkout-voucher-helper">Trạng thái: {bankStatus.message || bankStatus.paymentStatus}</p>}
                         </div>
                       )}
                     </div>
                     <div className="checkout-qr-wrap">
                       {bankPayment?.qrUrl ? (
-                        <img src={bankPayment.qrUrl} alt="QR chuyển khoản" className="checkout-qr" />
+                        <>
+                          <img src={bankPayment.qrUrl} alt="QR chuyển khoản" className="checkout-qr" />
+                          <button
+                            type="button"
+                            className="checkout-rethink-btn"
+                            onClick={handleRethinkBankTransfer}
+                          >
+                            Tôi suy nghĩ lại
+                          </button>
+                        </>
                       ) : (
                         <p className="checkout-voucher-helper">QR sẽ hiển thị sau khi tạo yêu cầu chuyển khoản.</p>
                       )}
@@ -1046,6 +968,21 @@ const CheckoutPage = () => {
           </aside>
         </div>
       </div>
+
+      {showThankYouModal && (
+        <div className="checkout-modal-backdrop" role="dialog" aria-modal="true" aria-label="Cảm ơn khách hàng">
+          <div className="checkout-modal-card checkout-thankyou-card">
+            <p className="checkout-section-label">Giao dịch thành công</p>
+            <h3>KP Luxury trân trọng cảm ơn quý khách</h3>
+            <p>
+              Đơn hàng đã được ghi nhận thành công. Chúc quý khách có trải nghiệm hương thơm thật tinh tế và trọn vẹn.
+            </p>
+            <button type="button" className="btn-gold" onClick={handleCloseThankYouModal}>
+              Xem đơn hàng
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

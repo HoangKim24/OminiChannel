@@ -526,17 +526,85 @@
 .checkout-qr-wrap {
   display: grid;
   place-items: center;
+  gap: 0.75rem;
+  align-self: stretch;
 }
 
 .checkout-qr {
   width: 100%;
-  max-width: 200px;
-  aspect-ratio: 1;
+  max-width: 300px;
+  max-height: 430px;
   object-fit: contain;
-  border-radius: 16px;
+  border-radius: 20px;
   background: #fff;
-  padding: 0.45rem;
-  border: 1px solid rgba(212, 175, 55, 0.3);
+  padding: 0.55rem;
+  border: 1px solid rgba(212, 175, 55, 0.36);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.28);
+}
+
+.checkout-rethink-btn {
+  min-height: 42px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(0, 0, 0, 0.25);
+  color: #fff;
+  padding: 0.55rem 0.95rem;
+  cursor: pointer;
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.checkout-rethink-btn:hover {
+  border-color: rgba(212, 175, 55, 0.5);
+  background: rgba(212, 175, 55, 0.15);
+}
+
+.checkout-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.64);
+  backdrop-filter: blur(3px);
+  display: grid;
+  place-items: center;
+  z-index: 2200;
+  padding: 1rem;
+}
+
+.checkout-modal-card {
+  width: min(92vw, 520px);
+  border-radius: 20px;
+  border: 1px solid rgba(212, 175, 55, 0.28);
+  background: linear-gradient(180deg, rgba(20, 20, 20, 0.96), rgba(8, 8, 8, 0.98));
+  box-shadow: 0 24px 72px rgba(0, 0, 0, 0.45);
+  padding: 1.35rem 1.25rem;
+  display: grid;
+  gap: 0.85rem;
+}
+
+.checkout-modal-card h3 {
+  margin: 0;
+  font-size: 1.25rem;
+}
+
+.checkout-modal-card p {
+  margin: 0;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+.checkout-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.65rem;
+  margin-top: 0.4rem;
+}
+
+.checkout-thankyou-card {
+  text-align: center;
+}
+
+.checkout-thankyou-card .btn-gold {
+  justify-self: center;
+  min-width: 220px;
 }
 
 .checkout-submit {
@@ -660,6 +728,11 @@
 
   .checkout-transfer-card {
     grid-template-columns: 1fr;
+  }
+
+  .checkout-qr {
+    max-width: 280px;
+    max-height: 380px;
   }
 
   .checkout-card {

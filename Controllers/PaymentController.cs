@@ -33,6 +33,59 @@ namespace Omnichannel.Controllers
             _batchOrderService = batchOrderService;
         }
 
+        private async Task<(bool Success, string Message, int? OrderId, string? OrderStatus)> MarkPaymentAsPaidAsync(
+            BankTransferPayment payment,
+            decimal paidAmount,
+            string destinationAccountNo,
+            string transferContent,
+            string? externalTransactionId,
+            CancellationToken cancellationToken)
+        {
+            if (string.Equals(payment.Status, "Paid", StringComparison.OrdinalIgnoreCase))
+            {
+                var existingOrder = await _context.Orders.FirstOrDefaultAsync(o => o.Id == payment.OrderId, cancellationToken);
+                return (true, "Thanh toán đã được ghi nhận trước đó", payment.OrderId, existingOrder?.Status);
+            }
+
+            if (!string.Equals(destinationAccountNo.Trim(), payment.AccountNo, StringComparison.OrdinalIgnoreCase))
+            {
+                return (false, "Sai tài khoản nhận tiền", null, null);
+            }
+
+            if (paidAmount != payment.Amount)
+            {
+                return (false, "Số tiền chuyển khoản không khớp", null, null);
+            }
+
+            if (string.IsNullOrWhiteSpace(transferContent)
+                || transferContent.IndexOf(payment.PaymentCode, StringComparison.OrdinalIgnoreCase) < 0)
+            {
+                return (false, "Nội dung chuyển khoản không chứa mã thanh toán", null, null);
+            }
+
+            var order = await _context.Orders.FirstOrDefaultAsync(o => o.Id == payment.OrderId, cancellationToken);
+            if (order == null)
+            {
+                return (false, "Đơn hàng không tồn tại", null, null);
+            }
+
+            payment.PaidAmount = paidAmount;
+            payment.TransferContent = transferContent.Trim();
+            payment.ExternalTransactionId = externalTransactionId?.Trim();
+            payment.PaidAt = DateTime.UtcNow;
+            payment.Status = "Paid";
+
+            // Auto-complete bank transfer checkout when payment is valid.
+            if (!string.Equals(order.Status, "Confirmed", StringComparison.OrdinalIgnoreCase)
+                && !string.Equals(order.Status, "Placed", StringComparison.OrdinalIgnoreCase))
+            {
+                order.Status = "Confirmed";
+            }
+
+            await _context.SaveChangesAsync(cancellationToken);
+            return (true, "Ghi nhận thanh toán thành công", order.Id, order.Status);
+        }
+
         [HttpPost("bank-transfer/request")]
         [Authorize]
         public async Task<IActionResult> CreateBankTransferRequest([FromBody] PlaceBatchOrderRequest request, CancellationToken cancellationToken)
@@ -80,7 +133,10 @@ namespace Omnichannel.Controllers
                 var paymentCode = $"BT-{DateTime.UtcNow:yyyyMMddHHmmss}-{Guid.NewGuid().ToString("N")[..6].ToUpperInvariant()}";
                 var addInfo = Uri.EscapeDataString($"Thanh toan {paymentCode}");
                 var accountNameEncoded = Uri.EscapeDataString(accountName);
-                var qrUrl = $"https://img.vietqr.io/image/{bankBin}-{accountNo}-compact2.png?amount={order.TotalAmount:0}&addInfo={addInfo}&accountName={accountNameEncoded}";
+                var staticQrUrl = _configuration["BankTransfer:StaticQrUrl"]?.Trim();
+                var qrUrl = string.IsNullOrWhiteSpace(staticQrUrl)
+                    ? $"https://img.vietqr.io/image/{bankBin}-{accountNo}-compact2.png?amount={order.TotalAmount:0}&addInfo={addInfo}&accountName={accountNameEncoded}"
+                    : staticQrUrl;
 
                 var voucherSnapshot = quote == null ? null : JsonSerializer.Serialize(new
                 {
@@ -199,51 +255,86 @@ namespace Omnichannel.Controllers
                 return NotFound(new { message = "Không tìm thấy mã thanh toán" });
             }
 
-            if (string.Equals(payment.Status, "Paid", StringComparison.OrdinalIgnoreCase))
+            var result = await MarkPaymentAsPaidAsync(
+                payment,
+                request.PaidAmount,
+                request.DestinationAccountNo,
+                request.TransferContent,
+                request.ExternalTransactionId,
+                cancellationToken);
+
+            if (!result.Success)
             {
-                return Ok(new { message = "Thanh toán đã được xác minh trước đó", orderId = payment.OrderId, status = payment.Status });
+                if (string.Equals(result.Message, "Đơn hàng không tồn tại", StringComparison.OrdinalIgnoreCase))
+                {
+                    return NotFound(new { message = result.Message });
+                }
+
+                return BadRequest(new { message = result.Message });
             }
-
-            var destinationAccount = request.DestinationAccountNo.Trim();
-            if (!string.Equals(destinationAccount, payment.AccountNo, StringComparison.OrdinalIgnoreCase))
-            {
-                return BadRequest(new { message = "Sai tài khoản nhận tiền" });
-            }
-
-            if (request.PaidAmount != payment.Amount)
-            {
-                return BadRequest(new { message = "Số tiền chuyển khoản không khớp" });
-            }
-
-            if (string.IsNullOrWhiteSpace(request.TransferContent)
-                || request.TransferContent.IndexOf(payment.PaymentCode, StringComparison.OrdinalIgnoreCase) < 0)
-            {
-                return BadRequest(new { message = "Nội dung chuyển khoản không chứa mã thanh toán" });
-            }
-
-            var order = await _context.Orders.FirstOrDefaultAsync(o => o.Id == payment.OrderId, cancellationToken);
-            if (order == null)
-            {
-                return NotFound(new { message = "Đơn hàng không tồn tại" });
-            }
-
-            payment.PaidAmount = request.PaidAmount;
-            payment.TransferContent = request.TransferContent.Trim();
-            payment.ExternalTransactionId = request.ExternalTransactionId?.Trim();
-            payment.PaidAt = DateTime.UtcNow;
-            payment.Status = "Paid";
-
-            order.Status = "Paid";
-
-            await _context.SaveChangesAsync(cancellationToken);
 
             return Ok(new
             {
-                message = "Xác minh thanh toán thành công",
-                orderId = order.Id,
+                message = result.Message,
+                orderId = result.OrderId,
                 paymentCode = payment.PaymentCode,
                 paymentStatus = payment.Status,
-                orderStatus = order.Status
+                orderStatus = result.OrderStatus
+            });
+        }
+
+        [HttpPost("bank-transfer/webhook")]
+        [AllowAnonymous]
+        public async Task<IActionResult> ReceiveBankTransferWebhook([FromBody] BankTransferWebhookRequest request, CancellationToken cancellationToken)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(new { message = "Payload webhook không hợp lệ", errors = ModelState });
+            }
+
+            var configuredSecret = _configuration["BankTransfer:WebhookSecret"];
+            if (!string.IsNullOrWhiteSpace(configuredSecret))
+            {
+                if (!Request.Headers.TryGetValue("X-Webhook-Secret", out var incomingSecret)
+                    || !string.Equals(incomingSecret.ToString(), configuredSecret, StringComparison.Ordinal))
+                {
+                    return Unauthorized(new { message = "Webhook secret không hợp lệ" });
+                }
+            }
+
+            var payment = await _context.BankTransferPayments
+                .FirstOrDefaultAsync(p => p.PaymentCode == request.PaymentCode, cancellationToken);
+
+            if (payment == null)
+            {
+                return NotFound(new { message = "Không tìm thấy mã thanh toán" });
+            }
+
+            var result = await MarkPaymentAsPaidAsync(
+                payment,
+                request.PaidAmount,
+                request.DestinationAccountNo,
+                request.TransferContent,
+                request.ExternalTransactionId,
+                cancellationToken);
+
+            if (!result.Success)
+            {
+                if (string.Equals(result.Message, "Đơn hàng không tồn tại", StringComparison.OrdinalIgnoreCase))
+                {
+                    return NotFound(new { message = result.Message });
+                }
+
+                return BadRequest(new { message = result.Message });
+            }
+
+            return Ok(new
+            {
+                message = "Webhook đã ghi nhận giao dịch thành công",
+                paymentCode = payment.PaymentCode,
+                orderId = result.OrderId,
+                orderStatus = result.OrderStatus,
+                paymentStatus = payment.Status
             });
         }
 

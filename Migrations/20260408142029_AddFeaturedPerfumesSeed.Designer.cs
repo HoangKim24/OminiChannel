@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Omnichannel.Infrastructure;
 
@@ -11,9 +12,11 @@ using Omnichannel.Infrastructure;
 namespace Omnichannel.Migrations
 {
     [DbContext(typeof(OmnichannelDbContext))]
-    partial class OmnichannelDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260408142029_AddFeaturedPerfumesSeed")]
+    partial class AddFeaturedPerfumesSeed
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -471,7 +474,7 @@ namespace Omnichannel.Migrations
                             Concentration = "Parfum",
                             Description = "Một mùi hương mạnh mẽ, tinh tế với sự kết hợp của gỗ tuyết tùng, đàn hương và cam quýt.",
                             Gender = "Nam",
-                            ImageUrl = "https://images.unsplash.com/photo-1541643600914-78b084683601?auto=format&fit=crop&w=800&q=80",
+                            ImageUrl = "https://perfume-store.com/images/chanel-bleu-1.jpg",
                             MiddleNotes = "Gừng, nhục đậu khấu, hoa hồng",
                             Name = "Bleu de Chanel Parfum",
                             Origin = "France",
@@ -491,7 +494,7 @@ namespace Omnichannel.Migrations
                             Concentration = "EDP",
                             Description = "Biểu tượng của sự cá tính với mùi hương đặc trưng của gỗ đàn hương, bạch đậu khấu và hoa violet.",
                             Gender = "Unisex",
-                            ImageUrl = "https://images.unsplash.com/photo-1595425977377-9a6f0f0fef87?auto=format&fit=crop&w=800&q=80",
+                            ImageUrl = "https://perfume-store.com/images/lelabo-santal-1.jpg",
                             MiddleNotes = "Diên vĩ, papyrus",
                             Name = "Le Labo Santal 33",
                             Origin = "United States",
@@ -511,7 +514,7 @@ namespace Omnichannel.Migrations
                             Concentration = "EDP",
                             Description = "Mùi hương quyến rũ bậc nhất với nốt xạ hương chủ đạo, kết hợp cùng hoa hồng và đào.",
                             Gender = "Nữ",
-                            ImageUrl = "https://images.unsplash.com/photo-1615634260167-c8cdede054de?auto=format&fit=crop&w=800&q=80",
+                            ImageUrl = "https://perfume-store.com/images/narciso-pink-1.jpg",
                             MiddleNotes = "Xạ hương, hổ phách",
                             Name = "Narciso Rodriguez For Her",
                             Origin = "France",
@@ -531,7 +534,7 @@ namespace Omnichannel.Migrations
                             Concentration = "EDP",
                             Description = "Ông hoàng của dòng nước hoa nam với hương dứa nướng, khói và long diên hương.",
                             Gender = "Nam",
-                            ImageUrl = "https://images.unsplash.com/photo-1541643600914-78b084683601?auto=format&fit=crop&w=800&q=80",
+                            ImageUrl = "https://perfume-store.com/images/creed-aventus-1.jpg",
                             MiddleNotes = "Hoa nhài, hoắc hương",
                             Name = "Creed Aventus",
                             Origin = "United Kingdom",
@@ -551,7 +554,7 @@ namespace Omnichannel.Migrations
                             Concentration = "EDT",
                             Description = "Một bó hoa tươi thắm với hương mẫu đơn và hoa hồng Damask nhẹ nhàng, thanh khiết.",
                             Gender = "Nữ",
-                            ImageUrl = "https://images.unsplash.com/photo-1615634260167-c8cdede054de?auto=format&fit=crop&w=800&q=80",
+                            ImageUrl = "https://perfume-store.com/images/dior-blooming-1.jpg",
                             MiddleNotes = "Mẫu đơn, hoa hồng Damask",
                             Name = "Miss Dior Blooming Bouquet",
                             Origin = "France",

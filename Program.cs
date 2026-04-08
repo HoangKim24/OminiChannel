@@ -3,6 +3,7 @@ using System.Data;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.HttpLogging;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
@@ -202,9 +203,37 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseDefaultFiles();
-app.UseStaticFiles();
 app.UseCors("AllowAll");
+
+// Static Files & Default Files (phục vụ wwwroot TRƯỚC MapControllers)
+var staticFileOptions = new StaticFileOptions
+{
+    OnPrepareResponse = ctx =>
+    {
+        ctx.Context.Response.Headers.CacheControl = "public,max-age=3600,must-revalidate";
+        if (ctx.File.Name.EndsWith(".jpg", StringComparison.OrdinalIgnoreCase) ||
+            ctx.File.Name.EndsWith(".jpeg", StringComparison.OrdinalIgnoreCase) ||
+            ctx.File.Name.EndsWith(".png", StringComparison.OrdinalIgnoreCase) ||
+            ctx.File.Name.EndsWith(".gif", StringComparison.OrdinalIgnoreCase) ||
+            ctx.File.Name.EndsWith(".webp", StringComparison.OrdinalIgnoreCase) ||
+            ctx.File.Name.EndsWith(".svg", StringComparison.OrdinalIgnoreCase))
+        {
+            ctx.Context.Response.ContentType = ctx.File.Name switch
+            {
+                _ when ctx.File.Name.EndsWith(".jpg", StringComparison.OrdinalIgnoreCase) => "image/jpeg",
+                _ when ctx.File.Name.EndsWith(".jpeg", StringComparison.OrdinalIgnoreCase) => "image/jpeg",
+                _ when ctx.File.Name.EndsWith(".png", StringComparison.OrdinalIgnoreCase) => "image/png",
+                _ when ctx.File.Name.EndsWith(".gif", StringComparison.OrdinalIgnoreCase) => "image/gif",
+                _ when ctx.File.Name.EndsWith(".webp", StringComparison.OrdinalIgnoreCase) => "image/webp",
+                _ when ctx.File.Name.EndsWith(".svg", StringComparison.OrdinalIgnoreCase) => "image/svg+xml",
+                _ => "application/octet-stream"
+            };
+        }
+    }
+};
+app.UseDefaultFiles();
+app.UseStaticFiles(staticFileOptions);
+
 app.UseAuthentication();
 app.UseAuthorization();
 

@@ -145,6 +145,23 @@ namespace Omnichannel.Models
         public string? ExternalTransactionId { get; set; }
     }
 
+    public class BankTransferWebhookRequest
+    {
+        [Required]
+        public string PaymentCode { get; set; } = string.Empty;
+
+        [Range(0, double.MaxValue)]
+        public decimal PaidAmount { get; set; }
+
+        [Required]
+        public string DestinationAccountNo { get; set; } = string.Empty;
+
+        [Required]
+        public string TransferContent { get; set; } = string.Empty;
+
+        public string? ExternalTransactionId { get; set; }
+    }
+
     // ========== COMMENTS ==========
 
     public class CreateCommentRequest

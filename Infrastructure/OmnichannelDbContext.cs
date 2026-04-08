@@ -168,7 +168,10 @@ namespace Omnichannel.Infrastructure
             modelBuilder.Entity<Category>().HasData(
                 new Category { Id = 1, CategoryName = "Floral" },
                 new Category { Id = 2, CategoryName = "Woody" },
-                new Category { Id = 3, CategoryName = "Fresh" }
+                new Category { Id = 3, CategoryName = "Fresh" },
+                new Category { Id = 4, CategoryName = "Designer" },
+                new Category { Id = 5, CategoryName = "Niche" },
+                new Category { Id = 6, CategoryName = "Luxury" }
             );
 
             modelBuilder.Entity<Perfume>().HasData(
@@ -228,6 +231,101 @@ namespace Omnichannel.Infrastructure
                     Concentration = "EDP",
                     BrandStory = "Freshness designed for daily confidence.",
                     VolumeOptions = "30ml:0.7,50ml:1.0,100ml:1.6"
+                },
+                new Perfume
+                {
+                    Id = 4,
+                    Name = "Bleu de Chanel Parfum",
+                    Brand = "Chanel",
+                    Price = 3850000m,
+                    Description = "Một mùi hương mạnh mẽ, tinh tế với sự kết hợp của gỗ tuyết tùng, đàn hương và cam quýt.",
+                    ImageUrl = "https://images.unsplash.com/photo-1541643600914-78b084683601?auto=format&fit=crop&w=800&q=80",
+                    CategoryId = 4,
+                    Gender = "Nam",
+                    StockQuantity = 25,
+                    TopNotes = "Cam quýt, chanh vàng, bưởi",
+                    MiddleNotes = "Gừng, nhục đậu khấu, hoa hồng",
+                    BaseNotes = "Gỗ tuyết tùng, đàn hương, hổ phách",
+                    Origin = "France",
+                    Concentration = "Parfum",
+                    BrandStory = "Biểu tượng nam tính hiện đại của Chanel, đậm chất lịch lãm và tự do.",
+                    VolumeOptions = "50ml:1.0,100ml:1.6"
+                },
+                new Perfume
+                {
+                    Id = 5,
+                    Name = "Le Labo Santal 33",
+                    Brand = "Le Labo",
+                    Price = 5200000m,
+                    Description = "Biểu tượng của sự cá tính với mùi hương đặc trưng của gỗ đàn hương, bạch đậu khấu và hoa violet.",
+                    ImageUrl = "https://images.unsplash.com/photo-1595425977377-9a6f0f0fef87?auto=format&fit=crop&w=800&q=80",
+                    CategoryId = 5,
+                    Gender = "Unisex",
+                    StockQuantity = 10,
+                    TopNotes = "Bạch đậu khấu, violet",
+                    MiddleNotes = "Diên vĩ, papyrus",
+                    BaseNotes = "Gỗ đàn hương, da thuộc, xạ hương",
+                    Origin = "United States",
+                    Concentration = "EDP",
+                    BrandStory = "Một hương thơm unisex mang tính biểu tượng, được yêu thích bởi giới mộ điệu.",
+                    VolumeOptions = "50ml:1.0"
+                },
+                new Perfume
+                {
+                    Id = 6,
+                    Name = "Narciso Rodriguez For Her",
+                    Brand = "Narciso Rodriguez",
+                    Price = 2950000m,
+                    Description = "Mùi hương quyến rũ bậc nhất với nốt xạ hương chủ đạo, kết hợp cùng hoa hồng và đào.",
+                    ImageUrl = "https://images.unsplash.com/photo-1615634260167-c8cdede054de?auto=format&fit=crop&w=800&q=80",
+                    CategoryId = 4,
+                    Gender = "Nữ",
+                    StockQuantity = 40,
+                    TopNotes = "Hoa hồng, đào",
+                    MiddleNotes = "Xạ hương, hổ phách",
+                    BaseNotes = "Hoắc hương, cỏ vetiver",
+                    Origin = "France",
+                    Concentration = "EDP",
+                    BrandStory = "Tinh tế, nữ tính và đầy gợi cảm - dấu ấn đặc trưng của Narciso Rodriguez.",
+                    VolumeOptions = "50ml:1.0,100ml:1.6"
+                },
+                new Perfume
+                {
+                    Id = 7,
+                    Name = "Creed Aventus",
+                    Brand = "Creed",
+                    Price = 7500000m,
+                    Description = "Ông hoàng của dòng nước hoa nam với hương dứa nướng, khói và long diên hương.",
+                    ImageUrl = "https://images.unsplash.com/photo-1541643600914-78b084683601?auto=format&fit=crop&w=800&q=80",
+                    CategoryId = 6,
+                    Gender = "Nam",
+                    StockQuantity = 5,
+                    TopNotes = "Dứa, bergamot, lý chua đen",
+                    MiddleNotes = "Hoa nhài, hoắc hương",
+                    BaseNotes = "Gỗ sồi, khói, long diên hương",
+                    Origin = "United Kingdom",
+                    Concentration = "EDP",
+                    BrandStory = "Một trong những mùi hương nam giới kinh điển và quyền lực nhất thế giới niche-luxury.",
+                    VolumeOptions = "50ml:1.0,100ml:1.6"
+                },
+                new Perfume
+                {
+                    Id = 8,
+                    Name = "Miss Dior Blooming Bouquet",
+                    Brand = "Dior",
+                    Price = 2150000m,
+                    Description = "Một bó hoa tươi thắm với hương mẫu đơn và hoa hồng Damask nhẹ nhàng, thanh khiết.",
+                    ImageUrl = "https://images.unsplash.com/photo-1615634260167-c8cdede054de?auto=format&fit=crop&w=800&q=80",
+                    CategoryId = 4,
+                    Gender = "Nữ",
+                    StockQuantity = 15,
+                    TopNotes = "Quýt hồng, cam bergamot",
+                    MiddleNotes = "Mẫu đơn, hoa hồng Damask",
+                    BaseNotes = "Xạ hương trắng",
+                    Origin = "France",
+                    Concentration = "EDT",
+                    BrandStory = "Một bó hoa thanh lịch dành cho phong cách nữ tính, nhẹ nhàng và hiện đại.",
+                    VolumeOptions = "50ml:1.0"
                 }
             );
 
