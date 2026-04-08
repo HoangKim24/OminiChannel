@@ -41,6 +41,7 @@ const CheckoutPage = () => {
   const [isConfirmingBankOrder, setIsConfirmingBankOrder] = useState(false)
   const [bankCheckoutCompleted, setBankCheckoutCompleted] = useState(false)
   const bankPollingRef = useRef(null)
+  const bankPaidToastShownRef = useRef(false)
 
   const vnd = (amount) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount || 0)
   const itemsSubtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0)
@@ -132,8 +133,11 @@ const CheckoutPage = () => {
   const completeBankTransferCheckout = useCallback(() => {
     if (bankCheckoutCompleted) return
     setBankCheckoutCompleted(true)
+    if (!bankPaidToastShownRef.current) {
+      bankPaidToastShownRef.current = true
+      showToast('Thanh toán thành công. Đơn hàng đã được xác nhận.', 'success')
+    }
     clearCart()
-    showToast('Thanh toán thành công. Đơn hàng đã được xác nhận.', 'success')
     navigate('/profile')
   }, [bankCheckoutCompleted, clearCart, navigate, showToast])
 
