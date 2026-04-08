@@ -145,6 +145,27 @@ namespace Omnichannel.Models
         public string? ExternalTransactionId { get; set; }
     }
 
+    public class BankTransferWebhookRequest
+    {
+        [Required]
+        [Range(0.01, double.MaxValue, ErrorMessage = "Amount phải lớn hơn 0")]
+        public decimal Amount { get; set; }
+
+        [Required]
+        public string Content { get; set; } = string.Empty;
+
+        [Required]
+        public string DestinationAccountNo { get; set; } = string.Empty;
+
+        public string? TransactionId { get; set; }
+
+        public DateTime? TransactedAt { get; set; }
+
+        public string? BankName { get; set; }
+
+        public string? SenderAccountNo { get; set; }
+    }
+
     // ========== COMMENTS ==========
 
     public class CreateCommentRequest

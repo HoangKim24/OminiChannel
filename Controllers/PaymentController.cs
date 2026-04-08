@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
@@ -242,6 +243,88 @@ namespace Omnichannel.Controllers
                 message = "Xác minh thanh toán thành công",
                 orderId = order.Id,
                 paymentCode = payment.PaymentCode,
+                paymentStatus = payment.Status,
+                orderStatus = order.Status
+            });
+        }
+
+        [HttpPost("bank-transfer/webhook")]
+        public async Task<IActionResult> BankTransferWebhook([FromBody] BankTransferWebhookRequest request, CancellationToken cancellationToken)
+        {
+            // API key authentication via X-Webhook-Key header
+            var configuredKey = _configuration["BankTransferWebhook:ApiKey"];
+            if (string.IsNullOrWhiteSpace(configuredKey))
+            {
+                return StatusCode(503, new { message = "Webhook chưa được cấu hình trên server" });
+            }
+
+            if (!Request.Headers.TryGetValue("X-Webhook-Key", out var providedKey)
+                || !string.Equals(providedKey, configuredKey, StringComparison.Ordinal))
+            {
+                return Unauthorized(new { message = "API key không hợp lệ" });
+            }
+
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(new { message = "Dữ liệu webhook không hợp lệ", errors = ModelState });
+            }
+
+            // Parse paymentCode (format: BT-yyyyMMddHHmmss-XXXXXX) from transfer content
+            var paymentCodeMatch = Regex.Match(request.Content ?? string.Empty, @"BT-\d{14}-[A-Z0-9]{6}", RegexOptions.IgnoreCase);
+            if (!paymentCodeMatch.Success)
+            {
+                return BadRequest(new { message = "Không tìm thấy mã thanh toán hợp lệ trong nội dung chuyển khoản" });
+            }
+
+            var paymentCode = paymentCodeMatch.Value.ToUpperInvariant();
+
+            var payment = await _context.BankTransferPayments
+                .FirstOrDefaultAsync(p => p.PaymentCode == paymentCode, cancellationToken);
+
+            if (payment == null)
+            {
+                return NotFound(new { message = "Không tìm thấy mã thanh toán", paymentCode });
+            }
+
+            // Idempotent: already paid
+            if (string.Equals(payment.Status, "Paid", StringComparison.OrdinalIgnoreCase))
+            {
+                return Ok(new { message = "Already paid", paymentCode, orderId = payment.OrderId });
+            }
+
+            // Validate destination account
+            if (!string.Equals(request.DestinationAccountNo.Trim(), payment.AccountNo, StringComparison.OrdinalIgnoreCase))
+            {
+                return BadRequest(new { message = "Tài khoản nhận không khớp" });
+            }
+
+            // Validate amount (strict match)
+            if (request.Amount != payment.Amount)
+            {
+                return BadRequest(new { message = "Số tiền không khớp", expected = payment.Amount, received = request.Amount });
+            }
+
+            var order = await _context.Orders.FirstOrDefaultAsync(o => o.Id == payment.OrderId, cancellationToken);
+            if (order == null)
+            {
+                return NotFound(new { message = "Đơn hàng không tồn tại" });
+            }
+
+            payment.PaidAmount = request.Amount;
+            payment.TransferContent = request.Content?.Trim();
+            payment.ExternalTransactionId = request.TransactionId?.Trim();
+            payment.PaidAt = DateTime.UtcNow;
+            payment.Status = "Paid";
+
+            order.Status = "Paid";
+
+            await _context.SaveChangesAsync(cancellationToken);
+
+            return Ok(new
+            {
+                message = "Xác nhận thanh toán thành công",
+                paymentCode = payment.PaymentCode,
+                orderId = order.Id,
                 paymentStatus = payment.Status,
                 orderStatus = order.Status
             });
