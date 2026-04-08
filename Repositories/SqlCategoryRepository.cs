@@ -22,7 +22,9 @@ namespace Omnichannel.Repositories
 
         public async Task<PaginatedResult<Category>> GetPaginatedAsync(int page, int pageSize, CancellationToken cancellationToken = default)
         {
-            var query = _context.Categories.AsNoTracking();
+            var query = _context.Categories
+                .AsNoTracking()
+                .OrderBy(category => category.Id);
             var totalCount = await query.CountAsync(cancellationToken);
             var data = await query.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync(cancellationToken);
 

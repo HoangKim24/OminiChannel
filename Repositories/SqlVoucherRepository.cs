@@ -22,7 +22,9 @@ namespace Omnichannel.Repositories
 
         public async Task<PaginatedResult<Voucher>> GetPaginatedAsync(int page, int pageSize, CancellationToken cancellationToken = default)
         {
-            var query = _context.Vouchers.AsNoTracking();
+            var query = _context.Vouchers
+                .AsNoTracking()
+                .OrderBy(voucher => voucher.Id);
             var totalCount = await query.CountAsync(cancellationToken);
             var data = await query.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync(cancellationToken);
 

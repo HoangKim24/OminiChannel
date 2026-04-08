@@ -3,6 +3,26 @@ import { useAppStore } from '../../store/useAppStore';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || '';
 
+const readApiError = async (response, fallbackMessage) => {
+  const contentType = response.headers.get('content-type') || '';
+
+  if (contentType.includes('application/json')) {
+    try {
+      const data = await response.json();
+      return data?.message || fallbackMessage;
+    } catch {
+      return fallbackMessage;
+    }
+  }
+
+  try {
+    const text = await response.text();
+    return text?.trim() || fallbackMessage;
+  } catch {
+    return fallbackMessage;
+  }
+};
+
 const AuthModal = () => {
   const mode = useAppStore(state => state.authModal);
   const setAuthModal = useAppStore(state => state.setAuthModal);
@@ -100,8 +120,8 @@ const AuthModal = () => {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ username, password })
         });
-        const data = await res.json();
         if (res.ok) {
+          const data = await res.json();
           setUser({ id: data.id, username: data.username, role: data.role, accessToken: data.accessToken, fullName: data.fullName });
           setAuthModal(null);
           setUsername('');
@@ -109,8 +129,9 @@ const AuthModal = () => {
           setErrors({});
           showToast(`Chào mừng ${data.fullName || data.username} quay trở lại! 🌟`);
         } else {
-          showToast(data.message || 'Đăng nhập thất bại', 'error');
-          setErrors({ form: data.message || 'Đăng nhập thất bại' });
+          const message = await readApiError(res, 'Sai tài khoản hoặc mật khẩu');
+          showToast(message, 'error');
+          setErrors({ form: message });
         }
       } else {
         const res = await fetch(`${API_BASE}/api/auth/register`, {
@@ -124,8 +145,8 @@ const AuthModal = () => {
             phoneNumber: phoneNumber.trim() || undefined
           })
         });
-        const data = await res.json();
         if (res.ok) {
+          await res.json();
           showToast('Đăng ký thành công! Vui lòng đăng nhập.');
           setUsername('');
           setPassword('');
@@ -135,8 +156,9 @@ const AuthModal = () => {
           setErrors({});
           setAuthModal('login');
         } else {
-          showToast(data.message || 'Lỗi đăng ký', 'error');
-          setErrors({ form: data.message || 'Lỗi đăng ký' });
+          const message = await readApiError(res, 'Đăng ký thất bại');
+          showToast(message, 'error');
+          setErrors({ form: message });
         }
       }
     } catch {

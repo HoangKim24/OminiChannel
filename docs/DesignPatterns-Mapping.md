@@ -2,6 +2,8 @@
 
 Tai lieu nay tong hop 10 Design Pattern dang co trong du an, kem bang chung code va endpoint lien quan de phuc vu bao cao/cham diem.
 
+Tong ket nhanh: Bai nay trinh bay 10 mau Design Pattern chinh.
+
 ## 1) Repository Pattern
 - Muc tieu: Tach data access ra khoi business logic.
 - Bang chung code:
@@ -96,6 +98,7 @@ Tai lieu nay tong hop 10 Design Pattern dang co trong du an, kem bang chung code
 ---
 
 ## Ghi chu bo sung
+- Tong so mau Design Pattern trong bai nay: 10 mau chinh.
 - Du an con co them cac pattern sau:
   - Factory: `Services/PerfumeFactory.cs`
   - Singleton: `Services/ConfigurationManager.cs`

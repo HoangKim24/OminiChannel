@@ -55,6 +55,10 @@ const Navbar = ({ setIsCartOpen }) => {
   const cartCount = cart.reduce((a, b) => a + b.quantity, 0);
   const closeMobileMenu = () => setIsMobileMenuOpen(false);
   const closeMenu = () => setIsMenuOpen(false);
+  const closeAllMenus = () => {
+    closeMenu();
+    closeMobileMenu();
+  };
   const filteredProducts = products.filter(p => p.name.toLowerCase().includes(searchTerm.toLowerCase()));
   const vnd = (price) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price || 0);
 
@@ -86,7 +90,7 @@ const Navbar = ({ setIsCartOpen }) => {
   return (
     <nav className={scrolled ? 'scrolled' : ''}>
       <div className="container">
-        <Link to="/" className="logo" onClick={() => { closeMenu(); closeMobileMenu(); }}>KP LUXURY</Link>
+        <Link to="/" className="logo" onClick={closeAllMenus}>KP LUXURY</Link>
         <button
           className="mobile-menu-toggle"
           type="button"
@@ -96,93 +100,104 @@ const Navbar = ({ setIsCartOpen }) => {
         </button>
         
         <div className={`nav-links ${isMobileMenuOpen ? 'mobile-open' : ''}`}>
-          <div className="nav-search-container">
-            <input 
-              type="text" 
-              className="nav-search-input" 
-              placeholder="🔍 Tìm kiếm sản phẩm..." 
-              value={searchTerm}
-              aria-label="Tìm kiếm sản phẩm nước hoa"
-              onFocus={() => setIsSearchOpen(true)} 
-              onBlur={() => setTimeout(() => setIsSearchOpen(false), 200)}
-              onChange={e => { setSearchTerm(e.target.value); if(location.pathname !== '/') navigate('/'); }} 
-            />
-            {searchTerm && isSearchOpen && (
-              <div className="search-suggest-dropdown" role="listbox" aria-label="Gợi ý tìm kiếm">
-                {filteredProducts.slice(0, 5).map((p) => (
-                  <div 
-                    key={p.id} 
-                    className="suggest-item" 
-                    role="option"
-                    tabIndex={0}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        navigate(`/product/${p.id}`);
-                        setIsSearchOpen(false);
-                        setSearchTerm('');
-                        closeMobileMenu();
-                      }
-                    }}
-                    onClick={() => { navigate(`/product/${p.id}`); setIsSearchOpen(false); setSearchTerm(''); closeMobileMenu(); }}>
-                    <img src={p.imageUrl} alt={p.name} />
-                    <div className="suggest-info">
-                      <h4>{p.name}</h4>
-                      <p>{vnd(p.price)}</p>
-                    </div>
-                  </div>
-                ))}
-                {filteredProducts.length === 0 && <div style={{ padding: '1rem', color: '#888' }}>Không tìm thấy sản phẩm.</div>}
-              </div>
-            )}
+          <div className="nav-primary-links">
+            <Link to="/" className="nav-link-btn" onClick={closeAllMenus}>Bộ sưu tập</Link>
+            <button type="button" className="nav-link-btn" onClick={openQuestionFinder}>Tư vấn mùi</button>
           </div>
 
-          <Link to="/" className="nav-link-btn" onClick={closeMobileMenu}>Bộ Sưu Tập</Link>
-
-          {!user && (
-            <button
-              type="button"
-              className="nav-link-btn nav-login-btn"
-              onClick={() => { setAuthModal('login'); closeMenu(); closeMobileMenu(); }}
-            >
-              Đăng nhập
-            </button>
-          )}
-
-          <div className="nav-menu-wrap" ref={menuWrapRef}>
-            <button
-              type="button"
-              className="nav-link-btn nav-menu-btn"
-              onClick={() => setIsMenuOpen((prev) => !prev)}
-              aria-label="Mở menu hồ sơ"
-              aria-haspopup="menu"
-              aria-expanded={isMenuOpen}
-            >
-              ☰
-            </button>
-
-            {isMenuOpen && (
-              <div className="nav-menu-panel" role="menu" aria-label="Menu hồ sơ">
-                <div className="nav-menu-section" role="presentation">
-                  <button type="button" className="nav-menu-item" onClick={openProfile}>Hồ sơ</button>
-                  <button type="button" className="nav-menu-item" onClick={openInvoiceDetails}>Chi tiết hóa đơn</button>
-                  <button type="button" className="nav-menu-item" onClick={openQuestionFinder}>Câu hỏi</button>
+          <div className="nav-utility">
+            <div className="nav-search-container">
+              <input 
+                type="text" 
+                className="nav-search-input" 
+                placeholder="🔍 Tìm kiếm sản phẩm..." 
+                value={searchTerm}
+                aria-label="Tìm kiếm sản phẩm nước hoa"
+                onFocus={() => setIsSearchOpen(true)} 
+                onBlur={() => setTimeout(() => setIsSearchOpen(false), 200)}
+                onChange={e => { setSearchTerm(e.target.value); if(location.pathname !== '/') navigate('/'); }} 
+              />
+              {searchTerm && isSearchOpen && (
+                <div className="search-suggest-dropdown" role="listbox" aria-label="Gợi ý tìm kiếm">
+                  {filteredProducts.slice(0, 5).map((p) => (
+                    <div 
+                      key={p.id} 
+                      className="suggest-item" 
+                      role="option"
+                      tabIndex={0}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          navigate(`/product/${p.id}`);
+                          setIsSearchOpen(false);
+                          setSearchTerm('');
+                          closeMobileMenu();
+                        }
+                      }}
+                      onClick={() => { navigate(`/product/${p.id}`); setIsSearchOpen(false); setSearchTerm(''); closeMobileMenu(); }}>
+                      <img src={p.imageUrl} alt={p.name} />
+                      <div className="suggest-info">
+                        <h4>{p.name}</h4>
+                        <p>{vnd(p.price)}</p>
+                      </div>
+                    </div>
+                  ))}
+                  {filteredProducts.length === 0 && <div className="nav-empty-suggest">Không tìm thấy sản phẩm.</div>}
                 </div>
-                {user && (
-                  <>
-                    <div className="nav-menu-divider" aria-hidden="true" />
-                    <div className="nav-menu-section" role="presentation">
-                      <button type="button" className="nav-menu-item danger" onClick={handleLogout}>Đăng xuất</button>
-                    </div>
-                  </>
-                )}
-              </div>
-            )}
-          </div>
+              )}
+            </div>
 
-          <button type="button" className="cart-cta" onClick={() => { setIsCartOpen(true); setIsMobileMenuOpen(false); closeMobileMenu(); }}>
-            <span>🛒</span>
-            <strong>{cartCount}</strong>
-          </button>
+            {!user && (
+              <button
+                type="button"
+                className="nav-link-btn nav-login-btn"
+                onClick={() => { setAuthModal('login'); closeAllMenus(); }}
+              >
+                Đăng nhập
+              </button>
+            )}
+
+            {user && (
+              <span className="nav-user-chip" title={user.name || user.email || 'Tài khoản'}>
+                {user.name || 'Khách hàng'}
+              </span>
+            )}
+
+            <div className="nav-menu-wrap" ref={menuWrapRef}>
+              <button
+                type="button"
+                className="nav-link-btn nav-menu-btn"
+                onClick={() => setIsMenuOpen((prev) => !prev)}
+                aria-label="Mở menu hồ sơ"
+                aria-haspopup="menu"
+                aria-expanded={isMenuOpen}
+              >
+                ☰
+              </button>
+
+              {isMenuOpen && (
+                <div className="nav-menu-panel" role="menu" aria-label="Menu hồ sơ">
+                  <div className="nav-menu-section" role="presentation">
+                    <button type="button" className="nav-menu-item" onClick={openProfile}>Hồ sơ</button>
+                    <button type="button" className="nav-menu-item" onClick={openInvoiceDetails}>Chi tiết hóa đơn</button>
+                    <button type="button" className="nav-menu-item" onClick={openQuestionFinder}>Câu hỏi</button>
+                  </div>
+                  {user && (
+                    <>
+                      <div className="nav-menu-divider" aria-hidden="true" />
+                      <div className="nav-menu-section" role="presentation">
+                        <button type="button" className="nav-menu-item danger" onClick={handleLogout}>Đăng xuất</button>
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
+
+            <button type="button" className="cart-cta" onClick={() => { setIsCartOpen(true); closeMobileMenu(); }}>
+              <span>🛒</span>
+              <strong>{cartCount}</strong>
+            </button>
+          </div>
         </div>
       </div>
     </nav>

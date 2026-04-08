@@ -248,4 +248,15 @@ namespace Omnichannel.Models
         public int OrderCount { get; set; }
         public DateTime? LastOrderDate { get; set; }
     }
+
+    public class RevenueSeriesResponse
+    {
+        public string Mode { get; set; } = "month";
+        public string Timezone { get; set; } = "UTC";
+        public string[] Labels { get; set; } = Array.Empty<string>();
+        public decimal[] Values { get; set; } = Array.Empty<decimal>();
+        public decimal Total { get; set; }
+        public string? From { get; set; }
+        public string? To { get; set; }
+    }
 }

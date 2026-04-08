@@ -30,7 +30,8 @@ namespace Omnichannel.Repositories
             var query = _context.ChannelProducts
                 .Include(x => x.Perfume)
                 .Include(x => x.SalesChannel)
-                .AsNoTracking();
+                .AsNoTracking()
+                .OrderBy(channelProduct => channelProduct.Id);
 
             var totalCount = await query.CountAsync(cancellationToken);
             var data = await query.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync(cancellationToken);
