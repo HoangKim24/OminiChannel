@@ -85,6 +85,7 @@ namespace Omnichannel.Infrastructure
             });
 
             modelBuilder.Entity<Perfume>().Property(p => p.Price).HasPrecision(18, 2);
+            modelBuilder.Entity<Perfume>().Property(p => p.RowVersion).IsRowVersion();
             modelBuilder.Entity<Order>().Property(o => o.TotalAmount).HasPrecision(18, 2);
             modelBuilder.Entity<Order>().Property(o => o.DiscountAmount).HasPrecision(18, 2);
             modelBuilder.Entity<OrderItem>().Property(oi => oi.Price).HasPrecision(18, 2);
@@ -139,7 +140,7 @@ namespace Omnichannel.Infrastructure
                     .HasForeignKey(v => v.VoucherId)
                     .OnDelete(DeleteBehavior.Cascade);
                 entity.HasIndex(v => new { v.VoucherId, v.UserId });
-                entity.HasIndex(v => v.OrderId).IsUnique();
+                entity.HasIndex(v => new { v.OrderId, v.VoucherId }).IsUnique();
             });
 
             // Seed demo data

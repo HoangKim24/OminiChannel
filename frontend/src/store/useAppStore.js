@@ -221,14 +221,16 @@ export const useAppStore = create(
       fetchProducts: async () => {
         try {
           set({ loading: true })
-          const res = await fetch(`${API_BASE}/api/perfumes`)
+          const [res, resChannels] = await Promise.all([
+            fetch(`${API_BASE}/api/perfumes`),
+            fetch(`${API_BASE}/api/channels`)
+          ])
           if (!res.ok) {
             throw new Error('Failed to fetch products')
           }
           const products = await res.json()
           set({ products: Array.isArray(products) ? products.map(normalizeProduct) : [] })
 
-          const resChannels = await fetch(`${API_BASE}/api/channels`)
           if (resChannels.ok) {
             const data = await resChannels.json()
             set({ channels: Array.isArray(data) ? data.filter(c => c.isActive) : [] })

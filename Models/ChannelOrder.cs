@@ -9,6 +9,6 @@ namespace Omnichannel.Models
         public Order? Order { get; set; }
         public string ExternalOrderId { get; set; } = string.Empty; // Order ID on the external platform
         public string ChannelStatus { get; set; } = "Received"; // Received, Processing, Shipped, Completed
-        public DateTime ReceivedAt { get; set; } = DateTime.Now;
+        public DateTime ReceivedAt { get; set; } = DateTime.UtcNow;
     }
 }

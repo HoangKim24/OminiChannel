@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using Omnichannel.Infrastructure;
 using Omnichannel.Models;
 using System.Threading;
@@ -33,9 +34,9 @@ namespace Omnichannel.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> Create([FromHeader(Name = "X-User-Role")] string role, [FromBody] CategoryRequest request, CancellationToken cancellationToken)
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> Create([FromBody] CategoryRequest request, CancellationToken cancellationToken)
         {
-            if (role != "Admin") return Unauthorized(new { message = "Chỉ Admin mới có quyền tạo danh mục" });
             if (string.IsNullOrWhiteSpace(request.CategoryName)) return BadRequest(new { message = "CategoryName không được để trống" });
 
             var category = new Category { CategoryName = request.CategoryName };
@@ -46,10 +47,9 @@ namespace Omnichannel.Controllers
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> Update(int id, [FromHeader(Name = "X-User-Role")] string role, [FromBody] CategoryRequest request, CancellationToken cancellationToken)
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> Update(int id, [FromBody] CategoryRequest request, CancellationToken cancellationToken)
         {
-            if (role != "Admin") return Unauthorized();
-
             var category = await _unitOfWork.Categories.GetByIdAsync(id, cancellationToken);
             if (category == null) return NotFound(new { message = "Không tìm thấy danh mục" });
 
@@ -65,10 +65,9 @@ namespace Omnichannel.Controllers
         }
 
         [HttpDelete("{id}")]
-        public async Task<IActionResult> Delete(int id, [FromHeader(Name = "X-User-Role")] string role, CancellationToken cancellationToken)
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> Delete(int id, CancellationToken cancellationToken)
         {
-            if (role != "Admin") return Unauthorized();
-
             var category = await _unitOfWork.Categories.GetByIdAsync(id, cancellationToken);
             if (category == null) return NotFound(new { message = "Không tìm thấy danh mục" });
 

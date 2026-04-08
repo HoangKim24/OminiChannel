@@ -50,6 +50,10 @@ const App = () => {
   const normalizedPathname = location.pathname.toLowerCase();
   const isAdminRoute = normalizedPathname.startsWith('/admin');
   const isAdminUser = String(user?.role || '').trim().toLowerCase() === 'admin';
+  const hasOwnPageTopSpacing =
+    normalizedPathname.startsWith('/cart') ||
+    normalizedPathname.startsWith('/checkout') ||
+    normalizedPathname.startsWith('/profile');
 
   useEffect(() => {
     if (isAdminRoute && isAdminUser) {
@@ -82,7 +86,7 @@ const App = () => {
         {!isAdminRoute && <Navbar setIsCartOpen={setIsCartOpen} />}
       </Suspense>
 
-      <main className="main-content">
+      <main className={`main-content ${!isAdminRoute && hasOwnPageTopSpacing ? 'no-nav-offset' : ''}`.trim()}>
         <Suspense fallback={routeFallback}>
           <Routes>
             <Route path="/" element={<HomePage />} />

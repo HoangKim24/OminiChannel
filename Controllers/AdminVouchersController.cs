@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Omnichannel.Infrastructure;
 using Omnichannel.Models;
@@ -8,10 +9,9 @@ namespace Omnichannel.Controllers
 {
     [ApiController]
     [Route("api/admin/vouchers")]
+    [Authorize(Roles = "Admin")]
     public class AdminVouchersController : ControllerBase
     {
-        private static bool IsAdminRole(string? role) => string.Equals(role?.Trim(), "Admin", StringComparison.OrdinalIgnoreCase);
-
         private readonly OmnichannelDbContext _context;
 
         public AdminVouchersController(OmnichannelDbContext context)
@@ -23,10 +23,8 @@ namespace Omnichannel.Controllers
         [SwaggerOperation(Summary = "Lấy danh sách voucher (admin)", Description = "API dành cho admin để lấy toàn bộ voucher kèm dữ liệu sử dụng và phạm vi kênh bán.")]
         [ProducesResponseType(typeof(List<VoucherResponse>), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        public async Task<IActionResult> GetAll([FromHeader(Name = "X-User-Role")] string role, CancellationToken cancellationToken)
+        public async Task<IActionResult> GetAll(CancellationToken cancellationToken)
         {
-            if (!IsAdminRole(role)) return Unauthorized(new { message = "Chỉ Admin mới có quyền xem danh sách mã giảm giá" });
-
             var vouchers = await _context.Vouchers
                 .AsNoTracking()
                 .Include(v => v.SalesChannel)
@@ -50,7 +48,7 @@ namespace Omnichannel.Controllers
                     SalesChannelName = v.SalesChannel != null ? v.SalesChannel.ChannelName : null,
                     IsActive = v.IsActive,
                     IsDeleted = v.IsDeleted,
-                    TotalRedemptions = v.Redemptions.Count
+                    TotalRedemptions = _context.VoucherRedemptions.Count(r => r.VoucherId == v.Id)
                 })
                 .ToListAsync(cancellationToken);
 
@@ -62,10 +60,8 @@ namespace Omnichannel.Controllers
         [ProducesResponseType(typeof(Voucher), StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        public async Task<IActionResult> Create([FromHeader(Name = "X-User-Role")] string role, [FromBody] VoucherUpsertRequest request, CancellationToken cancellationToken)
+        public async Task<IActionResult> Create([FromBody] VoucherUpsertRequest request, CancellationToken cancellationToken)
         {
-            if (!IsAdminRole(role)) return Unauthorized(new { message = "Chỉ Admin mới có quyền tạo voucher" });
-
             var normalizedCode = request.Code.Trim().ToUpperInvariant();
             var existing = await _context.Vouchers.AnyAsync(v => v.Code == normalizedCode, cancellationToken);
             if (existing) return BadRequest(new { message = "Mã code đã tồn tại" });
@@ -101,10 +97,8 @@ namespace Omnichannel.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> Update(int id, [FromHeader(Name = "X-User-Role")] string role, [FromBody] VoucherUpsertRequest request, CancellationToken cancellationToken)
+        public async Task<IActionResult> Update(int id, [FromBody] VoucherUpsertRequest request, CancellationToken cancellationToken)
         {
-            if (!IsAdminRole(role)) return Unauthorized(new { message = "Chỉ Admin mới có quyền cập nhật voucher" });
-
             var voucher = await _context.Vouchers.FirstOrDefaultAsync(v => v.Id == id, cancellationToken);
             if (voucher == null) return NotFound(new { message = "Voucher không tồn tại" });
 
@@ -137,10 +131,8 @@ namespace Omnichannel.Controllers
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> Delete(int id, [FromHeader(Name = "X-User-Role")] string role, CancellationToken cancellationToken)
+        public async Task<IActionResult> Delete(int id, CancellationToken cancellationToken)
         {
-            if (!IsAdminRole(role)) return Unauthorized(new { message = "Chỉ Admin mới có quyền xoá voucher" });
-
             var voucher = await _context.Vouchers.FirstOrDefaultAsync(v => v.Id == id, cancellationToken);
             if (voucher == null) return NotFound(new { message = "Voucher không tồn tại" });
 

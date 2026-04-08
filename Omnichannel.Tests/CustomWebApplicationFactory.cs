@@ -4,14 +4,22 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.IdentityModel.Tokens;
 using Omnichannel.Infrastructure;
 using Omnichannel.Models;
+using System.IdentityModel.Tokens.Jwt;
+using System.Net.Http.Headers;
+using System.Security.Claims;
+using System.Text;
 
 namespace Omnichannel.Tests
 {
     public class CustomWebApplicationFactory : WebApplicationFactory<Program>
     {
         private readonly string _databaseName = $"OmnichannelTests-{Guid.NewGuid()}";
+        private const string TestJwtKey = "integration-tests-jwt-key-32-characters";
+        private const string TestJwtIssuer = "Omnichannel";
+        private const string TestJwtAudience = "Omnichannel.Client";
 
         protected override void ConfigureWebHost(IWebHostBuilder builder)
         {
@@ -21,9 +29,9 @@ namespace Omnichannel.Tests
             {
                 config.AddInMemoryCollection(new Dictionary<string, string?>
                 {
-                    ["Jwt:Key"] = "integration-tests-jwt-key-32-characters",
-                    ["Jwt:Issuer"] = "Omnichannel",
-                    ["Jwt:Audience"] = "Omnichannel.Client",
+                    ["Jwt:Key"] = TestJwtKey,
+                    ["Jwt:Issuer"] = TestJwtIssuer,
+                    ["Jwt:Audience"] = TestJwtAudience,
                     ["VNPay:TmnCode"] = "TESTCODE",
                     ["VNPay:HashSecret"] = "TESTSECRET1234567890TESTSECRET1234567890",
                     ["VNPay:BaseUrl"] = "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html",
@@ -119,6 +127,47 @@ namespace Omnichannel.Tests
 
                 db.SaveChanges();
             });
+        }
+
+        public string CreateJwtToken(int userId, string role, string? username = null)
+        {
+            var claims = new List<Claim>
+            {
+                new Claim(ClaimTypes.NameIdentifier, userId.ToString()),
+                new Claim(ClaimTypes.Role, role),
+                new Claim(ClaimTypes.Name, username ?? $"user_{userId}")
+            };
+
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(TestJwtKey));
+            var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+
+            var token = new JwtSecurityToken(
+                issuer: TestJwtIssuer,
+                audience: TestJwtAudience,
+                claims: claims,
+                notBefore: DateTime.UtcNow.AddMinutes(-1),
+                expires: DateTime.UtcNow.AddHours(1),
+                signingCredentials: credentials);
+
+            return new JwtSecurityTokenHandler().WriteToken(token);
+        }
+
+        public HttpClient CreateAuthenticatedClient(int userId, string role, string? username = null)
+        {
+            var client = CreateClient();
+            var token = CreateJwtToken(userId, role, username);
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            return client;
+        }
+
+        public HttpClient CreateAdminClient(int userId = 1, string username = "integration_admin")
+        {
+            return CreateAuthenticatedClient(userId, "Admin", username);
+        }
+
+        public HttpClient CreateUserClient(int userId = 2, string username = "integration_user")
+        {
+            return CreateAuthenticatedClient(userId, "User", username);
         }
     }
 }

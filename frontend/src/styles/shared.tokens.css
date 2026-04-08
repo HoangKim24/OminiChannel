@@ -1,4 +1,11 @@
 /* Shared design tokens for both user and admin surfaces */
+/* z-index scale:
+  10    - sticky headers
+  100   - dropdowns / search suggest
+  200   - modals
+  300   - cart drawer + overlay
+  400   - toast alerts
+*/
 :root {
   /* Color Palette - Premium Luxury */
   --color-gold-400: #f4d27d;

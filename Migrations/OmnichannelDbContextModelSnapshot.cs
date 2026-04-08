@@ -362,6 +362,12 @@ namespace Omnichannel.Migrations
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
                     b.Property<int>("StockQuantity")
                         .HasColumnType("int");
 
@@ -395,6 +401,7 @@ namespace Omnichannel.Migrations
                             Name = "Golden Bloom",
                             Origin = "France",
                             Price = 2159760m,
+                            RowVersion = new byte[0],
                             StockQuantity = 120,
                             TopNotes = "Bergamot, Orange Blossom",
                             VolumeOptions = "30ml:0.7,50ml:1.0,100ml:1.6"
@@ -414,6 +421,7 @@ namespace Omnichannel.Migrations
                             Name = "Midnight Cedar",
                             Origin = "Italy",
                             Price = 2388000m,
+                            RowVersion = new byte[0],
                             StockQuantity = 90,
                             TopNotes = "Grapefruit, Pepper",
                             VolumeOptions = "50ml:1.0,100ml:1.6"
@@ -433,6 +441,7 @@ namespace Omnichannel.Migrations
                             Name = "Ocean Whisper",
                             Origin = "Spain",
                             Price = 1896000m,
+                            RowVersion = new byte[0],
                             StockQuantity = 140,
                             TopNotes = "Lemon, Sea Salt",
                             VolumeOptions = "30ml:0.7,50ml:1.0,100ml:1.6"
@@ -789,7 +798,7 @@ namespace Omnichannel.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("OrderId")
+                    b.HasIndex("OrderId", "VoucherId")
                         .IsUnique();
 
                     b.HasIndex("VoucherId", "UserId");

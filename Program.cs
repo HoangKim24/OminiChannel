@@ -102,7 +102,8 @@ builder.Services.Configure<ApiBehaviorOptions>(options =>
 var jwtKey = builder.Configuration["Jwt:Key"];
 if (string.IsNullOrWhiteSpace(jwtKey))
 {
-    jwtKey = "dev-only-change-me-32-chars-minimum";
+    throw new InvalidOperationException(
+        "Jwt:Key is not configured. Use user-secrets, environment variables, or appsettings.Development.json.");
 }
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
@@ -152,6 +153,7 @@ builder.Services.AddScoped<IOmnichannelAdapter, TikTokAdapter>();
 builder.Services.AddScoped<IOmnichannelAdapter, LazadaAdapter>();
 builder.Services.AddScoped<InventorySubject>();
 builder.Services.AddScoped<OrderFacade>();
+builder.Services.AddScoped<BatchOrderService>();
 builder.Services.AddScoped<VoucherPricingService>();
 builder.Services.AddScoped<RecommendationService>();
 builder.Services.AddScoped<IRecommendationFacade, RecommendationFacade>();
@@ -211,7 +213,10 @@ app.MapFallbackToFile("index.html");
 
 if (!isTesting)
 {
-    app.UseHangfireDashboard("/hangfire");
+    app.UseHangfireDashboard("/hangfire", new DashboardOptions
+    {
+        Authorization = new[] { new HangfireAuthorizationFilter() }
+    });
 }
 
 // Initialize Observers in a dedicated scope
@@ -291,7 +296,8 @@ using (var scope = app.Services.CreateScope())
     if (!isTesting)
     {
         var jobClient = scope.ServiceProvider.GetRequiredService<IBackgroundJobClient>();
-        subject.Attach(new OmnichannelSyncObserver(jobClient));
+        var observerLogger = scope.ServiceProvider.GetRequiredService<ILogger<OmnichannelSyncObserver>>();
+        subject.Attach(new OmnichannelSyncObserver(jobClient, observerLogger));
     }
 }
 

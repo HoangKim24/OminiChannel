@@ -21,8 +21,9 @@ const Footer = ({ page }) => {
 
           <div className="footer-col">
             <h3>Hỗ trợ</h3>
-            <p>Hotline: 1900 6868</p>
-            <p>Email: support@kpluxury.vn</p>
+            <p>Hotline: 0563750400</p>
+            <p>Email: nlhk2403@gmail.com</p>
+            <p>Địa chỉ tiệm: 70/55/15 Nguyễn Sỹ Sách Phường Tân Sơn</p>
             <p>08:30 - 22:00 mỗi ngày</p>
           </div>
 

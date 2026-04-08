@@ -9,7 +9,7 @@ namespace Omnichannel.Models
         public string UserName { get; set; } = string.Empty;
         public int Stars { get; set; }
         public string Text { get; set; } = string.Empty;
-        public DateTime CreatedAt { get; set; } = DateTime.Now;
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public bool IsVerified { get; set; } = false;
     }
 }

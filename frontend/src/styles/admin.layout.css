@@ -222,7 +222,7 @@
     bottom: 0;
     transform: translateX(-100%);
     transition: transform var(--transition-normal);
-    z-index: 1000;
+    z-index: 250;
   }
 
   .admin-app .sidebar-open .admin-sidebar-container {
@@ -255,7 +255,7 @@
   }
 
   .admin-app .sidebar-open .admin-sidebar-container {
-    z-index: 110;
+    z-index: 250;
   }
 
   .admin-app .status-indicator {

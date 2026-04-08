@@ -1,4 +1,5 @@
 using Omnichannel.Models;
+using Microsoft.Extensions.Logging;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Hangfire;
@@ -29,15 +30,21 @@ namespace Omnichannel.Services
     public class OmnichannelSyncObserver : IInventoryObserver
     {
         private readonly Hangfire.IBackgroundJobClient _backgroundJobClient;
+        private readonly ILogger<OmnichannelSyncObserver> _logger;
 
-        public OmnichannelSyncObserver(Hangfire.IBackgroundJobClient backgroundJobClient)
+        public OmnichannelSyncObserver(Hangfire.IBackgroundJobClient backgroundJobClient, ILogger<OmnichannelSyncObserver> logger)
         {
             _backgroundJobClient = backgroundJobClient;
+            _logger = logger;
         }
 
         public Task OnInventoryChangedAsync(Perfume perfume)
         {
-            System.Console.WriteLine($"[Observer] Phát hiện thay đổi tồn kho: '{perfume.Name}'. Đẩy việc đồng bộ vào Hàng đợi siêu tốc (Hangfire) để khách không phải chờ...");
+            _logger.LogInformation(
+                "[{Component}] Phát hiện thay đổi tồn kho cho sản phẩm {Name} - Tồn kho: {Stock}. Đẩy job đồng bộ vào hàng đợi",
+                "Observer",
+                perfume.Name,
+                perfume.StockQuantity);
             
             _backgroundJobClient.Enqueue<OmnichannelBackgroundSyncService>(service => service.SyncInventoryJobAsync(perfume.Id));
             

@@ -37,12 +37,12 @@ namespace Omnichannel.Services
     public class RecommendationService
     {
         private readonly OmnichannelDbContext _context;
-        private readonly IUnitOfWork _unitOfWork;
+        private readonly IUnitOfWork? _unitOfWork;
 
         public RecommendationService(OmnichannelDbContext context, IUnitOfWork? unitOfWork = null)
         {
             _context = context;
-            _unitOfWork = unitOfWork!;
+            _unitOfWork = unitOfWork;
         }
 
         /// <summary>
@@ -58,7 +58,12 @@ namespace Omnichannel.Services
                 query = query.Where(p => p.Gender == request.Gender || p.Gender == "Unisex");
             }
 
-            var candidatePerfumes = await query.ToListAsync();
+            // Notes are stored as free-text/comma-separated strings, so keep note matching in-memory for reliability.
+            // Cap candidate set to avoid loading an unbounded catalog.
+            var candidatePerfumes = await query
+                .OrderBy(p => p.Id)
+                .Take(500)
+                .ToListAsync();
 
             if (request.PreferredNotes != null && request.PreferredNotes.Any())
             {

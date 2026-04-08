@@ -9,12 +9,14 @@ namespace Omnichannel.Services
 {
     public class OrderFacade
     {
+        private readonly OmnichannelDbContext _context;
         private readonly IUnitOfWork _unitOfWork;
         private readonly IPaymentStrategy _paymentStrategy;
         private readonly InventorySubject _inventorySubject;
 
-        public OrderFacade(IUnitOfWork unitOfWork, IPaymentStrategy paymentStrategy, InventorySubject inventorySubject)
+        public OrderFacade(OmnichannelDbContext context, IUnitOfWork unitOfWork, IPaymentStrategy paymentStrategy, InventorySubject inventorySubject)
         {
+            _context = context;
             _unitOfWork = unitOfWork;
             _paymentStrategy = paymentStrategy;
             _inventorySubject = inventorySubject;
@@ -22,50 +24,57 @@ namespace Omnichannel.Services
 
         public async Task<(bool Success, string PaymentUrl, Order? CreatedOrder)> PlaceOrderAsync(PlaceOrderRequest request, CancellationToken cancellationToken = default)
         {
-            var perfume = await _unitOfWork.Perfumes.GetByIdAsync(request.PerfumeId, cancellationToken);
-            if (perfume == null || perfume.StockQuantity < request.Quantity) return (false, string.Empty, null);
-
-            var totalAmount = perfume.Price * request.Quantity;
-
-            var order = new Order
+            await using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
+            try
             {
-                UserId = request.UserId,
-                OrderDate = DateTime.Now,
-                Status = "Pending",
-                TotalAmount = totalAmount,
-                ShippingAddress = request.ShippingAddress,
-                ReceiverPhone = request.ReceiverPhone,
-                Note = request.Note,
-                Items = new List<OrderItem>
+                var perfume = await _unitOfWork.Perfumes.GetByIdAsync(request.PerfumeId, cancellationToken);
+                if (perfume == null || perfume.StockQuantity < request.Quantity) return (false, string.Empty, null);
+
+                var totalAmount = perfume.Price * request.Quantity;
+
+                var order = new Order
                 {
-                    new OrderItem
+                    UserId = request.UserId,
+                    OrderDate = DateTime.UtcNow,
+                    Status = "Pending",
+                    TotalAmount = totalAmount,
+                    ShippingAddress = request.ShippingAddress,
+                    ReceiverPhone = request.ReceiverPhone,
+                    Note = request.Note,
+                    Items = new List<OrderItem>
                     {
-                        PerfumeId = perfume.Id,
-                        PerfumeName = perfume.Name,
-                        Quantity = request.Quantity,
-                        Price = perfume.Price
+                        new OrderItem
+                        {
+                            PerfumeId = perfume.Id,
+                            PerfumeName = perfume.Name,
+                            Quantity = request.Quantity,
+                            Price = perfume.Price
+                        }
                     }
-                }
-            };
+                };
 
-            await _unitOfWork.Orders.AddAsync(order, cancellationToken);
-            
-            // Saving first to persist the Order and get an ID for Payment integration
-            await _unitOfWork.CompleteAsync(cancellationToken);
+                await _unitOfWork.Orders.AddAsync(order, cancellationToken);
 
-            // 2. Process Payment
-            var paymentUrl = await _paymentStrategy.ProcessPaymentAsync(order);
+                // 2. Process Payment
+                var paymentUrl = await _paymentStrategy.ProcessPaymentAsync(order);
 
-            // 3. Update Inventory
-            perfume.StockQuantity -= request.Quantity;
-            _unitOfWork.Perfumes.Update(perfume);
+                // Persist order and stock only after payment processing succeeds
+                perfume.StockQuantity -= request.Quantity;
+                _unitOfWork.Perfumes.Update(perfume);
 
-            // 4. Notify Omnichannel (Observer)
-            await _inventorySubject.NotifyAsync(perfume);
+                // 4. Notify Omnichannel (Observer)
+                await _inventorySubject.NotifyAsync(perfume);
 
-            await _unitOfWork.CompleteAsync(cancellationToken);
-            
-            return (true, paymentUrl, order);
+                await _unitOfWork.CompleteAsync(cancellationToken);
+                await transaction.CommitAsync(cancellationToken);
+
+                return (true, paymentUrl, order);
+            }
+            catch
+            {
+                await transaction.RollbackAsync(cancellationToken);
+                throw;
+            }
         }
     }
 }

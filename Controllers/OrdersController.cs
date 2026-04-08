@@ -1,4 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
+using Omnichannel.Extensions;
 using Omnichannel.Infrastructure;
 using Omnichannel.Models;
 using System;
@@ -14,41 +16,73 @@ namespace Omnichannel.Controllers
     [Route("api/[controller]")]
     public class OrdersController : ControllerBase
     {
-        private static bool IsAdminRole(string? role) => string.Equals(role?.Trim(), "Admin", StringComparison.OrdinalIgnoreCase);
-
         private readonly IUnitOfWork _unitOfWork;
         private readonly OrderFacade _orderFacade;
         private readonly OmnichannelDbContext _context;
-        private readonly VoucherPricingService _voucherPricingService;
+        private readonly BatchOrderService _batchOrderService;
 
-        public OrdersController(IUnitOfWork unitOfWork, OrderFacade orderFacade, OmnichannelDbContext context, VoucherPricingService voucherPricingService)
+        public OrdersController(IUnitOfWork unitOfWork, OrderFacade orderFacade, OmnichannelDbContext context, BatchOrderService batchOrderService)
         {
             _unitOfWork = unitOfWork;
             _orderFacade = orderFacade;
             _context = context;
-            _voucherPricingService = voucherPricingService;
+            _batchOrderService = batchOrderService;
         }
 
         [HttpGet("{id}")]
+        [Authorize]
         public async Task<IActionResult> GetOrderById(int id)
         {
             var order = await _unitOfWork.Orders.GetByIdAsync(id);
             if (order == null) return NotFound(new { message = "Đơn hàng không tồn tại" });
+
+            var currentUserId = User.GetCurrentUserId();
+            if (!User.IsInRole("Admin"))
+            {
+                if (!currentUserId.HasValue)
+                {
+                    return Unauthorized(new { message = "Không xác định được người dùng hiện tại" });
+                }
+
+                if (order.UserId != currentUserId.Value)
+                {
+                    return Forbid();
+                }
+            }
+
             return Ok(order);
         }
 
         [HttpGet("user/{userId}")]
+        [Authorize]
         public async Task<IActionResult> GetUserOrders(int userId)
         {
+            var currentUserId = User.GetCurrentUserId();
+            if (!User.IsInRole("Admin"))
+            {
+                if (!currentUserId.HasValue)
+                {
+                    return Unauthorized(new { message = "Không xác định được người dùng hiện tại" });
+                }
+
+                if (userId != currentUserId.Value)
+                {
+                    return Forbid();
+                }
+            }
+
             var orders = await _unitOfWork.Orders.GetByUserIdAsync(userId);
             return Ok(orders);
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetAllOrders([FromHeader(Name = "X-User-Role")] string role)
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> GetAllOrders([FromQuery] int page = 1, [FromQuery] int pageSize = 50)
         {
-            if (!IsAdminRole(role)) return Unauthorized(new { message = "Chỉ Admin mới có quyền xem tất cả đơn hàng" });
-            var orders = await _unitOfWork.Orders.GetAllAsync();
+            page = page < 1 ? 1 : page;
+            pageSize = pageSize < 1 ? 50 : pageSize;
+
+            var orders = await _unitOfWork.Orders.GetPaginatedAsync(page, pageSize);
             return Ok(orders);
         }
 
@@ -84,93 +118,11 @@ namespace Omnichannel.Controllers
             await using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
             try
             {
-                var orderItems = new List<OrderItem>();
-                decimal itemsSubtotal = 0;
-
-                foreach (var item in request.Items)
-                {
-                    var perfume = await _unitOfWork.Perfumes.GetByIdAsync(item.PerfumeId, cancellationToken);
-                    if (perfume == null)
-                        return NotFound(new { message = $"Sản phẩm ID={item.PerfumeId} không tồn tại" });
-
-                    if (perfume.StockQuantity < item.Quantity)
-                        return BadRequest(new { message = $"Sản phẩm '{perfume.Name}' chỉ còn {perfume.StockQuantity} trong kho" });
-
-                    orderItems.Add(new OrderItem
-                    {
-                        PerfumeId = perfume.Id,
-                        PerfumeName = perfume.Name,
-                        Quantity = item.Quantity,
-                        Price = perfume.Price
-                    });
-
-                    itemsSubtotal += perfume.Price * item.Quantity;
-
-                    perfume.StockQuantity -= item.Quantity;
-                    _unitOfWork.Perfumes.Update(perfume);
-                }
-
+                var batchResult = await _batchOrderService.CreateBatchOrderAsync(request, cancellationToken);
+                var order = batchResult.Order;
+                var quote = batchResult.VoucherQuote;
+                var itemsSubtotal = order.Items.Sum(i => i.Price * i.Quantity);
                 var shippingFee = request.IsPickup ? 0 : request.ShippingFee;
-                var hasVoucherCodes = !string.IsNullOrWhiteSpace(request.VoucherCode)
-                    || !string.IsNullOrWhiteSpace(request.OrderVoucherCode)
-                    || !string.IsNullOrWhiteSpace(request.ShippingVoucherCode);
-
-                VoucherApplyResponse? quote = null;
-                if (hasVoucherCodes)
-                {
-                    quote = await _voucherPricingService.QuoteAsync(new VoucherApplyRequest
-                    {
-                        UserId = request.UserId,
-                        ItemsSubtotal = itemsSubtotal,
-                        ShippingFee = shippingFee,
-                        VoucherCode = request.VoucherCode,
-                        OrderVoucherCode = request.OrderVoucherCode,
-                        ShippingVoucherCode = request.ShippingVoucherCode,
-                        SalesChannelId = request.SalesChannelId
-                    }, cancellationToken);
-                }
-
-                var paymentLabel = string.Equals(request.PaymentMethod, "BankTransfer", StringComparison.OrdinalIgnoreCase)
-                    ? "CHUYEN_KHOAN"
-                    : "TIEN_MAT";
-
-                var voucherCodes = quote?.AppliedVouchers.Select(v => v.Code).ToList() ?? new List<string>();
-                var composedNote = string.IsNullOrWhiteSpace(request.Note)
-                    ? $"[PAYMENT:{paymentLabel}]"
-                    : $"{request.Note} [PAYMENT:{paymentLabel}]";
-
-                if (voucherCodes.Count > 0)
-                {
-                    composedNote += $" [VOUCHERS:{string.Join(",", voucherCodes)}]";
-                }
-
-                var order = new Order
-                {
-                    UserId = request.UserId,
-                    OrderDate = DateTime.UtcNow,
-                    Status = "Confirmed",
-                    TotalAmount = quote?.FinalTotal ?? (itemsSubtotal + shippingFee),
-                    ShippingAddress = request.ShippingAddress,
-                    ReceiverPhone = request.ReceiverPhone,
-                    Note = composedNote,
-                    IsPickup = request.IsPickup,
-                    VoucherCode = voucherCodes.Count > 0 ? string.Join(",", voucherCodes) : request.VoucherCode,
-                    DiscountAmount = (quote?.OrderVoucherDiscount ?? 0) + (quote?.ShippingVoucherDiscount ?? 0),
-                    Items = orderItems
-                };
-
-                await _unitOfWork.Orders.AddAsync(order, cancellationToken);
-                await _unitOfWork.CompleteAsync(cancellationToken);
-
-                if (quote != null)
-                {
-                    var redemptions = VoucherPricingService.BuildRedemptions(order.Id, request.UserId, quote);
-                    if (redemptions.Count > 0)
-                    {
-                        await _context.VoucherRedemptions.AddRangeAsync(redemptions, cancellationToken);
-                        await _context.SaveChangesAsync(cancellationToken);
-                    }
-                }
 
                 await transaction.CommitAsync(cancellationToken);
 
@@ -189,6 +141,16 @@ namespace Omnichannel.Controllers
                     }
                 });
             }
+            catch (KeyNotFoundException ex)
+            {
+                await transaction.RollbackAsync(cancellationToken);
+                return NotFound(new { message = ex.Message });
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                await transaction.RollbackAsync(cancellationToken);
+                return Conflict(new { message = "Sản phẩm vừa được cập nhật, vui lòng thử lại" });
+            }
             catch (InvalidOperationException ex)
             {
                 await transaction.RollbackAsync(cancellationToken);
@@ -202,13 +164,11 @@ namespace Omnichannel.Controllers
         }
 
         [HttpPut("{id}/status")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> UpdateOrderStatus(
             int id,
-            [FromHeader(Name = "X-User-Role")] string role,
             [FromBody] UpdateOrderStatusRequest request)
         {
-            if (!IsAdminRole(role)) return Unauthorized(new { message = "Chỉ Admin mới có quyền cập nhật trạng thái" });
-
             if (!ModelState.IsValid)
                 return BadRequest(new { message = "Dữ liệu không hợp lệ" });
 

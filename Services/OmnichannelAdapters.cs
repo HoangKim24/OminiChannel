@@ -1,4 +1,5 @@
 using Omnichannel.Models;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Threading.Tasks;
 
@@ -17,30 +18,66 @@ namespace Omnichannel.Services
 
     public class ShopeeAdapter : IOmnichannelAdapter
     {
+        private readonly ILogger<ShopeeAdapter> _logger;
+
+        public ShopeeAdapter(ILogger<ShopeeAdapter> logger)
+        {
+            _logger = logger;
+        }
+
         public string ChannelName => "Shopee";
         public async Task SyncInventoryAsync(Perfume perfume)
         {
-            Console.WriteLine($"[Shopee] Đồng bộ sản phẩm '{perfume.Name}' - Tồn kho: {perfume.StockQuantity} - Giá: {perfume.Price:C}");
+            _logger.LogInformation(
+                "[{Channel}] Đồng bộ sản phẩm {Name} - Tồn kho: {Stock} - Giá: {Price}",
+                "Shopee",
+                perfume.Name,
+                perfume.StockQuantity,
+                perfume.Price);
             await Task.CompletedTask;
         }
     }
 
     public class TikTokAdapter : IOmnichannelAdapter
     {
+        private readonly ILogger<TikTokAdapter> _logger;
+
+        public TikTokAdapter(ILogger<TikTokAdapter> logger)
+        {
+            _logger = logger;
+        }
+
         public string ChannelName => "TikTok Shop";
         public async Task SyncInventoryAsync(Perfume perfume)
         {
-            Console.WriteLine($"[TikTok Shop] Đồng bộ sản phẩm '{perfume.Name}' - Tồn kho: {perfume.StockQuantity} - Giá: {perfume.Price:C}");
+            _logger.LogInformation(
+                "[{Channel}] Đồng bộ sản phẩm {Name} - Tồn kho: {Stock} - Giá: {Price}",
+                "TikTok Shop",
+                perfume.Name,
+                perfume.StockQuantity,
+                perfume.Price);
             await Task.CompletedTask;
         }
     }
 
     public class LazadaAdapter : IOmnichannelAdapter
     {
+        private readonly ILogger<LazadaAdapter> _logger;
+
+        public LazadaAdapter(ILogger<LazadaAdapter> logger)
+        {
+            _logger = logger;
+        }
+
         public string ChannelName => "Lazada";
         public async Task SyncInventoryAsync(Perfume perfume)
         {
-            Console.WriteLine($"[Lazada] Đồng bộ sản phẩm '{perfume.Name}' - Tồn kho: {perfume.StockQuantity} - Giá: {perfume.Price:C}");
+            _logger.LogInformation(
+                "[{Channel}] Đồng bộ sản phẩm {Name} - Tồn kho: {Stock} - Giá: {Price}",
+                "Lazada",
+                perfume.Name,
+                perfume.StockQuantity,
+                perfume.Price);
             await Task.CompletedTask;
         }
     }

@@ -41,6 +41,31 @@ const getOrderStatusLabel = (status) => {
   return 'Chờ xác nhận';
 };
 
+const getCurrentStepIndex = (status) => {
+  const value = String(status || 'pending').trim().toLowerCase();
+
+  if (value === 'completed') return 4;
+  if (value === 'shipping') return 3;
+  if (value === 'confirmed') return 1;
+  if (value === 'pending') return 0;
+  if (value === 'cancelled') return 0;
+
+  const numericValue = Number(value);
+  if (Number.isFinite(numericValue)) {
+    return Math.min(4, Math.max(0, numericValue));
+  }
+
+  return 0;
+};
+
+const STEPPER_STEPS = [
+  'Đơn Hàng Đã Đặt',
+  'Đã Xác Nhận',
+  'Chờ Lấy Hàng',
+  'Đang Giao',
+  'Đánh Giá',
+];
+
 const InvoiceDetailPage = () => {
   const navigate = useNavigate();
   const params = useParams();
@@ -90,6 +115,7 @@ const InvoiceDetailPage = () => {
   }, [normalizedOrders, params.orderId]);
 
   const orderStatus = getOrderStatusLabel(selectedOrder?.status);
+  const currentStepIndex = getCurrentStepIndex(selectedOrder?.status);
 
   if (!storedUser) return null;
 
@@ -196,22 +222,22 @@ const InvoiceDetailPage = () => {
 
           <article className="invoice-card admin-panel shadow-gold">
             <h2>Trạng thái xử lý</h2>
-            <div className="invoice-timeline">
-              <div className={`timeline-step ${['pending', 'confirmed', 'shipping', 'completed'].includes(String(selectedOrder.status || '').toLowerCase()) ? 'done' : ''}`}>
-                <strong>Đơn Hàng Đã Đặt</strong>
-              </div>
-              <div className={`timeline-step ${['confirmed', 'shipping', 'completed'].includes(String(selectedOrder.status || '').toLowerCase()) ? 'done' : ''}`}>
-                <strong>Đã Xác Nhận</strong>
-              </div>
-              <div className={`timeline-step ${['shipping', 'completed'].includes(String(selectedOrder.status || '').toLowerCase()) ? 'done' : ''}`}>
-                <strong>Chở Lấy Hàng</strong>
-              </div>
-              <div className={`timeline-step ${['shipping', 'completed'].includes(String(selectedOrder.status || '').toLowerCase()) ? 'done' : ''}`}>
-                <strong>Đang Giao</strong>
-              </div>
-              <div className={`timeline-step ${String(selectedOrder.status || '').toLowerCase() === 'completed' ? 'done' : ''}`}>
-                <strong>Đánh Giá</strong>
-              </div>
+            <div className="stepper" role="list" aria-label="Trạng thái xử lý đơn hàng">
+              {STEPPER_STEPS.map((stepLabel, index) => {
+                const stepState = index < currentStepIndex
+                  ? 'is-completed'
+                  : index === currentStepIndex
+                    ? 'is-active'
+                    : 'is-inactive';
+
+                return (
+                  <div key={stepLabel} className={`step ${stepState}`} role="listitem">
+                    <div className="circle" aria-hidden="true">{index + 1}</div>
+                    <div className="label">{stepLabel}</div>
+                    {index < STEPPER_STEPS.length - 1 && <div className="line" aria-hidden="true" />}
+                  </div>
+                );
+              })}
             </div>
           </article>
         </section>

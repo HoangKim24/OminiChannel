@@ -4,6 +4,7 @@ using System.Net;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Omnichannel.Middleware;
@@ -18,8 +19,10 @@ namespace Omnichannel.Tests
         {
             // Arrange
             var loggerMock = new Mock<ILogger<ExceptionMiddleware>>();
+            var hostEnvironmentMock = new Mock<IHostEnvironment>();
+            hostEnvironmentMock.SetupGet(x => x.EnvironmentName).Returns(Environments.Development);
             RequestDelegate next = (HttpContext hc) => throw new UnauthorizedAccessException("Test denied");
-            var middleware = new ExceptionMiddleware(next, loggerMock.Object);
+            var middleware = new ExceptionMiddleware(next, loggerMock.Object, hostEnvironmentMock.Object);
 
             var context = new DefaultHttpContext();
             context.Response.Body = new MemoryStream();

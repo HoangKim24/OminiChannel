@@ -27,7 +27,7 @@ namespace Omnichannel.Features.Comments.Commands
                 Stars = request.Stars,
                 Text = request.Text,
                 IsVerified = request.IsVerified,
-                CreatedAt = DateTime.Now
+                CreatedAt = DateTime.UtcNow
             };
 
             await _unitOfWork.Comments.AddAsync(comment, cancellationToken);

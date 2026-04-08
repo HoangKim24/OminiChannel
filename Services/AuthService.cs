@@ -119,7 +119,8 @@ namespace Omnichannel.Services
             var key = _configuration["Jwt:Key"];
             if (string.IsNullOrWhiteSpace(key))
             {
-                key = "dev-only-change-me-32-chars-minimum";
+                throw new InvalidOperationException(
+                    "Jwt:Key is not configured. Ensure configuration provides a valid JWT signing key.");
             }
 
             var issuer = _configuration["Jwt:Issuer"] ?? "Omnichannel";

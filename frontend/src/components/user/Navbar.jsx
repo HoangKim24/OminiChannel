@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAppStore } from '../../store/useAppStore';
 
@@ -7,6 +7,7 @@ const Navbar = ({ setIsCartOpen }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const menuWrapRef = useRef(null);
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -30,11 +31,24 @@ const Navbar = ({ setIsCartOpen }) => {
     const handleKeyDown = (e) => {
       if (e.key === 'Escape') {
         setIsSearchOpen(false);
+        setIsMenuOpen(false);
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
+
+  useEffect(() => {
+    const handlePointerDown = (event) => {
+      if (!isMenuOpen) return;
+      if (menuWrapRef.current && !menuWrapRef.current.contains(event.target)) {
+        setIsMenuOpen(false);
+      }
+    };
+
+    document.addEventListener('pointerdown', handlePointerDown);
+    return () => document.removeEventListener('pointerdown', handlePointerDown);
+  }, [isMenuOpen]);
 
   if (location.pathname.startsWith('/admin')) return null;
 
@@ -124,12 +138,23 @@ const Navbar = ({ setIsCartOpen }) => {
 
           <Link to="/" className="nav-link-btn" onClick={closeMobileMenu}>Bộ Sưu Tập</Link>
 
-          <div className="nav-menu-wrap">
+          {!user && (
+            <button
+              type="button"
+              className="nav-link-btn nav-login-btn"
+              onClick={() => { setAuthModal('login'); closeMenu(); closeMobileMenu(); }}
+            >
+              Đăng nhập
+            </button>
+          )}
+
+          <div className="nav-menu-wrap" ref={menuWrapRef}>
             <button
               type="button"
               className="nav-link-btn nav-menu-btn"
               onClick={() => setIsMenuOpen((prev) => !prev)}
               aria-label="Mở menu hồ sơ"
+              aria-haspopup="menu"
               aria-expanded={isMenuOpen}
             >
               ☰
@@ -137,19 +162,24 @@ const Navbar = ({ setIsCartOpen }) => {
 
             {isMenuOpen && (
               <div className="nav-menu-panel" role="menu" aria-label="Menu hồ sơ">
-                <button type="button" className="nav-menu-item" onClick={openProfile}>Hồ sơ</button>
-                <button type="button" className="nav-menu-item" onClick={openInvoiceDetails}>Chi tiết hóa đơn</button>
-                <button type="button" className="nav-menu-item" onClick={openQuestionFinder}>Câu hỏi</button>
-                {user ? (
-                  <button type="button" className="nav-menu-item danger" onClick={handleLogout}>Đăng xuất</button>
-                ) : (
-                  <button type="button" className="nav-menu-item" onClick={() => { setAuthModal('login'); closeMenu(); closeMobileMenu(); }}>Đăng nhập</button>
+                <div className="nav-menu-section" role="presentation">
+                  <button type="button" className="nav-menu-item" onClick={openProfile}>Hồ sơ</button>
+                  <button type="button" className="nav-menu-item" onClick={openInvoiceDetails}>Chi tiết hóa đơn</button>
+                  <button type="button" className="nav-menu-item" onClick={openQuestionFinder}>Câu hỏi</button>
+                </div>
+                {user && (
+                  <>
+                    <div className="nav-menu-divider" aria-hidden="true" />
+                    <div className="nav-menu-section" role="presentation">
+                      <button type="button" className="nav-menu-item danger" onClick={handleLogout}>Đăng xuất</button>
+                    </div>
+                  </>
                 )}
               </div>
             )}
           </div>
 
-          <button type="button" className="cart-cta" onClick={() => { setIsCartOpen(true); closeMobileMenu(); }}>
+          <button type="button" className="cart-cta" onClick={() => { setIsCartOpen(true); setIsMobileMenuOpen(false); closeMobileMenu(); }}>
             <span>🛒</span>
             <strong>{cartCount}</strong>
           </button>

@@ -1,7 +1,7 @@
 /* d:\Omnichannel\frontend\src\features\conversations\ConversationLayout\ConversationLayout.css */
 .omni-conv-layout {
   display: flex;
-  height: calc(100vh - 70px - 64px); /* Minus AdminLayout header and padding */
+  height: calc(100vh - var(--admin-topbar-height, 70px));
   width: 100%;
   background-color: var(--bg-primary);
   border: 1px solid var(--border-color);
@@ -23,6 +23,7 @@
   max-width: 400px;
   border-right: 1px solid var(--border-color);
   background-color: var(--bg-secondary);
+  overflow-y: auto;
 }
 
 .omni-conv-layout__pane--center {
@@ -30,6 +31,8 @@
   display: flex;
   flex-direction: column;
   background-color: var(--bg-primary);
+  overflow-y: auto;
+  min-height: 0;
 }
 
 .omni-conv-layout__pane--right {
@@ -48,6 +51,15 @@
   border-left: none;
 }
 
+.conversation-list-panel {
+  overflow-y: auto;
+}
+
+.conversation-detail-panel {
+  overflow-y: auto;
+  min-height: 0;
+}
+
 @media (max-width: 1024px) {
   .omni-conv-layout__pane--right {
     position: absolute;
@@ -60,18 +72,30 @@
 }
 
 @media (max-width: 768px) {
+  .omni-conv-layout,
+  .conversation-layout {
+    flex-direction: column;
+  }
+
   .omni-conv-layout__pane--left {
-    position: absolute;
-    left: 0;
-    top: 0;
-    bottom: 0;
+    position: static;
     width: 100%;
+    height: 200px;
+    min-width: 0;
     max-width: 100%;
-    z-index: 5;
-    transition: transform var(--transition-normal);
+    overflow-y: auto;
+    border-right: none;
+    border-bottom: 1px solid var(--border-color);
   }
   
   .omni-conv-layout__pane--center {
     width: 100%;
+    flex: 1;
+    min-height: 0;
+  }
+
+  .omni-conv-layout--conversation-open .omni-conv-layout__pane--left,
+  .omni-conv-layout--conversation-open .conversation-list-panel {
+    display: none;
   }
 }

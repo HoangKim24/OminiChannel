@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using Omnichannel.Infrastructure;
 using Omnichannel.Models;
 using Omnichannel.Services;
@@ -40,23 +41,21 @@ namespace Omnichannel.Controllers
         }
 
         [HttpPost]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> CreateChannel(
-            [FromHeader(Name = "X-User-Role")] string role,
             [FromBody] SalesChannel channel)
         {
-            if (role != "Admin") return Unauthorized(new { message = "Chỉ Admin mới có quyền tạo kênh" });
             await _unitOfWork.SalesChannels.AddAsync(channel);
             await _unitOfWork.CompleteAsync();
             return CreatedAtAction(nameof(GetChannel), new { id = channel.Id }, channel);
         }
 
         [HttpPut("{id}")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> UpdateChannel(
             int id,
-            [FromHeader(Name = "X-User-Role")] string role,
             [FromBody] SalesChannel channel)
         {
-            if (role != "Admin") return Unauthorized(new { message = "Chỉ Admin mới có quyền cập nhật kênh" });
             var existing = await _unitOfWork.SalesChannels.GetByIdAsync(id);
             if (existing == null) return NotFound(new { message = $"Kênh ID={id} không tồn tại" });
 
@@ -87,13 +86,11 @@ namespace Omnichannel.Controllers
         }
 
         [HttpPost("{channelId}/products")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> ListProductOnChannel(
             int channelId,
-            [FromHeader(Name = "X-User-Role")] string role,
             [FromBody] ChannelProductRequest request)
         {
-            if (role != "Admin") return Unauthorized(new { message = "Chỉ Admin mới có quyền đăng sản phẩm lên kênh" });
-
             var channel = await _unitOfWork.SalesChannels.GetByIdAsync(channelId);
             if (channel == null) return NotFound(new { message = "Kênh bán hàng không tồn tại" });
 
@@ -110,7 +107,7 @@ namespace Omnichannel.Controllers
                 PerfumeId = request.PerfumeId,
                 ChannelPrice = request.ChannelPrice > 0 ? request.ChannelPrice : perfume.Price,
                 IsListed = true,
-                LastSyncedAt = DateTime.Now
+                LastSyncedAt = DateTime.UtcNow
             };
 
             await _unitOfWork.SalesChannels.AddChannelProductAsync(channelProduct);
@@ -147,7 +144,7 @@ namespace Omnichannel.Controllers
                 var order = new Order
                 {
                     UserId = request.UserId,
-                    OrderDate = DateTime.Now,
+                    OrderDate = DateTime.UtcNow,
                     TotalAmount = perfume.Price * request.Quantity,
                     Status = "Pending",
                     ShippingAddress = request.ShippingAddress,
@@ -175,7 +172,7 @@ namespace Omnichannel.Controllers
                     OrderId = order.Id,
                     ExternalOrderId = request.ExternalOrderId,
                     ChannelStatus = "Received",
-                    ReceivedAt = DateTime.Now
+                    ReceivedAt = DateTime.UtcNow
                 };
 
                 await _unitOfWork.SalesChannels.AddChannelOrderAsync(channelOrder);
@@ -204,12 +201,10 @@ namespace Omnichannel.Controllers
         // ========== SYNC ==========
 
         [HttpPost("{channelId}/sync")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> SyncChannelInventory(
-            int channelId,
-            [FromHeader(Name = "X-User-Role")] string role)
+            int channelId)
         {
-            if (role != "Admin") return Unauthorized(new { message = "Chỉ Admin mới có quyền đồng bộ kênh" });
-
             try
             {
                 var channel = await _unitOfWork.SalesChannels.GetByIdAsync(channelId);
@@ -225,7 +220,7 @@ namespace Omnichannel.Controllers
                     {
                         if (cp.Perfume != null)
                         {
-                            cp.LastSyncedAt = DateTime.Now;
+                            cp.LastSyncedAt = DateTime.UtcNow;
                             _unitOfWork.SalesChannels.UpdateChannelProduct(cp);
                             syncCount++;
                         }
@@ -241,7 +236,7 @@ namespace Omnichannel.Controllers
                 return Ok(new
                 {
                     message = $"Đã đồng bộ {syncCount} sản phẩm lên {channel.ChannelName}",
-                    syncedAt = DateTime.Now,
+                    syncedAt = DateTime.UtcNow,
                     errors = errors.Count > 0 ? errors : null
                 });
             }

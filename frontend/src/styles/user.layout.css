@@ -6,6 +6,24 @@
   font-family: var(--font-sans);
 }
 
+.user-app.app-container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.user-app .main-content {
+  flex: 1;
+  min-height: calc(100vh - 80px);
+  padding-top: 80px;
+  display: flex;
+  flex-direction: column;
+}
+
+.user-app .main-content.no-nav-offset {
+  padding-top: 0;
+}
+
 .user-app h1,
 .user-app h2,
 .user-app h3,

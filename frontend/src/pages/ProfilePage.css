@@ -364,3 +364,22 @@
     flex-direction: column;
   }
 }
+
+@media (max-width: 640px) {
+  .profile-hero {
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .profile-hero > * {
+    width: 100%;
+  }
+
+  .profile-hero-card {
+    min-width: 0;
+  }
+
+  .profile-order-timeline {
+    flex-wrap: wrap;
+  }
+}

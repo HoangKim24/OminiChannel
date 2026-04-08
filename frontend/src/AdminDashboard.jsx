@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import AdminSidebar from './components/admin/AdminSidebar';
+import { useLocation } from 'react-router-dom';
+import AdminLayout from './components/admin/AdminLayout';
 import OverviewTab from './components/admin/tabs/OverviewTab';
 import OrdersTab from './components/admin/tabs/OrdersTab';
 import ProductsTab from './components/admin/tabs/ProductsTab';
@@ -9,50 +9,32 @@ import AdminAccountsTab from './components/admin/tabs/AdminAccountsTab';
 import VouchersTab from './components/admin/tabs/VouchersTab';
 
 const AdminDashboard = ({ products, channelProducts, cartTotal, orders, setPage, user, onRefresh }) => {
-  const [activeTab, setActiveTab] = useState('overview');
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const location = useLocation();
+
+  const normalizedPath = location.pathname.toLowerCase();
+
+  const activeTab = (() => {
+    if (normalizedPath.startsWith('/admin/products')) return 'products';
+    if (normalizedPath.startsWith('/admin/orders')) return 'orders';
+    if (normalizedPath.startsWith('/admin/inventory')) return 'inventory';
+    if (normalizedPath.startsWith('/admin/vouchers')) return 'voucher-management';
+    if (normalizedPath.startsWith('/admin/customers')) return 'customers';
+    if (normalizedPath.startsWith('/admin/admin-accounts')) return 'admin-accounts';
+    return 'overview';
+  })();
 
   return (
-    <div className={`admin-screen fade-in ${isSidebarOpen ? 'sidebar-open' : ''}`}>
-      <div className="admin-overlay" onClick={() => setIsSidebarOpen(false)}></div>
-
-      <div className="admin-sidebar-container">
-        <AdminSidebar activeTab={activeTab} setActiveTab={setActiveTab} setPage={setPage} isMobileOpen={isSidebarOpen} setIsMobileOpen={setIsSidebarOpen} />
-      </div>
-
-      <div className="admin-body">
-        <header className="admin-topbar">
-          <div className="admin-topbar-left">
-            <button className="mobile-toggle" onClick={() => setIsSidebarOpen(true)}>☰</button>
-            <div className="admin-breadcrumb">
-              <span className="root">ADMIN</span>
-              <span className="sep">/</span>
-              <span className="current">{activeTab.toUpperCase()}</span>
-            </div>
-          </div>
-          <div className="admin-status">
-            <div className="status-indicator">● HỆ THỐNG TRỰC TUYẾN</div>
-            <div className="admin-user">
-              <span>{user?.fullName || user?.username || 'Super Admin'}</span>
-              <div className="avatar luxury-glow" aria-hidden="true">
-                <span className="avatar-icon">👤</span>
-              </div>
-            </div>
-          </div>
-        </header>
-
-        <main className="admin-canvas">
-          {activeTab === 'overview' && <OverviewTab products={products} orders={orders} cartTotal={cartTotal} user={user} />}
-          {activeTab === 'products' && <ProductsTab products={products} user={user} onRefresh={onRefresh} />}
-          {activeTab === 'orders' && <OrdersTab orders={orders} user={user} onRefresh={onRefresh} />}
-          {activeTab === 'inventory' && <InventoryTab products={products} channelProducts={channelProducts} user={user} />}
-          {activeTab === 'voucher-management' && <VouchersTab user={user} />}
-          {activeTab === 'customers' && <CustomersTab user={user} />}
-          {activeTab === 'admin-accounts' && <AdminAccountsTab user={user} onRefresh={onRefresh} />}
-        </main>
-      </div>
-
-    </div>
+    <AdminLayout>
+      <section className="admin-canvas">
+        {activeTab === 'overview' && <OverviewTab products={products} orders={orders} cartTotal={cartTotal} user={user} />}
+        {activeTab === 'products' && <ProductsTab products={products} user={user} onRefresh={onRefresh} />}
+        {activeTab === 'orders' && <OrdersTab orders={orders} user={user} onRefresh={onRefresh} />}
+        {activeTab === 'inventory' && <InventoryTab products={products} channelProducts={channelProducts} user={user} />}
+        {activeTab === 'voucher-management' && <VouchersTab user={user} />}
+        {activeTab === 'customers' && <CustomersTab user={user} />}
+        {activeTab === 'admin-accounts' && <AdminAccountsTab user={user} onRefresh={onRefresh} />}
+      </section>
+    </AdminLayout>
   );
 };
 

@@ -1,18 +1,22 @@
 import { useState } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import './AdminLayout.css';
 import { useTheme } from '../../hooks/useTheme';
 
-const AdminLayout = ({ children, activePath = '/admin/dashboard' }) => {
+const AdminLayout = ({ children }) => {
   const [isSidebarOpen, setSidebarOpen] = useState(false);
   const { theme, toggleTheme } = useTheme();
+  const location = useLocation();
 
   // Danh sách menu linh hoạt (có thể trỏ từ file config/routes)
   const menuItems = [
     { name: 'Tổng quan', path: '/admin/dashboard', icon: 'M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z' },
-    { name: 'Sản phẩm', path: '/admin/products', icon: 'M20 16.2A2 2 0 0 1 18.2 18H5.8A2 2 0 0 1 4 16.2V7.8A2 2 0 0 1 5.8 6h12.4a2 2 0 0 1 1.8 1.8v8.4zm-9.2-4.1l2.4 2.4-2.4 2.4' }, // Ví dụ dạng Box
+    { name: 'Sản phẩm', path: '/admin/products', icon: 'M20 16.2A2 2 0 0 1 18.2 18H5.8A2 2 0 0 1 4 16.2V7.8A2 2 0 0 1 5.8 6h12.4a2 2 0 0 1 1.8 1.8v8.4zm-9.2-4.1l2.4 2.4-2.4 2.4' },
     { name: 'Đơn hàng', path: '/admin/orders', icon: 'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z M14 2v6h6' },
+    { name: 'Mã giảm giá', path: '/admin/vouchers', icon: 'M3 12h18M8 7h.01M16 17h.01M7 17l10-10' },
+    { name: 'Khách hàng', path: '/admin/customers', icon: 'M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2 M9 7a4 4 0 1 0 0-8 4 4 0 0 0 0 8z' },
+    { name: 'Tài khoản Admin', path: '/admin/admin-accounts', icon: 'M12 12c2.76 0 5-2.24 5-5S14.76 2 12 2 7 4.24 7 7s2.24 5 5 5z M4 22v-2c0-2.76 2.24-5 5-5h6c2.76 0 5 2.24 5 5v2' },
     { name: 'Kho hàng', path: '/admin/inventory', icon: 'M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z' },
-    { name: 'CRM', path: '/admin/crm', icon: 'M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2 M9 7a4 4 0 1 0 0-8 4 4 0 0 0 0 8z M23 21v-2a4 4 0 0 0-3-3.87 M16 3.13a4 4 0 0 1 0 7.75' }
   ];
 
   return (
@@ -36,15 +40,15 @@ const AdminLayout = ({ children, activePath = '/admin/dashboard' }) => {
         <nav className="al-nav">
           <ul>
             {menuItems.map((item, index) => {
-              const isActive = activePath === item.path;
+              const isActive = location.pathname === item.path || location.pathname.startsWith(item.path + '/');
               return (
                 <li key={index}>
-                  <a href={item.path} className={`al-nav-link ${isActive ? 'active' : ''}`}>
+                  <Link to={item.path} className={`al-nav-link ${isActive ? 'active' : ''}`}>
                     <svg className="al-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <path d={item.icon}></path>
                     </svg>
                     <span>{item.name}</span>
-                  </a>
+                  </Link>
                 </li>
               );
             })}
@@ -53,13 +57,13 @@ const AdminLayout = ({ children, activePath = '/admin/dashboard' }) => {
 
         {/* Cấu hình dưới cùng Sidebar (Tùy chọn) */}
         <div className="al-sidebar-footer">
-          <a href="/admin/settings" className="al-nav-link">
+          <Link to="/admin/settings" className="al-nav-link">
             <svg className="al-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <circle cx="12" cy="12" r="3"></circle>
               <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
             </svg>
             <span>Cài đặt</span>
-          </a>
+          </Link>
         </div>
       </aside>
 

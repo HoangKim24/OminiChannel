@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Configuration;
 using Omnichannel.Infrastructure;
 using Omnichannel.Models;
@@ -20,22 +21,20 @@ namespace Omnichannel.Controllers
     {
         private readonly OmnichannelDbContext _context;
         private readonly IConfiguration _configuration;
-        private readonly IUnitOfWork _unitOfWork;
-        private readonly VoucherPricingService _voucherPricingService;
+        private readonly BatchOrderService _batchOrderService;
 
         public PaymentController(
             OmnichannelDbContext context,
             IConfiguration configuration,
-            IUnitOfWork unitOfWork,
-            VoucherPricingService voucherPricingService)
+            BatchOrderService batchOrderService)
         {
             _context = context;
             _configuration = configuration;
-            _unitOfWork = unitOfWork;
-            _voucherPricingService = voucherPricingService;
+            _batchOrderService = batchOrderService;
         }
 
         [HttpPost("bank-transfer/request")]
+        [Authorize]
         public async Task<IActionResult> CreateBankTransferRequest([FromBody] PlaceBatchOrderRequest request, CancellationToken cancellationToken)
         {
             if (!ModelState.IsValid)
@@ -56,98 +55,28 @@ namespace Omnichannel.Controllers
             await using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
             try
             {
-                var orderItems = new List<OrderItem>();
-                decimal itemsSubtotal = 0;
+                var batchResult = await _batchOrderService.CreateBatchOrderAsync(request, cancellationToken);
+                var order = batchResult.Order;
+                var quote = batchResult.VoucherQuote;
 
-                foreach (var item in request.Items)
+                var bankName = _configuration["BankTransfer:BankName"];
+                var bankBin = _configuration["BankTransfer:BankBin"];
+                var accountNo = _configuration["BankTransfer:AccountNo"];
+                var accountName = _configuration["BankTransfer:AccountName"];
+
+                if (string.IsNullOrWhiteSpace(bankName)
+                    || string.IsNullOrWhiteSpace(bankBin)
+                    || string.IsNullOrWhiteSpace(accountNo)
+                    || string.IsNullOrWhiteSpace(accountName))
                 {
-                    var perfume = await _unitOfWork.Perfumes.GetByIdAsync(item.PerfumeId, cancellationToken);
-                    if (perfume == null)
-                    {
-                        return NotFound(new { message = $"Sản phẩm ID={item.PerfumeId} không tồn tại" });
-                    }
-
-                    if (perfume.StockQuantity < item.Quantity)
-                    {
-                        return BadRequest(new { message = $"Sản phẩm '{perfume.Name}' chỉ còn {perfume.StockQuantity} trong kho" });
-                    }
-
-                    orderItems.Add(new OrderItem
-                    {
-                        PerfumeId = perfume.Id,
-                        PerfumeName = perfume.Name,
-                        Quantity = item.Quantity,
-                        Price = perfume.Price
-                    });
-
-                    itemsSubtotal += perfume.Price * item.Quantity;
-
-                    perfume.StockQuantity -= item.Quantity;
-                    _unitOfWork.Perfumes.Update(perfume);
+                    await transaction.RollbackAsync(cancellationToken);
+                    return BadRequest(new { message = "Cấu hình chuyển khoản ngân hàng chưa được thiết lập" });
                 }
 
-                var shippingFee = request.IsPickup ? 0 : request.ShippingFee;
-                var hasVoucherCodes = !string.IsNullOrWhiteSpace(request.VoucherCode)
-                    || !string.IsNullOrWhiteSpace(request.OrderVoucherCode)
-                    || !string.IsNullOrWhiteSpace(request.ShippingVoucherCode);
-
-                VoucherApplyResponse? quote = null;
-                if (hasVoucherCodes)
-                {
-                    quote = await _voucherPricingService.QuoteAsync(new VoucherApplyRequest
-                    {
-                        UserId = request.UserId,
-                        ItemsSubtotal = itemsSubtotal,
-                        ShippingFee = shippingFee,
-                        VoucherCode = request.VoucherCode,
-                        OrderVoucherCode = request.OrderVoucherCode,
-                        ShippingVoucherCode = request.ShippingVoucherCode,
-                        SalesChannelId = request.SalesChannelId
-                    }, cancellationToken);
-                }
-
-                var voucherCodes = quote?.AppliedVouchers.Select(v => v.Code).ToList() ?? new List<string>();
-                var composedNote = string.IsNullOrWhiteSpace(request.Note)
-                    ? "[PAYMENT:CHUYEN_KHOAN]"
-                    : $"{request.Note} [PAYMENT:CHUYEN_KHOAN]";
-
-                if (voucherCodes.Count > 0)
-                {
-                    composedNote += $" [VOUCHERS:{string.Join(",", voucherCodes)}]";
-                }
-
-                var order = new Order
-                {
-                    UserId = request.UserId,
-                    OrderDate = DateTime.UtcNow,
-                    Status = "PendingPayment",
-                    TotalAmount = quote?.FinalTotal ?? (itemsSubtotal + shippingFee),
-                    ShippingAddress = request.ShippingAddress,
-                    ReceiverPhone = request.ReceiverPhone,
-                    Note = composedNote,
-                    IsPickup = request.IsPickup,
-                    VoucherCode = voucherCodes.Count > 0 ? string.Join(",", voucherCodes) : request.VoucherCode,
-                    DiscountAmount = (quote?.OrderVoucherDiscount ?? 0) + (quote?.ShippingVoucherDiscount ?? 0),
-                    Items = orderItems
-                };
-
-                await _unitOfWork.Orders.AddAsync(order, cancellationToken);
-                await _unitOfWork.CompleteAsync(cancellationToken);
-
-                if (quote != null)
-                {
-                    var redemptions = VoucherPricingService.BuildRedemptions(order.Id, request.UserId, quote);
-                    if (redemptions.Count > 0)
-                    {
-                        await _context.VoucherRedemptions.AddRangeAsync(redemptions, cancellationToken);
-                        await _context.SaveChangesAsync(cancellationToken);
-                    }
-                }
-
-                var bankName = _configuration["BankTransfer:BankName"] ?? "Techcombank";
-                var bankBin = _configuration["BankTransfer:BankBin"] ?? "970407";
-                var accountNo = _configuration["BankTransfer:AccountNo"] ?? "19071687454011";
-                var accountName = _configuration["BankTransfer:AccountName"] ?? "NGUYEN LUU HOANG KIM";
+                bankName = bankName.Trim();
+                bankBin = bankBin.Trim();
+                accountNo = accountNo.Trim();
+                accountName = accountName.Trim();
                 var paymentCode = $"BT-{DateTime.UtcNow:yyyyMMddHHmmss}-{Guid.NewGuid().ToString("N")[..6].ToUpperInvariant()}";
                 var addInfo = Uri.EscapeDataString($"Thanh toan {paymentCode}");
                 var accountNameEncoded = Uri.EscapeDataString(accountName);
@@ -194,6 +123,16 @@ namespace Omnichannel.Controllers
                     Status = payment.Status
                 });
             }
+            catch (DbUpdateConcurrencyException)
+            {
+                await transaction.RollbackAsync(cancellationToken);
+                return Conflict(new { message = "Sản phẩm vừa được cập nhật, vui lòng thử lại" });
+            }
+            catch (KeyNotFoundException ex)
+            {
+                await transaction.RollbackAsync(cancellationToken);
+                return NotFound(new { message = ex.Message });
+            }
             catch (InvalidOperationException ex)
             {
                 await transaction.RollbackAsync(cancellationToken);
@@ -207,6 +146,7 @@ namespace Omnichannel.Controllers
         }
 
         [HttpGet("bank-transfer/status/{paymentCode}")]
+        [Authorize]
         public async Task<IActionResult> GetBankTransferStatus(string paymentCode, CancellationToken cancellationToken)
         {
             var payment = await _context.BankTransferPayments
@@ -243,6 +183,7 @@ namespace Omnichannel.Controllers
         }
 
         [HttpPost("bank-transfer/verify")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> VerifyBankTransfer([FromBody] BankTransferVerificationRequest request, CancellationToken cancellationToken)
         {
             if (!ModelState.IsValid)
@@ -307,6 +248,7 @@ namespace Omnichannel.Controllers
         }
 
         [HttpPost("bank-transfer/confirm/{paymentCode}")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> ConfirmPaidOrder(string paymentCode, CancellationToken cancellationToken)
         {
             var payment = await _context.BankTransferPayments

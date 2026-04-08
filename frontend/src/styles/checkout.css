@@ -1,5 +1,6 @@
 .checkout-page {
-  padding: 7.5rem 0 4rem;
+  padding-top: clamp(100px, 12vh, 140px);
+  padding-bottom: 4rem;
   min-height: 100vh;
   background:
     radial-gradient(circle at top left, rgba(212, 175, 55, 0.14), transparent 28%),
@@ -640,7 +641,7 @@
 
 @media (max-width: 768px) {
   .checkout-page {
-    padding-top: 6.5rem;
+    padding-top: clamp(90px, 12vh, 140px);
   }
 
   .checkout-hero {

@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Net;
@@ -12,11 +13,13 @@ namespace Omnichannel.Middleware
     {
         private readonly RequestDelegate _next;
         private readonly ILogger<ExceptionMiddleware> _logger;
+        private readonly IHostEnvironment _hostEnvironment;
 
-        public ExceptionMiddleware(RequestDelegate next, ILogger<ExceptionMiddleware> logger)
+        public ExceptionMiddleware(RequestDelegate next, ILogger<ExceptionMiddleware> logger, IHostEnvironment hostEnvironment)
         {
             _next = next;
             _logger = logger;
+            _hostEnvironment = hostEnvironment;
         }
 
         public async Task InvokeAsync(HttpContext context)
@@ -28,11 +31,11 @@ namespace Omnichannel.Middleware
             catch (Exception ex)
             {
                 _logger.LogError(ex, "An unhandled exception occurred.");
-                await HandleExceptionAsync(context, ex);
+                await HandleExceptionAsync(context, ex, _hostEnvironment);
             }
         }
 
-        private static Task HandleExceptionAsync(HttpContext context, Exception exception)
+        private static Task HandleExceptionAsync(HttpContext context, Exception exception, IHostEnvironment hostEnvironment)
         {
             context.Response.ContentType = "application/json";
 
@@ -54,7 +57,9 @@ namespace Omnichannel.Middleware
                     ArgumentException => "Invalid Request",
                     _ => "An unexpected error occurred"
                 },
-                Detail = exception.Message,
+                Detail = hostEnvironment.IsDevelopment()
+                    ? exception.Message
+                    : "Đã xảy ra lỗi, vui lòng thử lại sau",
                 Instance = context.Request.Path
             };
 

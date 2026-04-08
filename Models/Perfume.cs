@@ -1,3 +1,6 @@
+using System;
+using System.ComponentModel.DataAnnotations;
+
 namespace Omnichannel.Models
 {
     public class Perfume
@@ -21,5 +24,8 @@ namespace Omnichannel.Models
         public string? Concentration { get; set; } // EDP, EDT, etc.
         public string? BrandStory { get; set; }
         public string? VolumeOptions { get; set; } // e.g., "30ml:0.7,50ml:1.0,100ml:1.6"
+
+        [Timestamp]
+        public byte[] RowVersion { get; set; } = Array.Empty<byte>();
     }
 }

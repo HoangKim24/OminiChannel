@@ -64,7 +64,7 @@ namespace Omnichannel.Services
                 { "vnp_Command", "pay" },
                 { "vnp_TmnCode", vnp_TmnCode },
                 { "vnp_Amount", ((long)(order.TotalAmount * 100)).ToString() }, // Amount in VND * 100
-                { "vnp_CreateDate", DateTime.Now.ToString("yyyyMMddHHmmss") },
+                { "vnp_CreateDate", DateTime.UtcNow.ToString("yyyyMMddHHmmss") },
                 { "vnp_CurrCode", "VND" },
                 { "vnp_IpAddr", "127.0.0.1" },
                 { "vnp_Locale", "vn" },

@@ -8,3 +8,7 @@
 	text-transform: uppercase;
 	font-size: 0.85rem;
 }
+.user-app .main-content {
+  flex: 1;
+  min-height: calc(100vh - 80px);
+}

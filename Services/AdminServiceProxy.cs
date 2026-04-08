@@ -1,5 +1,8 @@
 using Omnichannel.Models;
+using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Security.Claims;
 using System.Threading.Tasks;
 
 namespace Omnichannel.Services
@@ -48,29 +51,41 @@ namespace Omnichannel.Services
     public class SecurityProxy : IAdminService
     {
         private readonly IAdminService _realService;
-        private readonly string _userRole;
+        private readonly ClaimsPrincipal _principal;
 
-        public SecurityProxy(IAdminService realService, string userRole)
+        public SecurityProxy(IAdminService realService, ClaimsPrincipal principal)
         {
             _realService = realService;
-            _userRole = userRole;
+            _principal = principal;
+        }
+
+        private void EnsureAdmin()
+        {
+            var isAdmin = _principal.Claims
+                .Where(c => c.Type == ClaimTypes.Role)
+                .Any(c => string.Equals(c.Value, "Admin", StringComparison.OrdinalIgnoreCase));
+
+            if (!isAdmin)
+            {
+                throw new UnauthorizedAccessException("Chỉ Admin mới có quyền thực hiện.");
+            }
         }
 
         public Task<bool> CreateProductAsync(Perfume perfume)
         {
-            if (_userRole != "Admin") throw new System.UnauthorizedAccessException("Chỉ Admin mới có quyền thực hiện.");
+            EnsureAdmin();
             return _realService.CreateProductAsync(perfume);
         }
 
         public Task<bool> UpdateProductAsync(Perfume perfume)
         {
-            if (_userRole != "Admin") throw new System.UnauthorizedAccessException("Chỉ Admin mới có quyền thực hiện.");
+            EnsureAdmin();
             return _realService.UpdateProductAsync(perfume);
         }
 
         public Task<bool> DeleteProductAsync(int id)
         {
-            if (_userRole != "Admin") throw new System.UnauthorizedAccessException("Chỉ Admin mới có quyền thực hiện.");
+            EnsureAdmin();
             return _realService.DeleteProductAsync(id);
         }
     }

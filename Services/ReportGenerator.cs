@@ -30,7 +30,7 @@ namespace Omnichannel.Services
         protected virtual object FormatReport(List<decimal> data)
         {
             return new { 
-                timestamp = DateTime.Now,
+                timestamp = DateTime.UtcNow,
                 data = data,
                 total = data.Sum()
             };

@@ -7,6 +7,6 @@ namespace Omnichannel.Models
         public bool IsActive { get; set; } = true;
         public string? ApiKey { get; set; }
         public string? LogoUrl { get; set; }
-        public DateTime CreatedAt { get; set; } = DateTime.Now;
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     }
 }

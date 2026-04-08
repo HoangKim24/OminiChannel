@@ -1,4 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.Extensions.Hosting;
 using Omnichannel.Infrastructure;
 using Omnichannel.Models;
 using System;
@@ -13,11 +15,20 @@ namespace Omnichannel.Controllers
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly Services.IRecommendationFacade _recommendationFacade;
+        private readonly IHostEnvironment _hostEnvironment;
 
-        public PerfumesController(IUnitOfWork unitOfWork, Services.IRecommendationFacade recommendationFacade)
+        public PerfumesController(IUnitOfWork unitOfWork, Services.IRecommendationFacade recommendationFacade, IHostEnvironment hostEnvironment)
         {
             _unitOfWork = unitOfWork;
             _recommendationFacade = recommendationFacade;
+            _hostEnvironment = hostEnvironment;
+        }
+
+        private string GetSafeErrorDetail(Exception ex)
+        {
+            return _hostEnvironment.IsDevelopment()
+                ? ex.Message
+                : "Đã xảy ra lỗi, vui lòng thử lại sau";
         }
 
         [HttpGet]
@@ -36,28 +47,24 @@ namespace Omnichannel.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult<Perfume>> CreatePerfume(
-            [FromHeader(Name = "X-User-Role")] string role,
-            [FromBody] Perfume perfume)
+        [Authorize(Roles = "Admin")]
+        public async Task<ActionResult<Perfume>> CreatePerfume([FromBody] Perfume perfume)
         {
             try
             {
-                var proxy = new Services.SecurityProxy(new Services.AdminService(_unitOfWork), role);
-                await proxy.CreateProductAsync(perfume);
+                var adminService = new Services.AdminService(_unitOfWork);
+                await adminService.CreateProductAsync(perfume);
                 return CreatedAtAction(nameof(GetPerfume), new { id = perfume.Id }, perfume);
-            }
-            catch (UnauthorizedAccessException)
-            {
-                return StatusCode(403, new { message = "Chỉ Admin mới có quyền tạo sản phẩm" });
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { message = "Lỗi khi tạo sản phẩm", error = ex.Message });
+                return StatusCode(500, new { message = "Lỗi khi tạo sản phẩm", error = GetSafeErrorDetail(ex) });
             }
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdatePerfume(int id, [FromHeader(Name = "X-User-Role")] string role, [FromBody] Perfume perfume)
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> UpdatePerfume(int id, [FromBody] Perfume perfume)
         {
             if (id != perfume.Id) return BadRequest(new { message = "ID không khớp" });
 
@@ -66,37 +73,30 @@ namespace Omnichannel.Controllers
                 var existing = await _unitOfWork.Perfumes.GetByIdAsync(id);
                 if (existing == null) return NotFound(new { message = $"Sản phẩm ID={id} không tồn tại" });
 
-                var proxy = new Services.SecurityProxy(new Services.AdminService(_unitOfWork), role);
-                await proxy.UpdateProductAsync(perfume);
+                var adminService = new Services.AdminService(_unitOfWork);
+                await adminService.UpdateProductAsync(perfume);
                 return NoContent();
-            }
-            catch (UnauthorizedAccessException)
-            {
-                return StatusCode(403, new { message = "Chỉ Admin mới có quyền cập nhật sản phẩm" });
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { message = "Lỗi khi cập nhật sản phẩm", error = ex.Message });
+                return StatusCode(500, new { message = "Lỗi khi cập nhật sản phẩm", error = GetSafeErrorDetail(ex) });
             }
         }
 
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeletePerfume(int id, [FromHeader(Name = "X-User-Role")] string role)
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> DeletePerfume(int id)
         {
             try
             {
-                var proxy = new Services.SecurityProxy(new Services.AdminService(_unitOfWork), role);
-                var success = await proxy.DeleteProductAsync(id);
+                var adminService = new Services.AdminService(_unitOfWork);
+                var success = await adminService.DeleteProductAsync(id);
                 if (!success) return NotFound(new { message = $"Sản phẩm ID={id} không tồn tại" });
                 return NoContent();
             }
-            catch (UnauthorizedAccessException)
-            {
-                return StatusCode(403, new { message = "Chỉ Admin mới có quyền xóa sản phẩm" });
-            }
             catch (Exception ex)
             {
-                return StatusCode(500, new { message = "Lỗi khi xóa sản phẩm", error = ex.Message });
+                return StatusCode(500, new { message = "Lỗi khi xóa sản phẩm", error = GetSafeErrorDetail(ex) });
             }
         }
         [HttpPost("recommend")]
@@ -126,7 +126,7 @@ namespace Omnichannel.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { message = "Lỗi khi lấy gợi ý sản phẩm", error = ex.Message });
+                return StatusCode(500, new { message = "Lỗi khi lấy gợi ý sản phẩm", error = GetSafeErrorDetail(ex) });
             }
         }
 
@@ -154,7 +154,7 @@ namespace Omnichannel.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { message = "Lỗi khi lấy gợi ý theo sở thích", error = ex.Message });
+                return StatusCode(500, new { message = "Lỗi khi lấy gợi ý theo sở thích", error = GetSafeErrorDetail(ex) });
             }
         }
     }
