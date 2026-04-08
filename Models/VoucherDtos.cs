@@ -90,4 +90,17 @@ namespace Omnichannel.Models
         public bool IsDeleted { get; set; }
         public int TotalRedemptions { get; set; }
     }
+
+    public class PublicVoucherListItemResponse
+    {
+        public string Code { get; set; } = string.Empty;
+        public string Name { get; set; } = string.Empty;
+        public string? Description { get; set; }
+        public string VoucherType { get; set; } = string.Empty;
+        public string DiscountType { get; set; } = string.Empty;
+        public decimal DiscountValue { get; set; }
+        public decimal? MaxDiscountAmount { get; set; }
+        public decimal MinOrderValue { get; set; }
+        public DateTime EndAt { get; set; }
+    }
 }

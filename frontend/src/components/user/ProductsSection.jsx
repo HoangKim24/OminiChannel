@@ -47,7 +47,7 @@ const ProductsSection = () => {
       .filter(p => filterGender === 'All' || p.gender === filterGender)
       .filter(p => filterFamily === 'All' || (p.description + p.name).toLowerCase().includes(filterFamily.toLowerCase()))
       .filter(p => filterConcentration === 'All' || (p.concentration && p.concentration.toLowerCase().includes(filterConcentration.toLowerCase())))
-      .filter(p => p.price * 24000 <= priceRange)
+      .filter(p => p.price <= priceRange)
       .sort((a, b) => {
         if (sortBy === 'price-asc') return a.price - b.price;
         if (sortBy === 'price-desc') return b.price - a.price;
@@ -56,7 +56,7 @@ const ProductsSection = () => {
       });
   }, [products, searchTerm, filterGender, filterFamily, filterConcentration, priceRange, sortBy]);
 
-  const vnd = (price) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price * 24000);
+  const vnd = (price) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price || 0);
 
   return (
     <section id="products" className="products-section" style={{ scroll: 'smooth' }}>

@@ -1,7 +1,7 @@
 /* User layout is fully scoped to avoid admin leakage */
 .user-app {
   min-height: 100vh;
-  background: var(--luxury-bg);
+  background: var(--bg-primary);
   color: var(--text-primary);
   font-family: var(--font-sans);
 }

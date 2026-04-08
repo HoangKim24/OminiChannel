@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { vnd } from '../../../utils/format';
-import { useToast } from '../../../utils/toastContext.jsx';
+import { useToast } from '../../../utils/useToast.jsx';
 import CustomerDetailModal from '../modals/CustomerDetailModal';
 
 const CustomersTab = ({ user }) => {
@@ -15,7 +15,10 @@ const CustomersTab = ({ user }) => {
       try {
         setIsLoading(true);
         const res = await fetch('/api/statistics/customers', {
-          headers: { 'X-User-Role': user?.role || 'Admin' }
+          headers: {
+            ...(user?.role ? { 'X-User-Role': user.role } : {}),
+            ...(user?.accessToken ? { Authorization: `Bearer ${user.accessToken}` } : {}),
+          }
         });
         if (!res.ok) throw new Error('Failed to fetch customers');
         const data = await res.json();
@@ -29,7 +32,7 @@ const CustomersTab = ({ user }) => {
     };
 
     fetchCustomers();
-  }, [user?.role, error]);
+  }, [user?.accessToken, user?.role, error]);
 
   const filteredCustomers = useMemo(() => {
     return customers.filter(c => {

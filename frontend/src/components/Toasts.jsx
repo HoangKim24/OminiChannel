@@ -1,4 +1,4 @@
-import { useToast } from '../utils/toastContext.jsx';
+import { useToast } from '../utils/useToast.jsx';
 import './Toasts.css';
 
 const Toasts = () => {

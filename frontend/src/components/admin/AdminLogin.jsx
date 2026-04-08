@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppStore } from '../../store/useAppStore';
+import { useToast } from '../../utils/useToast.jsx';
 import '../../styles/AdminLogin.css';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || '';
@@ -8,7 +9,7 @@ const API_BASE = import.meta.env.VITE_API_BASE_URL || '';
 const AdminLogin = () => {
     const navigate = useNavigate();
     const setUser = useAppStore(state => state.setUser);
-    const showToast = useAppStore(state => state.showToast);
+    const { success, error } = useToast();
     const [formData, setFormData] = useState({ username: '', password: '' });
     const [loading, setLoading] = useState(false);
 
@@ -25,13 +26,13 @@ const AdminLogin = () => {
             
             if (res.ok) {
                 setUser({ id: data.id, username: data.username, role: data.role, accessToken: data.accessToken, fullName: data.fullName });
-                showToast(`Chào mừng Admin ${data.fullName || data.username} trở lại!`, 'success');
+                success(`Chào mừng Admin ${data.fullName || data.username} trở lại!`);
                 navigate('/admin', { replace: true });
             } else {
-                showToast(data.message || 'Đăng nhập admin thất bại', 'error');
+                error(data.message || 'Đăng nhập admin thất bại');
             }
         } catch {
-            showToast('Lỗi kết nối máy chủ', 'error');
+            error('Lỗi kết nối máy chủ');
         } finally {
             setLoading(false);
         }

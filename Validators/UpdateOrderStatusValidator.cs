@@ -9,7 +9,7 @@ namespace Omnichannel.Validators
         {
             RuleFor(x => x.Status)
                 .NotEmpty().WithMessage("Trạng thái đơn hàng là bắt buộc")
-                .Must(x => new[] { "Pending", "Confirmed", "Shipping", "Completed", "Cancelled", "Paid", "Payment Failed" }.Contains(x))
+                .Must(x => new[] { "Pending", "PendingPayment", "Paid", "Confirmed", "Placed", "Shipping", "Completed", "Cancelled", "Payment Failed" }.Contains(x))
                 .WithMessage("Trạng thái đơn hàng không hợp lệ");
         }
     }

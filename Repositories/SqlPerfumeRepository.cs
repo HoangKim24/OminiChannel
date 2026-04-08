@@ -48,7 +48,13 @@ namespace Omnichannel.Repositories
 
         public void Update(Perfume entity)
         {
-            _context.Perfumes.Update(entity);
+            var local = _context.Perfumes.Local.FirstOrDefault(p => p.Id == entity.Id);
+            if (local != null)
+            {
+                _context.Entry(local).State = EntityState.Detached;
+            }
+
+            _context.Entry(entity).State = EntityState.Modified;
         }
 
         public void Delete(Perfume entity)

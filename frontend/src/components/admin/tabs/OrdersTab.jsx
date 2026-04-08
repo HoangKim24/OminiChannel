@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { vnd } from '../../../utils/format';
-import { useToast } from '../../../utils/toastContext.jsx';
+import { useToast } from '../../../utils/useToast.jsx';
 
 const OrdersTab = ({ orders, user, onRefresh }) => {
   const { success, error } = useToast();
@@ -77,7 +77,8 @@ const OrdersTab = ({ orders, user, onRefresh }) => {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          'X-User-Role': user?.role || 'Admin'
+          ...(user?.role ? { 'X-User-Role': user.role } : {}),
+          ...(user?.accessToken ? { Authorization: `Bearer ${user.accessToken}` } : {}),
         },
         body: JSON.stringify({ status: newStatus })
       });

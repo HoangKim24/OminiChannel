@@ -6,6 +6,7 @@ const Navbar = ({ setIsCartOpen }) => {
   const [scrolled, setScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -39,13 +40,39 @@ const Navbar = ({ setIsCartOpen }) => {
 
   const cartCount = cart.reduce((a, b) => a + b.quantity, 0);
   const closeMobileMenu = () => setIsMobileMenuOpen(false);
+  const closeMenu = () => setIsMenuOpen(false);
   const filteredProducts = products.filter(p => p.name.toLowerCase().includes(searchTerm.toLowerCase()));
-  const vnd = (price) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price * 24000);
+  const vnd = (price) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price || 0);
+
+  const openProfile = () => {
+    closeMenu();
+    navigate('/profile');
+    closeMobileMenu();
+  };
+
+  const openInvoiceDetails = () => {
+    closeMenu();
+    navigate('/orders/latest');
+    closeMobileMenu();
+  };
+
+  const openQuestionFinder = () => {
+    setQuizOpen(true);
+    closeMenu();
+    closeMobileMenu();
+  };
+
+  const handleLogout = () => {
+    logout();
+    closeMenu();
+    closeMobileMenu();
+    navigate('/');
+  };
 
   return (
     <nav className={scrolled ? 'scrolled' : ''}>
       <div className="container">
-        <Link to="/" className="logo" onClick={closeMobileMenu}>KP LUXURY</Link>
+        <Link to="/" className="logo" onClick={() => { closeMenu(); closeMobileMenu(); }}>KP LUXURY</Link>
         <button
           className="mobile-menu-toggle"
           type="button"
@@ -95,18 +122,32 @@ const Navbar = ({ setIsCartOpen }) => {
             )}
           </div>
 
-          <button type="button" className="nav-link-btn" onClick={() => { setQuizOpen(true); closeMobileMenu(); }}>Fragrance Finder</button>
-          
           <Link to="/" className="nav-link-btn" onClick={closeMobileMenu}>Bộ Sưu Tập</Link>
 
-          {user ? (
-            <>
-              <Link to="/profile" className="nav-link-btn" onClick={closeMobileMenu}>Hồ Sơ Của Tôi</Link>
-              <button type="button" className="nav-link-btn" onClick={() => { logout(); closeMobileMenu(); navigate('/'); }}>Đăng Xuất</button>
-            </>
-          ) : (
-            <button type="button" className="nav-link-btn" onClick={() => { setAuthModal('login'); closeMobileMenu(); }}>Đăng Nhập</button>
-          )}
+          <div className="nav-menu-wrap">
+            <button
+              type="button"
+              className="nav-link-btn nav-menu-btn"
+              onClick={() => setIsMenuOpen((prev) => !prev)}
+              aria-label="Mở menu hồ sơ"
+              aria-expanded={isMenuOpen}
+            >
+              ☰
+            </button>
+
+            {isMenuOpen && (
+              <div className="nav-menu-panel" role="menu" aria-label="Menu hồ sơ">
+                <button type="button" className="nav-menu-item" onClick={openProfile}>Hồ sơ</button>
+                <button type="button" className="nav-menu-item" onClick={openInvoiceDetails}>Chi tiết hóa đơn</button>
+                <button type="button" className="nav-menu-item" onClick={openQuestionFinder}>Câu hỏi</button>
+                {user ? (
+                  <button type="button" className="nav-menu-item danger" onClick={handleLogout}>Đăng xuất</button>
+                ) : (
+                  <button type="button" className="nav-menu-item" onClick={() => { setAuthModal('login'); closeMenu(); closeMobileMenu(); }}>Đăng nhập</button>
+                )}
+              </div>
+            )}
+          </div>
 
           <button type="button" className="cart-cta" onClick={() => { setIsCartOpen(true); closeMobileMenu(); }}>
             <span>🛒</span>

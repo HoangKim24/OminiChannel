@@ -14,7 +14,7 @@ const InventoryTab = ({ products, channelProducts, user }) => {
         setLoading(true);
         const res = await fetch(`${API_BASE}/api/statistics/inventory`, {
           headers: {
-            'X-User-Role': user?.role || 'Admin',
+            ...(user?.role ? { 'X-User-Role': user.role } : {}),
             ...(user?.accessToken ? { Authorization: `Bearer ${user.accessToken}` } : {}),
           },
         });

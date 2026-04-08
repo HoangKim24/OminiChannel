@@ -11,8 +11,6 @@ import {
 import { vnd } from '../../../utils/format';
 import './OverviewTab.css';
 
-const FALLBACK_RATIO = [0.1, 0.13, 0.16, 0.14, 0.18, 0.14, 0.15];
-
 const shortMonthLabel = (date) => `T${date.getMonth() + 1}`;
 
 const monthKey = (date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
@@ -108,9 +106,12 @@ const OverviewTab = ({ products, orders, user }) => {
     setError('');
 
     try {
-      const userRole = String(user?.role || 'Admin').trim();
+      const userRole = String(user?.role || '').trim();
       const res = await fetch('/api/statistics/dashboard', {
-        headers: { 'X-User-Role': userRole },
+        headers: {
+          ...(userRole ? { 'X-User-Role': userRole } : {}),
+          ...(user?.accessToken ? { Authorization: `Bearer ${user.accessToken}` } : {}),
+        },
       });
 
       if (!res.ok) {
@@ -134,7 +135,7 @@ const OverviewTab = ({ products, orders, user }) => {
     } finally {
       setIsLoading(false);
     }
-  }, [user?.role]);
+  }, [user?.accessToken, user?.role]);
 
   useEffect(() => {
     fetchDashboard();

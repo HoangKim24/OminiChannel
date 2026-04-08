@@ -32,6 +32,6 @@
 
 .user-app {
   font-family: var(--font-sans);
-  background-color: var(--luxury-bg);
+  background-color: var(--bg-primary);
   color: #fff;
 }

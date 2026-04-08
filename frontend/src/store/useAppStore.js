@@ -59,12 +59,75 @@ const normalizeChannelProduct = (channelProduct) => ({
 
 const isAdminRole = (role) => String(role || '').trim().toLowerCase() === 'admin'
 
+const parseJwtPayload = (token) => {
+  try {
+    if (!token || typeof token !== 'string') return null
+    const parts = token.split('.')
+    if (parts.length < 2) return null
+    const base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/')
+    const json = decodeURIComponent(
+      atob(base64)
+        .split('')
+        .map((c) => `%${(`00${c.charCodeAt(0).toString(16)}`).slice(-2)}`)
+        .join('')
+    )
+    return JSON.parse(json)
+  } catch {
+    return null
+  }
+}
+
+const getRoleFromToken = (token) => {
+  const payload = parseJwtPayload(token)
+  if (!payload) return null
+  const role = payload['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'] ?? payload.role
+  if (typeof role === 'string' && role.trim()) return role.trim()
+  if (Array.isArray(role) && typeof role[0] === 'string' && role[0].trim()) return role[0].trim()
+  return null
+}
+
+const getUserIdFromToken = (token) => {
+  const payload = parseJwtPayload(token)
+  if (!payload) return null
+  const rawId = payload['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier'] ?? payload.nameid ?? payload.sub
+  const parsedId = Number.parseInt(String(rawId ?? ''), 10)
+  return Number.isFinite(parsedId) ? parsedId : null
+}
+
+const isTokenExpired = (token) => {
+  const payload = parseJwtPayload(token)
+  if (!payload?.exp) return false
+  const nowSeconds = Math.floor(Date.now() / 1000)
+  return nowSeconds >= Number(payload.exp)
+}
+
+const normalizeAuthUser = (user) => {
+  if (!user) return null
+
+  const token = user.accessToken
+  const tokenRole = getRoleFromToken(token)
+  const tokenUserId = getUserIdFromToken(token)
+
+  return {
+    ...user,
+    id: tokenUserId ?? user.id,
+    role: tokenRole ?? user.role,
+  }
+}
+
 export const useAppStore = create(
   persist(
     (set, get) => ({
       // User Auth
       user: null,
-      setUser: (user) => set({ user }),
+      setUser: (user) => {
+        const normalizedUser = normalizeAuthUser(user)
+        if (normalizedUser?.accessToken && isTokenExpired(normalizedUser.accessToken)) {
+          set({ user: null })
+          return
+        }
+        set({ user: normalizedUser })
+      },
       logout: () => set({ user: null }),
 
       // Cart
@@ -225,6 +288,19 @@ export const useAppStore = create(
     {
       name: 'kp-storage', // unique localstorage key
       partialize: (state) => ({ user: state.user, cart: state.cart, cartNote: state.cartNote, favorites: state.favorites }),
+      merge: (persistedState, currentState) => {
+        const mergedState = {
+          ...currentState,
+          ...(persistedState || {}),
+        }
+
+        const persistedUser = normalizeAuthUser(mergedState.user)
+        mergedState.user = persistedUser?.accessToken && isTokenExpired(persistedUser.accessToken)
+          ? null
+          : persistedUser
+
+        return mergedState
+      },
     }
   )
 )

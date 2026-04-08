@@ -9,7 +9,7 @@ const FavoritesPage = () => {
   const addToCart = useAppStore(state => state.addToCart)
 
   const favoriteProducts = products.filter(p => favorites.includes(p.id))
-  const vnd = (price) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price * 24000)
+  const vnd = (price) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price || 0)
 
   return (
     <section className="products-section" style={{ paddingTop: '100px', minHeight: '80vh' }}>

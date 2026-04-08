@@ -22,6 +22,75 @@ namespace Omnichannel.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("Omnichannel.Models.BankTransferPayment", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("AccountName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("AccountNo")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("AppliedVoucherSnapshotJson")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("BankName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ExternalTransactionId")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("OrderId")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("PaidAmount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime?>("PaidAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("PaymentCode")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("QrUrl")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("TransferContent")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OrderId")
+                        .IsUnique();
+
+                    b.HasIndex("PaymentCode")
+                        .IsUnique();
+
+                    b.ToTable("BankTransferPayments", (string)null);
+                });
+
             modelBuilder.Entity("Omnichannel.Models.Category", b =>
                 {
                     b.Property<int>("Id")
@@ -325,7 +394,7 @@ namespace Omnichannel.Migrations
                             MiddleNotes = "Rose, Jasmine",
                             Name = "Golden Bloom",
                             Origin = "France",
-                            Price = 89.99m,
+                            Price = 2159760m,
                             StockQuantity = 120,
                             TopNotes = "Bergamot, Orange Blossom",
                             VolumeOptions = "30ml:0.7,50ml:1.0,100ml:1.6"
@@ -344,7 +413,7 @@ namespace Omnichannel.Migrations
                             MiddleNotes = "Lavender, Sage",
                             Name = "Midnight Cedar",
                             Origin = "Italy",
-                            Price = 99.50m,
+                            Price = 2388000m,
                             StockQuantity = 90,
                             TopNotes = "Grapefruit, Pepper",
                             VolumeOptions = "50ml:1.0,100ml:1.6"
@@ -363,7 +432,7 @@ namespace Omnichannel.Migrations
                             MiddleNotes = "Neroli, Green Tea",
                             Name = "Ocean Whisper",
                             Origin = "Spain",
-                            Price = 79.00m,
+                            Price = 1896000m,
                             StockQuantity = 140,
                             TopNotes = "Lemon, Sea Salt",
                             VolumeOptions = "30ml:0.7,50ml:1.0,100ml:1.6"
@@ -612,8 +681,8 @@ namespace Omnichannel.Migrations
                             EndAt = new DateTime(2026, 12, 31, 23, 59, 59, 0, DateTimeKind.Utc),
                             IsActive = true,
                             IsDeleted = false,
-                            MaxDiscountAmount = 4.17m,
-                            MinOrderValue = 15m,
+                            MaxDiscountAmount = 100080m,
+                            MinOrderValue = 360000m,
                             Name = "Welcome 10%",
                             StartAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             UsageLimitPerUser = 1,
@@ -626,11 +695,11 @@ namespace Omnichannel.Migrations
                             Code = "ORDER50K",
                             Description = "Giảm 50,000đ trên tổng đơn hàng",
                             DiscountType = "FixedAmount",
-                            DiscountValue = 2.08m,
+                            DiscountValue = 49920m,
                             EndAt = new DateTime(2026, 12, 31, 23, 59, 59, 0, DateTimeKind.Utc),
                             IsActive = true,
                             IsDeleted = false,
-                            MinOrderValue = 20m,
+                            MinOrderValue = 480000m,
                             Name = "Order -50K",
                             StartAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             UsageLimitPerUser = 2,
@@ -647,8 +716,8 @@ namespace Omnichannel.Migrations
                             EndAt = new DateTime(2026, 12, 31, 23, 59, 59, 0, DateTimeKind.Utc),
                             IsActive = true,
                             IsDeleted = false,
-                            MaxDiscountAmount = 8.33m,
-                            MinOrderValue = 40m,
+                            MaxDiscountAmount = 199920m,
+                            MinOrderValue = 960000m,
                             Name = "VIP 15%",
                             SalesChannelId = 1,
                             StartAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
@@ -662,11 +731,11 @@ namespace Omnichannel.Migrations
                             Code = "SHIP20K",
                             Description = "Giảm 20,000đ phí ship",
                             DiscountType = "FixedAmount",
-                            DiscountValue = 0.83m,
+                            DiscountValue = 19920m,
                             EndAt = new DateTime(2026, 12, 31, 23, 59, 59, 0, DateTimeKind.Utc),
                             IsActive = true,
                             IsDeleted = false,
-                            MinOrderValue = 12m,
+                            MinOrderValue = 288000m,
                             Name = "Ship -20K",
                             StartAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             UsageLimitPerUser = 3,
@@ -683,8 +752,8 @@ namespace Omnichannel.Migrations
                             EndAt = new DateTime(2026, 12, 31, 23, 59, 59, 0, DateTimeKind.Utc),
                             IsActive = true,
                             IsDeleted = false,
-                            MaxDiscountAmount = 2.08m,
-                            MinOrderValue = 20m,
+                            MaxDiscountAmount = 49920m,
+                            MinOrderValue = 480000m,
                             Name = "Ship 10%",
                             SalesChannelId = 1,
                             StartAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),

@@ -1,9 +1,6 @@
 /* AdminLayout.css */
-:root {
-  --admin-sidebar-w: 260px;
-}
-
-* {
+.al-layout,
+.al-layout * {
   box-sizing: border-box;
 }
 

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { useAppStore } from '../store/useAppStore'
 import RecommendationSection from '../components/RecommendationSection'
@@ -120,14 +120,16 @@ const ProductDetailPage = () => {
     }
   }, [id, products])
 
-  const parsedSizes = parseVolumeOptions(product?.volumeOptions)
-  const sizes = parsedSizes.length > 0
-    ? parsedSizes
-    : [
-        { label: '30ml', multiplier: 0.7 },
-        { label: '50ml', multiplier: 1 },
-        { label: '100ml', multiplier: 1.6 },
-      ]
+  const sizes = useMemo(() => {
+    const parsedSizes = parseVolumeOptions(product?.volumeOptions)
+    return parsedSizes.length > 0
+      ? parsedSizes
+      : [
+          { label: '30ml', multiplier: 0.7 },
+          { label: '50ml', multiplier: 1 },
+          { label: '100ml', multiplier: 1.6 },
+        ]
+  }, [product?.volumeOptions])
   const activeSize = sizes.find(sz => sz.label === selectedSize) || sizes[1] || sizes[0]
   const currentPrice = (product?.price || 0) * (activeSize.multiplier || 1)
   const stockQty = product?.stockQuantity ?? 0
@@ -140,7 +142,7 @@ const ProductDetailPage = () => {
       const defaultSize = sizes.find(size => size.label === '50ml') || sizes[0]
       if (defaultSize) setSelectedSize(defaultSize.label)
     }
-  }, [product?.volumeOptions, selectedSize])
+  }, [sizes, selectedSize])
 
   if (productLoading) return <div className="container" style={{ padding: '80px 0', textAlign: 'center' }}>Đang tải sản phẩm...</div>
   if (!product) return <div className="container" style={{ padding: '80px 0', textAlign: 'center' }}>Không tìm thấy sản phẩm.</div>
@@ -208,7 +210,7 @@ const ProductDetailPage = () => {
     }
   }
 
-  const vnd = (price) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price * 24000)
+  const vnd = (price) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price || 0)
   
   const avgRating = comments.length ? (comments.reduce((s, c) => s + c.stars, 0) / comments.length) : 5.0
   const related = products

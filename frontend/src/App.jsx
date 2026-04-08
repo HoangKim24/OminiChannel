@@ -17,6 +17,7 @@ const ProductDetailPage = lazy(() => import('./pages/ProductDetailPage'));
 const CartPage = lazy(() => import('./pages/CartPage'));
 const CheckoutPage = lazy(() => import('./pages/CheckoutPage'));
 const ProfilePage = lazy(() => import('./pages/ProfilePage'));
+const InvoiceDetailPage = lazy(() => import('./pages/InvoiceDetailPage'));
 const FavoritesPage = lazy(() => import('./pages/FavoritesPage'));
 const AdminDashboard = lazy(() => import('./AdminDashboard'));
 
@@ -70,7 +71,7 @@ const App = () => {
     }
   }, [location.hash, location.pathname, location.search, navigate, normalizedPathname]);
 
-  const vnd = (price) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price * 24000);
+  const vnd = (price) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price || 0);
   const cartTotal = cart.reduce((s, item) => s + item.price * item.quantity, 0);
   const routeFallback = <div className="loading-state">Đang tải...</div>;
   const uiFallback = <></>;
@@ -89,6 +90,8 @@ const App = () => {
             <Route path="/cart" element={<CartPage />} />
             <Route path="/checkout" element={<CheckoutPage />} />
             <Route path="/profile" element={<ProfilePage />} />
+            <Route path="/orders" element={<InvoiceDetailPage />} />
+            <Route path="/orders/:orderId" element={<InvoiceDetailPage />} />
             <Route path="/favorites" element={<FavoritesPage />} />
             <Route
               path="/admin/*"

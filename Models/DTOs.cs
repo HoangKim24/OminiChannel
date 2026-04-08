@@ -104,6 +104,47 @@ namespace Omnichannel.Models
         public int Quantity { get; set; }
     }
 
+    public class CreateBankTransferPaymentResponse
+    {
+        public int OrderId { get; set; }
+        public string PaymentCode { get; set; } = string.Empty;
+        public decimal Amount { get; set; }
+        public string BankName { get; set; } = string.Empty;
+        public string AccountNo { get; set; } = string.Empty;
+        public string AccountName { get; set; } = string.Empty;
+        public string QrUrl { get; set; } = string.Empty;
+        public string Status { get; set; } = "PendingPayment";
+    }
+
+    public class BankTransferPaymentStatusResponse
+    {
+        public int OrderId { get; set; }
+        public string PaymentCode { get; set; } = string.Empty;
+        public decimal Amount { get; set; }
+        public decimal PaidAmount { get; set; }
+        public bool IsPaid { get; set; }
+        public string PaymentStatus { get; set; } = string.Empty;
+        public string OrderStatus { get; set; } = string.Empty;
+        public string Message { get; set; } = string.Empty;
+    }
+
+    public class BankTransferVerificationRequest
+    {
+        [Required]
+        public string PaymentCode { get; set; } = string.Empty;
+
+        [Range(0, double.MaxValue)]
+        public decimal PaidAmount { get; set; }
+
+        [Required]
+        public string TransferContent { get; set; } = string.Empty;
+
+        [Required]
+        public string DestinationAccountNo { get; set; } = string.Empty;
+
+        public string? ExternalTransactionId { get; set; }
+    }
+
     // ========== COMMENTS ==========
 
     public class CreateCommentRequest

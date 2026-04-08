@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppStore } from '../store/useAppStore';
-import { useToast } from '../utils/toastContext.jsx';
+import { useToast } from '../utils/useToast.jsx';
 import './ProfilePage.css';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || '';
 
-const vnd = (price) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(Number(price || 0) * 24000);
+const vnd = (price) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(Number(price || 0));
 
 const normalizeUser = (user) => ({
   id: user?.id ?? user?.Id,
@@ -17,6 +17,41 @@ const normalizeUser = (user) => ({
   address: user?.address ?? user?.Address ?? '',
   role: user?.role ?? user?.Role ?? 'User',
 });
+
+const normalizeOrderItem = (item) => ({
+  id: item?.id ?? item?.Id,
+  perfumeId: item?.perfumeId ?? item?.PerfumeId,
+  perfumeName: item?.perfumeName ?? item?.PerfumeName ?? 'Sản phẩm',
+  quantity: Number(item?.quantity ?? item?.Quantity ?? 0),
+  price: Number(item?.price ?? item?.Price ?? 0),
+});
+
+const normalizeOrder = (order) => ({
+  id: order?.id ?? order?.Id,
+  userId: order?.userId ?? order?.UserId,
+  orderDate: order?.orderDate ?? order?.OrderDate,
+  totalAmount: Number(order?.totalAmount ?? order?.TotalAmount ?? 0),
+  status: order?.status ?? order?.Status ?? 'Pending',
+  shippingAddress: order?.shippingAddress ?? order?.ShippingAddress ?? '',
+  receiverPhone: order?.receiverPhone ?? order?.ReceiverPhone ?? '',
+  note: order?.note ?? order?.Note ?? '',
+  isPickup: order?.isPickup ?? order?.IsPickup ?? false,
+  voucherCode: order?.voucherCode ?? order?.VoucherCode ?? '',
+  discountAmount: Number(order?.discountAmount ?? order?.DiscountAmount ?? 0),
+  items: (() => {
+    const rawItems = order?.items ?? order?.Items;
+    return Array.isArray(rawItems) ? rawItems.map(normalizeOrderItem) : [];
+  })(),
+});
+
+const getOrderStatusLabel = (status) => {
+  const value = String(status || 'Pending').trim().toLowerCase();
+  if (value === 'confirmed') return 'Đã xác nhận';
+  if (value === 'shipping') return 'Đang giao';
+  if (value === 'completed') return 'Đã hoàn tất';
+  if (value === 'cancelled') return 'Đã hủy';
+  return 'Chờ xác nhận';
+};
 
 const ProfilePage = () => {
   const navigate = useNavigate();
@@ -119,7 +154,11 @@ const ProfilePage = () => {
       .slice(0, 3);
   }, [orders]);
 
-  const recentOrders = useMemo(() => (Array.isArray(orders) ? orders.slice(0, 5) : []), [orders]);
+  const sortedOrders = useMemo(() => {
+    return (Array.isArray(orders) ? orders : [])
+      .map(normalizeOrder)
+      .sort((a, b) => new Date(b.orderDate || 0) - new Date(a.orderDate || 0));
+  }, [orders]);
 
   const handleProfileSubmit = async (event) => {
     event.preventDefault();
@@ -304,25 +343,34 @@ const ProfilePage = () => {
             <h2>Đơn hàng gần đây</h2>
             {loadingOrders ? (
               <div className="profile-loading">Đang tải lịch sử đơn hàng...</div>
-            ) : recentOrders.length === 0 ? (
+            ) : sortedOrders.length === 0 ? (
               <div className="profile-empty">Bạn chưa có đơn hàng nào.</div>
             ) : (
               <div className="profile-order-list">
-                {recentOrders.map((order) => {
-                  const id = order.id ?? order.Id;
-                  const items = order.items || order.Items || [];
-                  const total = order.totalAmount ?? order.TotalAmount ?? 0;
-                  const status = order.status || order.Status || 'Pending';
+                {sortedOrders.map((order) => {
                   return (
-                    <article key={id} className="profile-order-card">
-                      <div className="profile-order-head">
-                        <strong>#{id}</strong>
-                        <span>{status}</span>
-                      </div>
-                      <p>{order.orderDate ? new Date(order.orderDate).toLocaleDateString('vi-VN') : 'Chưa xác định ngày'}</p>
-                      <div className="profile-order-meta">
-                        <span>{items.length} sản phẩm</span>
-                        <strong>{vnd(total)}</strong>
+                    <article key={order.id} className="profile-order-card">
+                      <div className="profile-order-summary">
+                        <div className="profile-order-head">
+                          <strong>#{order.id}</strong>
+                          <span className={`order-status order-status-${String(order.status || 'pending').toLowerCase()}`}>
+                            {getOrderStatusLabel(order.status)}
+                          </span>
+                        </div>
+                        <p>{order.orderDate ? new Date(order.orderDate).toLocaleDateString('vi-VN') : 'Chưa xác định ngày'}</p>
+                        <div className="profile-order-timeline">
+                          <div className={`status-dot ${['pending', 'confirmed', 'shipping', 'completed'].includes(String(order.status || '').toLowerCase()) ? 'done' : ''}`} />
+                          <div className={`status-dot ${['confirmed', 'shipping', 'completed'].includes(String(order.status || '').toLowerCase()) ? 'done' : ''}`} />
+                          <div className={`status-dot ${['shipping', 'completed'].includes(String(order.status || '').toLowerCase()) ? 'done' : ''}`} />
+                          <div className={`status-dot ${String(order.status || '').toLowerCase() === 'completed' ? 'done' : ''}`} />
+                        </div>
+                        <div className="profile-order-meta">
+                          <span>{order.items.length} sản phẩm</span>
+                          <strong>{vnd(order.totalAmount)}</strong>
+                        </div>
+                        <button type="button" className="profile-order-detail-btn" onClick={() => navigate(`/orders/${order.id}`)}>
+                          Xem chi tiết hóa đơn
+                        </button>
                       </div>
                     </article>
                   );

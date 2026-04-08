@@ -7,6 +7,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Microsoft.Data.SqlClient;
+using Microsoft.AspNetCore.Hosting.Server;
+using Microsoft.AspNetCore.Hosting.Server.Features;
 using Omnichannel.Infrastructure;
 using Omnichannel.Repositories;
 using Omnichannel.Services;
@@ -179,6 +181,14 @@ builder.Services.AddCors(options =>
 });
 
 var app = builder.Build();
+
+app.Lifetime.ApplicationStarted.Register(() =>
+{
+    var server = app.Services.GetRequiredService<IServer>();
+    var addresses = server.Features.Get<IServerAddressesFeature>();
+    var webAddress = addresses?.Addresses.FirstOrDefault() ?? "(unknown)";
+    Console.WriteLine($"Web running at: {webAddress}");
+});
 
 app.UseMiddleware<ExceptionMiddleware>();
 app.UseHttpLogging();

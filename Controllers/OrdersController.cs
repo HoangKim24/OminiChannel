@@ -73,6 +73,11 @@ namespace Omnichannel.Controllers
             if (!ModelState.IsValid)
                 return BadRequest(new { message = "Dữ liệu không hợp lệ", errors = ModelState });
 
+            if (string.Equals(request.PaymentMethod, "BankTransfer", StringComparison.OrdinalIgnoreCase))
+            {
+                return BadRequest(new { message = "Đơn chuyển khoản cần tạo qua endpoint /api/payments/bank-transfer/request" });
+            }
+
             if (request.Items == null || request.Items.Count == 0)
                 return BadRequest(new { message = "Giỏ hàng trống" });
 
@@ -143,7 +148,7 @@ namespace Omnichannel.Controllers
                 {
                     UserId = request.UserId,
                     OrderDate = DateTime.UtcNow,
-                    Status = "Pending",
+                    Status = "Confirmed",
                     TotalAmount = quote?.FinalTotal ?? (itemsSubtotal + shippingFee),
                     ShippingAddress = request.ShippingAddress,
                     ReceiverPhone = request.ReceiverPhone,
@@ -210,7 +215,7 @@ namespace Omnichannel.Controllers
             var existing = await _unitOfWork.Orders.GetByIdAsync(id);
             if (existing == null) return NotFound(new { message = $"Đơn hàng #{id} không tồn tại" });
 
-            var validStatuses = new[] { "Pending", "Confirmed", "Shipping", "Completed", "Cancelled" };
+            var validStatuses = new[] { "Pending", "PendingPayment", "Paid", "Confirmed", "Placed", "Shipping", "Completed", "Cancelled", "Payment Failed" };
             if (!validStatuses.Contains(request.Status))
                 return BadRequest(new { message = $"Trạng thái '{request.Status}' không hợp lệ. Cho phép: {string.Join(", ", validStatuses)}" });
 

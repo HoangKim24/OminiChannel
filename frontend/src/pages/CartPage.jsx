@@ -12,7 +12,7 @@ const CartPage = () => {
   const removeFromCart = useAppStore((state) => state.removeFromCart)
   const clearCart = useAppStore((state) => state.clearCart)
 
-  const vnd = (price) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price * 24000)
+  const vnd = (price) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price || 0)
 
   const cartTotal = useMemo(
     () => cart.reduce((sum, item) => sum + item.price * item.quantity, 0),

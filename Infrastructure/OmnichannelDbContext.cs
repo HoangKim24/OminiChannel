@@ -22,6 +22,7 @@ namespace Omnichannel.Infrastructure
         public DbSet<Voucher> Vouchers { get; set; }
         public DbSet<VoucherRedemption> VoucherRedemptions { get; set; }
         public DbSet<Recommendation> Recommendations { get; set; }
+        public DbSet<BankTransferPayment> BankTransferPayments { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -35,6 +36,7 @@ namespace Omnichannel.Infrastructure
             modelBuilder.Entity<ChannelOrder>().ToTable("ChannelOrders");
             modelBuilder.Entity<Comment>().ToTable("Comments");
             modelBuilder.Entity<Recommendation>().ToTable("Recommendations");
+            modelBuilder.Entity<BankTransferPayment>().ToTable("BankTransferPayments");
 
             modelBuilder.Entity<Perfume>()
                 .HasOne(p => p.Category)
@@ -86,6 +88,8 @@ namespace Omnichannel.Infrastructure
             modelBuilder.Entity<Order>().Property(o => o.TotalAmount).HasPrecision(18, 2);
             modelBuilder.Entity<Order>().Property(o => o.DiscountAmount).HasPrecision(18, 2);
             modelBuilder.Entity<OrderItem>().Property(oi => oi.Price).HasPrecision(18, 2);
+            modelBuilder.Entity<BankTransferPayment>().Property(p => p.Amount).HasPrecision(18, 2);
+            modelBuilder.Entity<BankTransferPayment>().Property(p => p.PaidAmount).HasPrecision(18, 2);
 
             // Performance Indexes
             modelBuilder.Entity<Perfume>().HasIndex(p => p.Gender);
@@ -95,6 +99,8 @@ namespace Omnichannel.Infrastructure
             modelBuilder.Entity<Recommendation>().HasIndex(r => r.SourcePerfumeId);
             modelBuilder.Entity<Recommendation>().HasIndex(r => r.CoOccurrenceScore);
             modelBuilder.Entity<User>().HasIndex(u => u.Username).IsUnique();
+            modelBuilder.Entity<BankTransferPayment>().HasIndex(p => p.PaymentCode).IsUnique();
+            modelBuilder.Entity<BankTransferPayment>().HasIndex(p => p.OrderId).IsUnique();
 
             modelBuilder.Entity<ChannelOrder>()
                 .HasOne(co => co.SalesChannel)
@@ -170,7 +176,7 @@ namespace Omnichannel.Infrastructure
                     Id = 1,
                     Name = "Golden Bloom",
                     Brand = "KP Luxury",
-                    Price = 89.99m,
+                    Price = 2159760m,
                     Description = "Floral signature with elegant warm base.",
                     ImageUrl = "https://images.unsplash.com/photo-1541643600914-78b084683601?auto=format&fit=crop&w=800&q=80",
                     CategoryId = 1,
@@ -189,7 +195,7 @@ namespace Omnichannel.Infrastructure
                     Id = 2,
                     Name = "Midnight Cedar",
                     Brand = "KP Luxury",
-                    Price = 99.50m,
+                    Price = 2388000m,
                     Description = "Woody aromatic blend for modern professionals.",
                     ImageUrl = "https://images.unsplash.com/photo-1595425977377-9a6f0f0fef87?auto=format&fit=crop&w=800&q=80",
                     CategoryId = 2,
@@ -208,7 +214,7 @@ namespace Omnichannel.Infrastructure
                     Id = 3,
                     Name = "Ocean Whisper",
                     Brand = "KP Luxury",
-                    Price = 79.00m,
+                    Price = 1896000m,
                     Description = "Fresh unisex scent inspired by coastal mornings.",
                     ImageUrl = "https://images.unsplash.com/photo-1615634260167-c8cdede054de?auto=format&fit=crop&w=800&q=80",
                     CategoryId = 3,
@@ -269,8 +275,8 @@ namespace Omnichannel.Infrastructure
                     VoucherType = VoucherTypes.Order,
                     DiscountType = VoucherDiscountTypes.Percentage,
                     DiscountValue = 10m,
-                    MaxDiscountAmount = 4.17m,
-                    MinOrderValue = 15m,
+                    MaxDiscountAmount = 100080m,
+                    MinOrderValue = 360000m,
                     StartAt = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc),
                     EndAt = new DateTime(2026, 12, 31, 23, 59, 59, DateTimeKind.Utc),
                     UsageLimitTotal = 100,
@@ -287,9 +293,9 @@ namespace Omnichannel.Infrastructure
                     Description = "Giảm 50,000đ trên tổng đơn hàng",
                     VoucherType = VoucherTypes.Order,
                     DiscountType = VoucherDiscountTypes.FixedAmount,
-                    DiscountValue = 2.08m,
+                    DiscountValue = 49920m,
                     MaxDiscountAmount = null,
-                    MinOrderValue = 20m,
+                    MinOrderValue = 480000m,
                     StartAt = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc),
                     EndAt = new DateTime(2026, 12, 31, 23, 59, 59, DateTimeKind.Utc),
                     UsageLimitTotal = 50,
@@ -307,8 +313,8 @@ namespace Omnichannel.Infrastructure
                     VoucherType = VoucherTypes.Order,
                     DiscountType = VoucherDiscountTypes.Percentage,
                     DiscountValue = 15m,
-                    MaxDiscountAmount = 8.33m,
-                    MinOrderValue = 40m,
+                    MaxDiscountAmount = 199920m,
+                    MinOrderValue = 960000m,
                     StartAt = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc),
                     EndAt = new DateTime(2026, 12, 31, 23, 59, 59, DateTimeKind.Utc),
                     UsageLimitTotal = 20,
@@ -325,9 +331,9 @@ namespace Omnichannel.Infrastructure
                     Description = "Giảm 20,000đ phí ship",
                     VoucherType = VoucherTypes.Shipping,
                     DiscountType = VoucherDiscountTypes.FixedAmount,
-                    DiscountValue = 0.83m,
+                    DiscountValue = 19920m,
                     MaxDiscountAmount = null,
-                    MinOrderValue = 12m,
+                    MinOrderValue = 288000m,
                     StartAt = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc),
                     EndAt = new DateTime(2026, 12, 31, 23, 59, 59, DateTimeKind.Utc),
                     UsageLimitTotal = 100,
@@ -345,8 +351,8 @@ namespace Omnichannel.Infrastructure
                     VoucherType = VoucherTypes.Shipping,
                     DiscountType = VoucherDiscountTypes.Percentage,
                     DiscountValue = 10m,
-                    MaxDiscountAmount = 2.08m,
-                    MinOrderValue = 20m,
+                    MaxDiscountAmount = 49920m,
+                    MinOrderValue = 480000m,
                     StartAt = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc),
                     EndAt = new DateTime(2026, 12, 31, 23, 59, 59, DateTimeKind.Utc),
                     UsageLimitTotal = 75,

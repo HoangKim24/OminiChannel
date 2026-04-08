@@ -1,5 +1,7 @@
 import { useState, useMemo } from 'react';
-import { useToast } from '../../../utils/toastContext.jsx';
+import { useToast } from '../../../utils/useToast.jsx';
+
+const formatVnd = (price) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(Number(price || 0));
 
 const ProductsTab = ({ products, user, onRefresh }) => {
   const { success, error } = useToast();
@@ -9,7 +11,7 @@ const ProductsTab = ({ products, user, onRefresh }) => {
   const [formData, setFormData] = useState({});
   const [searchQuery, setSearchQuery] = useState('');
   const [filterGender, setFilterGender] = useState('all');
-  const [priceRange, setPriceRange] = useState({ min: 0, max: 10000000 });
+  const [priceRange] = useState({ min: 0, max: 50000000 });
 
   const openAddModal = () => {
     setEditingProduct(null);
@@ -21,7 +23,7 @@ const ProductsTab = ({ products, user, onRefresh }) => {
     setEditingProduct(product);
     setFormData({
       name: product.name || '', brand: product.brand || '', gender: product.gender || 'Unisex',
-      price: product.price || '', stockQuantity: product.stockQuantity || 0,
+      price: product.price || 0, stockQuantity: product.stockQuantity || 0,
       topNotes: product.topNotes || '', middleNotes: product.middleNotes || '', baseNotes: product.baseNotes || '',
       concentration: product.concentration || 'EDP', volumeOptions: product.volumeOptions || '',
       description: product.description || '', imageUrl: product.imageUrl || '', origin: product.origin || '', brandStory: product.brandStory || ''
@@ -48,7 +50,11 @@ const ProductsTab = ({ products, user, onRefresh }) => {
       const method = editingProduct ? 'PUT' : 'POST';
 
       const res = await fetch(url, {
-        method, headers: { 'Content-Type': 'application/json', 'X-User-Role': user?.role || 'Admin' },
+        method, headers: {
+          'Content-Type': 'application/json',
+          ...(user?.role ? { 'X-User-Role': user.role } : {}),
+          ...(user?.accessToken ? { Authorization: `Bearer ${user.accessToken}` } : {}),
+        },
         body: JSON.stringify(body)
       });
 
@@ -69,7 +75,10 @@ const ProductsTab = ({ products, user, onRefresh }) => {
     if (!window.confirm('Bạn chắc chắn muốn xóa sản phẩm này?')) return;
     try {
       const res = await fetch(`/api/perfumes/${id}`, {
-        method: 'DELETE', headers: { 'X-User-Role': user?.role || 'Admin' }
+        method: 'DELETE', headers: {
+          ...(user?.role ? { 'X-User-Role': user.role } : {}),
+          ...(user?.accessToken ? { Authorization: `Bearer ${user.accessToken}` } : {}),
+        }
       });
       if (res.ok || res.status === 204) {
         success('✓ Xóa sản phẩm thành công!');
@@ -157,7 +166,7 @@ const ProductsTab = ({ products, user, onRefresh }) => {
                     </span>
                   </td>
                   <td className="admin-td">
-                    <div className="admin-order-code">{p.price?.toLocaleString()} đ</div>
+                    <div className="admin-order-code">{formatVnd(p.price)}</div>
                     <div className={p.stockQuantity < 5 ? 'status-critical' : ''} style={{ fontSize: '0.7rem', color: p.stockQuantity < 5 ? 'var(--status-critical)' : 'var(--text-muted)', marginTop: '4px' }}>
                       CÒN: {p.stockQuantity || 0} CHAI
                     </div>

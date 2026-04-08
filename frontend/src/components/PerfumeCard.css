@@ -1,16 +1,11 @@
 /* PerfumeCard.css */
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600&family=Montserrat:wght@300;400;500&display=swap');
-
-:root {
-  --pc-bg: #0d0d0d;
-  --pc-border: #333333;
-  --pc-gold: #d4af37;
-  --pc-gold-dim: rgba(212, 175, 55, 0.2);
-  --pc-text-primary: #ffffff;
-  --pc-text-dim: #999999;
-}
-
 .perfume-card {
+  --pc-bg: var(--bg-secondary);
+  --pc-border: var(--border-color);
+  --pc-gold: var(--color-gold-500);
+  --pc-gold-dim: var(--border-gold);
+  --pc-text-primary: var(--text-primary);
+  --pc-text-dim: var(--text-secondary);
   width: 100%;
   max-width: 300px;
   background-color: var(--pc-bg);
@@ -18,7 +13,7 @@
   border-radius: 8px;
   overflow: hidden;
   position: relative;
-  font-family: 'Montserrat', sans-serif;
+  font-family: var(--font-sans);
   color: var(--pc-text-primary);
   /* Mượt transition viền và bóng đổ */
   transition: border-color 0.3s ease-in-out, box-shadow 0.3s ease-in-out, transform 0.3s ease-in-out;
@@ -84,7 +79,7 @@
   background-color: transparent;
   color: var(--pc-gold);
   border: 1px solid var(--pc-gold);
-  font-family: 'Montserrat', sans-serif;
+  font-family: var(--font-sans);
   font-size: 0.85rem;
   font-weight: 500;
   text-transform: uppercase;
@@ -129,7 +124,7 @@
 }
 
 .perfume-name {
-  font-family: 'Playfair Display', serif;
+  font-family: var(--font-serif);
   font-size: 1.25rem;
   font-weight: 400;
   margin: 0 0 16px 0;

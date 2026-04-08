@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useToast } from '../../../utils/toastContext.jsx';
+import { useToast } from '../../../utils/useToast.jsx';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || '';
 
@@ -70,7 +70,7 @@ const VouchersTab = ({ user }) => {
 
   const authHeaders = useMemo(() => ({
     'Content-Type': 'application/json',
-    'X-User-Role': user?.role || 'Admin',
+    ...(user?.role ? { 'X-User-Role': user.role } : {}),
     ...(user?.accessToken ? { Authorization: `Bearer ${user.accessToken}` } : {}),
   }), [user?.accessToken, user?.role]);
 
